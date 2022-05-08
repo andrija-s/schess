@@ -49,7 +49,7 @@ async function render_square(square) {
   ctx.fillStyle = (square === selected) ? selected_color : ((x % 2 === y % 2) ? sq_lcolor : sq_dcolor);
   ctx.fillRect(x*width,y*height,width,height);
   if (state[square] !== "e") {
-    let img = await loadImage(`/assets/${state[square]}.png`);
+    let img = await loadImage(`assets/${state[square]}.png`);
     ctx.drawImage(img, (x*width)+(width/8), (y*height)+(width/8), 50, 50);
   }
 }
@@ -61,7 +61,7 @@ async function render_state(board) {
     };
     let x = parseInt(square.charAt(1));
     let y = parseInt(square.charAt(0));
-    let img = await loadImage(`/assets/${board[square]}.png`);
+    let img = await loadImage(`assets/${board[square]}.png`);
     ctx.drawImage(img, (x*width)+(width/8), (y*height)+(width/8), 50, 50);
   }
 }
