@@ -66,7 +66,7 @@ nav.top-right {
 }
 .open .l1:hover {
   background: shade(tomato, 90%);
-  color: tomato;
+  color: #af3846;
   transition-delay: 0s;
 }
 .open .l1:active {
@@ -92,7 +92,7 @@ nav.top-right {
 }
 .open .l2:hover {
   background: shade(#ff7a39, 90%);
-  color: #ff7a39;
+  color: #af3846;
   transition-delay: 0s;
 }
 .open .l2:active {
@@ -118,7 +118,7 @@ nav.top-right {
 }
 .open .l3:hover {
   background: shade(#ff912b, 90%);
-  color: #ff912b;
+  color: #af3846;
   transition-delay: 0s;
 }
 .open .l3:active {
@@ -144,7 +144,7 @@ nav.top-right {
 }
 .open .l4:hover {
   background: shade(#ffa91c, 90%);
-  color: #ffa91c;
+  color: #af3846;
   transition-delay: 0s;
 }
 .open .l4:active {
