@@ -16,7 +16,7 @@ const sets = ["alpha", "anarcandy", "california", "cardinal", "cburnett", "chess
 let piece_setting = 0;
 let piece_set = sets[piece_setting];
 
-const state = {"00": "bR", "01": "bN", "02": "bN","03": "bK","04": "bQ", "05": "bB", "06": "bN", "07": "bR",
+const state = {"00": "bR", "01": "bN", "02": "bB","03": "bK","04": "bQ", "05": "bB", "06": "bN", "07": "bR",
                  "10": "bP", "11": "bP", "12": "bP","13": "bP","14": "bP", "15": "bP", "16": "bP", "17": "bP",
                  "20": "e", "21": "e", "22": "e","23": "e","24": "e", "25": "e", "26": "e", "27": "e",
                  "30": "e", "31": "e", "32": "e","33": "e","34": "e", "35": "e", "36": "e", "37": "e",
@@ -91,8 +91,9 @@ async function render_state(board) {
 function bind_click() {
   c.addEventListener("mousedown", function(e) {
     let rect = c.getBoundingClientRect();
-    let x = parseInt((e.clientX - rect.left) / (c.width / w_squares));
-    let y = parseInt((e.clientY - rect.top) / (c.height / h_squares));
+    let x = parseInt((e.clientX - rect.left) / width);
+    let y = parseInt((e.clientY - rect.top) / height);
+    if (x === 8 || y === 8) return;
     let position = y.toString();
     position = position + x.toString();
     if (selected === "" && has_move(position, state) && state[position].charAt(0) === player) {
