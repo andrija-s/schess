@@ -27,18 +27,27 @@ const images = {"bR": loadImage(`./assets/pieces/${piece_set}/bR.svg`),
                 "wK": loadImage(`./assets/pieces/${piece_set}/wK.svg`),
                 "wQ": loadImage(`./assets/pieces/${piece_set}/wQ.svg`),
                 "wP": loadImage(`./assets/pieces/${piece_set}/wP.svg`),};
-const arr_state = ["bR", "bN", "bB", "bK", "bQ", "bB", "bN", "bR",
-                   "bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP",
-                    "e",  "e",  "e",  "e",  "e",  "e",  "e",  "e",
-                    "e",  "e",  "e",  "e",  "e",  "e",  "e",  "e",
-                    "e",  "e",  "e",  "e",  "e",  "e",  "e",  "e",
-                    "e",  "e",  "e",  "e",  "e",  "e",  "e",  "e",
-                   "wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP",
-                   "wR", "wN", "wB", "wK", "wQ", "wB", "wN", "wR",]
+let arr_state = ["bR", "bN", "bB", "bK", "bQ", "bB", "bN", "bR",
+                 "bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP",
+                  "e",  "e",  "e",  "e",  "e",  "e",  "e",  "e",
+                  "e",  "e",  "e",  "e",  "e",  "e",  "e",  "e",
+                  "e",  "e",  "e",  "e",  "e",  "e",  "e",  "e",
+                  "e",  "e",  "e",  "e",  "e",  "e",  "e",  "e",
+                 "wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP",
+                 "wR", "wN", "wB", "wK", "wQ", "wB", "wN", "wR",]
 let selected = -1;
 let flipped = false;
 let player = "w";
 
+function flip() {
+  new_board = [];
+  for (let i = arr_state.length - 1; i >= 0; i--) {
+    new_board.push(arr_state[i]);
+  }
+  arr_state = new_board;
+  selected = -1;
+  render_state(arr_state);
+}
 function linear(x, y) {
   return ((h_squares*y)+x);
 }
@@ -50,21 +59,21 @@ function nonlinear(z) {
 function loadImage(url) {
   return new Promise(r => { let i = new Image(); i.onload = (() => r(i)); i.src = url; });
 }
-function legal_move(from, to, board) {
+function legal_move(from, to) {
   if (from === to) return false;
   return true;
 }
-function has_move(position, board) {
-  if (board[position] !== "e") {
+function has_move(position) {
+  if (arr_state[position] !== "e") {
     return true;
   }
   else {
     return false;
   }
 }
-function move(from, to, board) {
-  board[to] = board[from];
-  board[from] = "e";
+function move(from, to) {
+  arr_state[to] = arr_state[from];
+  arr_state[from] = "e";
 }
 function render_board() {
   for (let i = 0; i < w_squares; i++) {
@@ -75,19 +84,19 @@ function render_board() {
     }
   }
 }
-async function render_square(square) {
-  let {x, y} = nonlinear(square);
-  ctx.fillStyle = (square === selected) ? selected_color : ((x % 2 === y % 2) ? sq_lcolor : sq_dcolor);
+async function render_square(pos) {
+  let {x, y} = nonlinear(pos);
+  ctx.fillStyle = (pos === selected) ? selected_color : ((x % 2 === y % 2) ? sq_lcolor : sq_dcolor);
   ctx.fillRect(x*width,y*height,width,height);
-  if (arr_state[square] !== "e") {
-    let img = await images[arr_state[square]];
+  if (arr_state[pos] !== "e") {
+    let img = await images[arr_state[pos]];
     ctx.drawImage(img, (x*width)+(width/8), (y*height)+(width/8), 50, 50);
   }
 }
-async function render_state(board) {
+async function render_state() {
   render_board();
-  for (let i = 0; i < board.length; i++) {
-    if (board[i] === 'e') {
+  for (let i = 0; i < arr_state.length; i++) {
+    if (arr_state[i] === 'e') {
       continue;
     };
     let {x, y} = nonlinear(i);
@@ -102,13 +111,13 @@ function bind_click() {
     let y = ((e.clientY - rect.top) / height) | 0;
     if (x > 7 || y > 7) return;
     let position = linear(x, y);
-    if (selected === -1 && has_move(position, arr_state) && arr_state[position].charAt(0) === player) {
+    if (selected === -1 && has_move(position) && arr_state[position].charAt(0) === player) {
       selected = position;
       render_square(selected);
     }
     else if (selected !== -1) {
-      if (legal_move(selected, position, arr_state)) {
-        move(selected, position, arr_state);
+      if (legal_move(selected, position)) {
+        move(selected, position);
         render_square(position);
       }
       let prev = selected;
@@ -118,7 +127,6 @@ function bind_click() {
   });
 }
 function init() {
-  render_board();
   render_state(arr_state);
   bind_click();
 }
