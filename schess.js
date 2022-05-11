@@ -127,7 +127,7 @@ function bind_click() {
   });
 }
 function init() {
-  render_state(arr_state);
+  render_state();
   bind_click();
 }
 window.addEventListener("DOMContentLoaded", init());
