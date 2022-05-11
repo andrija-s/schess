@@ -46,7 +46,7 @@ function flip() {
   }
   arr_state = new_board;
   selected = -1;
-  render_state(arr_state);
+  render_state();
 }
 function linear(x, y) {
   return ((h_squares*y)+x);
