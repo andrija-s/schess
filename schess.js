@@ -43,7 +43,7 @@ let recent_to = -1;
 let selected = -1;
 let flipped = false;
 let player = "w";
-let enpeasant = -1;
+let enpeasant = ["",-1];
 let check = false;
 
 function flip() {
@@ -75,63 +75,51 @@ function rookMoves(from, player, state) {
   let moves = [];
   let {x, y} = nonlinear(from);
   // row check
-  for (let i = from - 1; i >= from - x; i--) {
+  for (let i=from-1; i>=from-x; i--) {
     if (state[i] === "e") {
       moves.push(i);
     }
     else {
-      if (state[i].charAt(0) === player) {
-        break;
-      }
-      else {
+      if (state[i].charAt(0) !== player) {
         moves.push(i);
-        break;
       }
+      break;
     }
   }
-  for (let i = from+1; i < (y*w_squares)+8; i++) {
+  for (let i = from+1; i<(y*w_squares)+8; i++) {
     if (state[i] === "e") {
       moves.push(i);
     }
     else {
-      if (state[i].charAt(0) === player) {
-        break;
-      }
-      else {
+      if (state[i].charAt(0) !== player) {
         moves.push(i);
-        break;
       }
+      break;
     }
   }
 
   // column check
 
-  for (let i = from - w_squares; i >= x; i -= w_squares) {
+  for (let i=from-w_squares; i>=x; i-=w_squares) {
     if (state[i] === "e") {
       moves.push(i);
     }
     else {
-      if (state[i].charAt(0) === player) {
-        break;
-      }
-      else {
+      if (state[i].charAt(0) !== player) {
         moves.push(i);
-        break;
       }
+      break;
     }
   }
-  for (let i = from + w_squares; i < 56 + x; i += w_squares) {
+  for (let i=from+w_squares; i<(w_squares*h_squares); i+=w_squares) {
     if (state[i] === "e") {
       moves.push(i);
     }
     else {
-      if (state[i].charAt(0) === player) {
-        break;
-      }
-      else {
+      if (state[i].charAt(0) !== player) {
         moves.push(i);
-        break;
       }
+      break;
     }
   }
   return moves;
@@ -191,6 +179,7 @@ function kingMoves(from, player, state) {
 function peonMoves(from, player, state) {
   let moves = [];
   let {x, y} = nonlinear(from);
+  let oppo = (player === "w") ? "b" : "w";
   let going_up = ((player === "w" && !flipped) || (player === "b" && flipped))
   let peasant_possible = ((going_up && y === 6) || (!going_up && y === 1));
   let inc = w_squares - ((w_squares * 2) * going_up)
@@ -200,17 +189,17 @@ function peonMoves(from, player, state) {
       moves.push(from + inc + inc);
     }
   }
-  let y_move = (inc > 0) ? y+1 : y-1;
+  let y_move = (going_up) ? y-1 : y+1;
 
-  if (x < 7) {
+  if (x !== 7) {
     let char = state[linear(x+1, y_move)].charAt(0)
-    if ((char !== "e" && char !== player) || (char === "e" && linear(x+1, y) === enpeasant)) {
+    if ((char !== "e" && char !== player) || (char==="e" && oppo===enpeasant[0] && linear(x+1, y)===enpeasant[1])) {
       moves.push(linear(x+1, y_move));
     }
   }
-  if (x > 0) {
+  if (x !== 0) {
     let char = state[linear(x-1, y_move)].charAt(0)
-    if ((char !== "e" && char !== player) || (char === "e" && linear(x-1, y) === enpeasant)) {
+    if ((char !== "e" && char !== player) || (char==="e" && oppo===enpeasant[0] && linear(x-1, y)===enpeasant[1])) {
       moves.push(linear(x-1, y_move));
     }
   }
@@ -224,88 +213,84 @@ function queenMoves(from, player, state) {
   let minplus = true;
   let minmin = true;
   for (let i = 1; i < w_squares; i++) {
-    if (plusplus && inBound(x+i, y+i)) {
-      if (state[linear(x+i, y+i)].charAt(0) !== player) moves.push(linear(x+i,y+i));
-      if (state[linear(x+i, y+i)].charAt(0) !== "e") {
+    let x_curr = x+i;
+    let y_curr = y+i;
+    if (plusplus && inBound(x_curr, y_curr)) {
+      if (state[linear(x_curr, y_curr)].charAt(0) !== player) moves.push(linear(x_curr,y_curr));
+      if (state[linear(x_curr, y_curr)].charAt(0) !== "e") {
         plusplus = false;
       }
     }
-    if (plusmin && inBound(x+i, y-i)) {
-      if (state[linear(x+i, y-i)].charAt(0) !== player) moves.push(linear(x+i,y-i));
-      if (state[linear(x+i, y-i)].charAt(0) !== "e") {
+    x_curr = x+i;
+    y_curr = y-i;
+    if (plusmin && inBound(x_curr, y_curr)) {
+      if (state[linear(x_curr, y_curr)].charAt(0) !== player) moves.push(linear(x_curr,y_curr));
+      if (state[linear(x_curr, y_curr)].charAt(0) !== "e") {
         plusmin = false;
       }
     }
-    if (minplus && inBound(x-i, y+i)) {
-      if (state[linear(x-i, y+i)].charAt(0) !== player) moves.push(linear(x-i,y+i));
-      if (state[linear(x-i, y+i)].charAt(0) !== "e") {
+    x_curr = x-i;
+    y_curr = y+i;
+    if (minplus && inBound(x_curr, y_curr)) {
+      if (state[linear(x_curr, y_curr)].charAt(0) !== player) moves.push(linear(x_curr,y_curr));
+      if (state[linear(x_curr, y_curr)].charAt(0) !== "e") {
         minplus = false;
       }
     }
-    if (minmin && inBound(x-i, y-i)) {
-      if (state[linear(x-i, y-i)].charAt(0) !== player) moves.push(linear(x-i,y-i));
-      if (state[linear(x-i, y-i)].charAt(0) !== "e") {
+    x_curr = x-i;
+    y_curr = y-i;
+    if (minmin && inBound(x_curr, y_curr)) {
+      if (state[linear(x_curr, y_curr)].charAt(0) !== player) moves.push(linear(x_curr,y_curr));
+      if (state[linear(x_curr, y_curr)].charAt(0) !== "e") {
         minmin = false;
       }
     }
   }
-  for (let i = from - 1; i >= from - x; i--) {
+  for (let i=from-1; i>=from-x; i--) {
     if (state[i] === "e") {
       moves.push(i);
     }
     else {
-      if (state[i].charAt(0) === player) {
-        break;
-      }
-      else {
+      if (state[i].charAt(0) !== player) {
         moves.push(i);
-        break;
       }
+      break;
     }
   }
-  for (let i = from+1; i < (y*w_squares)+8; i++) {
+  for (let i=from+1; i<(y*w_squares)+8; i++) {
     if (state[i] === "e") {
       moves.push(i);
     }
     else {
-      if (state[i].charAt(0) === player) {
-        break;
-      }
-      else {
+      if (state[i].charAt(0) !== player) {
         moves.push(i);
-        break;
       }
+      break;
     }
   }
 
   // column check
 
-  for (let i = from - w_squares; i >= x; i -= w_squares) {
+  for (let i=from-w_squares; i>=x; i-=w_squares) {
     if (state[i] === "e") {
       moves.push(i);
     }
     else {
-      if (state[i].charAt(0) === player) {
-        break;
-      }
-      else {
+      if (state[i].charAt(0) !== player) {
         moves.push(i);
-        break;
       }
+      break;
     }
   }
-  for (let i = from + w_squares; i < 56 + x; i += w_squares) {
+  for (let i=from+w_squares; i<(w_squares*h_squares); i+=w_squares) {
     if (state[i] === "e") {
       moves.push(i);
     }
     else {
-      if (state[i].charAt(0) === player) {
-        break;
-      }
-      else {
+      if (state[i].charAt(0) !== player) {
         moves.push(i);
-        break;
       }
+      break;
     }
   }
   return moves;
@@ -353,12 +338,16 @@ function move(from, to, state) {
   if (state[from].charAt(1) === "P") {
     let {x, y} = nonlinear(to);
     if (Math.abs(to - from) > 15) {
-      enpeasant = to;
+      enpeasant[0] = state[from].charAt(0);
+      enpeasant[1] = to;
     }
     else if (y === 0 || y === 7) {
       state[from] = state[from].charAt(0) + "Q";
     }
-    else enpeasant = -1;
+    else {
+      enpeasant[0] = "";
+      enpeasant[1] = -1;
+    }
   }
   state[to] = state[from];
   state[from] = "e";
@@ -376,7 +365,6 @@ function render_board() {
     }
   }
 }
-// deprecated
 /* async function render_square(pos) {
   let {x, y} = nonlinear(pos);
   ctx.fillStyle = (pos === selected) ? selected_color : ((x % 2 === y % 2) ? sq_lcolor : sq_dcolor);
