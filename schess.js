@@ -140,9 +140,41 @@ function rookMoves(from, player, state) {
   }
   return moves;
 }
+function knight_calc(x, y, player, state, moves) {
+  if (inBound(x,y) && (state.board[linear(x,y)] === 0 || (state.board[linear(x,y)] / Math.abs(state.board[linear(x,y)])) !== player)) {
+    moves.push(linear(x,y));
+  }
+}
 function knightMoves(from, player, state) {
   let moves = [];
+  let [x,y] = nonlinear(from);
+  let [x_mov,y_mov] = [x+2, y+1];
+  knight_calc(x_mov,y_mov,player,state,moves);
+  [x_mov,y_mov] = [x-2, y+1];
+  knight_calc(x_mov,y_mov,player,state,moves);
+  [x_mov,y_mov] = [x+2, y-1];
+  knight_calc(x_mov,y_mov,player,state,moves);
+  [x_mov,y_mov] = [x-2, y-1];
+  knight_calc(x_mov,y_mov,player,state,moves);
+  [x_mov,y_mov] = [x+1, y+2];
+  knight_calc(x_mov,y_mov,player,state,moves);
+  [x_mov,y_mov] = [x-1, y+2];
+  knight_calc(x_mov,y_mov,player,state,moves);
+  [x_mov,y_mov] = [x+1, y-2];
+  knight_calc(x_mov,y_mov,player,state,moves);
+  [x_mov,y_mov] = [x-1, y-2];
+  knight_calc(x_mov,y_mov,player,state,moves);
   return moves;
+}
+function diag_calc(x, y, player, state, moves, booli) {
+  if (booli && inBound(x, y)) {
+      let pos = linear(x, y);
+      if (state.board[pos] / Math.abs(state.board[pos]) !== player) moves.push(pos);
+      if (state.board[pos] !== EMPTY) {
+        return false;
+      }
+    }
+  return booli;
 }
 function bishopMoves(from, player, state) {
   let moves = [];
@@ -152,34 +184,10 @@ function bishopMoves(from, player, state) {
   let minplus = true;
   let minmin = true;
   for (let i = 1; i < w_squares; i++) {
-    if (plusplus && inBound(x+i, y+i)) {
-      let pos = linear(x+i, y+i);
-      if (state.board[pos] / Math.abs(state.board[pos]) !== player) moves.push(pos);
-      if (state.board[pos] !== EMPTY) {
-        plusplus = false;
-      }
-    }
-    if (plusmin && inBound(x+i, y-i)) {
-      let pos = linear(x+i, y-i);
-      if (state.board[pos] / Math.abs(state.board[pos]) !== player) moves.push(pos);
-      if (state.board[pos] !== EMPTY) {
-        plusmin = false;
-      }
-    }
-    if (minplus && inBound(x-i, y+i)) {
-      let pos = linear(x-i,y+i);
-      if (state.board[pos] / Math.abs(state.board[pos]) !== player) moves.push(pos);
-      if (state.board[pos] !== EMPTY) {
-        minplus = false;
-      }
-    }
-    if (minmin && inBound(x-i, y-i)) {
-      let pos = linear(x-i,y-i);
-      if (state.board[pos] / Math.abs(state.board[pos]) !== player) moves.push(pos);
-      if (state.board[pos] !== EMPTY) {
-        minmin = false;
-      }
-    }
+    plusplus = diag_calc(x+i,y+i,player,state,moves,plusplus);
+    plusmin  = diag_calc(x+i,y-i,player,state,moves,plusmin);
+    minplus  = diag_calc(x-i,y+i,player,state,moves,minplus);
+    minmin   = diag_calc(x-i,y-i,player,state,moves,minmin);
   }
   return moves;
 }
@@ -188,7 +196,7 @@ function kingMoves(from, player, state) {
   let [x, y] = nonlinear(from);
   for (let i = -1; i <= 1; i++) {
     for (let j = -1; j <= 1; j++) {
-      if ((i===0&&j===0) || x+i<0 || x+i > 7 || y+j<0 || y+j > 7) continue;
+      if ((i===0&&j===0) || x+i<0 || x+i>7 || y+j<0 || y+j>7) continue;
       let pos = linear(x+i,y+j);
       if (state.board[pos] / Math.abs(state.board[pos]) !== player) {
         moves.push(pos);
@@ -231,21 +239,11 @@ function queenMoves(from, player, state) {
   let plusmin = true;
   let minplus = true;
   let minmin = true;
-  function q_calculate(x, y, booli) {
-    if (booli && inBound(x, y)) {
-      let pos = linear(x, y);
-      if (state.board[pos] / Math.abs(state.board[pos]) !== player) moves.push(pos);
-      if (state.board[pos] !== EMPTY) {
-        return false;
-      }
-    }
-    return booli;
-  }
   for (let i = 1; i < w_squares; i++) {
-    plusplus = q_calculate(x+i,y+i,plusplus);
-    plusmin  = q_calculate(x+i,y-i,plusmin);
-    minplus  = q_calculate(x-i,y+i,minplus);
-    minmin   = q_calculate(x-i,y-i,minmin);
+    plusplus = diag_calc(x+i,y+i,player,state,moves,plusplus);
+    plusmin  = diag_calc(x+i,y-i,player,state,moves,plusmin);
+    minplus  = diag_calc(x-i,y+i,player,state,moves,minplus);
+    minmin   = diag_calc(x-i,y-i,player,state,moves,minmin);
   }
   for (let i=from-1; i>=from-x; i--) {
     if (state.board[i] === EMPTY) {
@@ -361,7 +359,6 @@ function move(from, to, state) {
   }
   state.board[to] = state.board[from];
   state.board[from] = EMPTY;
-  console.log(state.king_positions[0],state.king_positions[1]);
 }
 function render_board() {
   for (let i = 0; i < w_squares; i++) {
