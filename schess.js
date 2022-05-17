@@ -469,6 +469,20 @@ function move(mov, state) {
   let from = mov[0];
   let to = mov[1];
   let special = mov[2];
+  switch(to) {
+    case 63:
+      state.castles[WCS] = 0;
+      break;
+    case 56:
+      state.castles[WCL] = 0;
+      break;
+    case 7:
+      state.castles[BCS] = 0;
+      break;
+    case 0:
+      state.castles[BCL] = 0;
+      break;
+  }
   if (state.board[from].TYPE===PAWN) {
     let [x, y] = nonlinear(to);
     if (Math.abs(to-from) > 15) {
