@@ -621,6 +621,7 @@ function bind_click() {
   });
 }
 function init() {
+  c.onselectstart = function () { return false; }
   render_state();
   bind_click();
 }
