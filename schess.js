@@ -4,6 +4,7 @@ const w_squares = 8;
 const h_squares = 8;
 const width = c.width/w_squares;
 const height = c.height/h_squares;
+const checkb_color = "blue";
 const border_color = "black";
 const selected_color = "yellow";
 const piece_color = "black";
@@ -21,6 +22,7 @@ const WCS_MOV = 9;
 const WCL_MOV = 10;
 const BCS_MOV = 11;
 const BCL_MOV = 12;
+const ONPEASANT = 13;
 const WHITE = 1;
 const BLACK = 2;
 const EMPTY = 0;
@@ -43,11 +45,10 @@ const images = {"21" : loadImage(`./assets/pieces/${piece_set}/bR.svg`),
                 "15" : loadImage(`./assets/pieces/${piece_set}/wQ.svg`),
                 "16" : loadImage(`./assets/pieces/${piece_set}/wB.svg`),};
 class chess_state {
-  constructor(board, king_positions, enpeasant, check, castles, turn) {
+  constructor(board, king_positions, enpeasant, castles, turn) {
     this.board = board;
     this.king_positions = king_positions;
     this.enpeasant = enpeasant;
-    this.check = check;
     this.castles = castles;
     this.turn = turn;
   }
@@ -55,7 +56,6 @@ class chess_state {
     return new chess_state(structuredClone(other.board),
                            {...other.king_positions},
                            {...other.enpeasant},
-                           {...other.check},
                            [...other.castles],
                            other.turn);
   }
@@ -70,12 +70,13 @@ let main_state = new chess_state([{TYPE: ROOK, COLOR: BLACK}, {TYPE: KNIGHT, COL
                          {TYPE: ROOK, COLOR: WHITE}, {TYPE: KNIGHT, COLOR: WHITE}, {TYPE: BISHOP, COLOR: WHITE}, {TYPE: QUEEN, COLOR: WHITE}, {TYPE: KING, COLOR: WHITE}, {TYPE: BISHOP, COLOR: WHITE}, {TYPE: KNIGHT, COLOR: WHITE}, {TYPE: ROOK, COLOR: WHITE},],
                          {WHITE: 60, BLACK: 4},
                          {COLOR: 0, POSITION: -1},
-                         {WHITE: false, BLACK: false},
                          [1,1,1,1],
                          WHITE);
 let recent_from = -1;
 let recent_to = -1;
 let selected = -1;
+let black_checked = false;
+let white_checked = false;
 let curr_player = WHITE;
 let gitflip = false;
 let promote_piece = 5;
@@ -111,22 +112,22 @@ function rookMoves(from, color, state) {
   let [x, y] = nonlinear(from);
   // row check
   for (let i=from-1; i>=from-x; i--) {
-    if (state.board[i].TYPE === EMPTY) {
+    if (state.board[i].TYPE===EMPTY) {
       moves.push([from,i,0]);
     }
     else {
-      if (state.board[i].COLOR !== color) {
+      if (state.board[i].COLOR!==color) {
         moves.push([from,i,0]);
       }
       break;
     }
   }
   for (let i = from+1; i<(y*w_squares)+8; i++) {
-    if (state.board[i].TYPE === EMPTY) {
+    if (state.board[i].TYPE===EMPTY) {
       moves.push([from,i,0]);
     }
     else {
-      if (state.board[i].COLOR !== color) {
+      if (state.board[i].COLOR!==color) {
         moves.push([from,i,0]);
       }
       break;
@@ -136,22 +137,22 @@ function rookMoves(from, color, state) {
   // column check
 
   for (let i=from-w_squares; i>=x; i-=w_squares) {
-    if (state.board[i].TYPE === EMPTY) {
+    if (state.board[i].TYPE===EMPTY) {
       moves.push([from,i,0]);
     }
     else {
-      if (state.board[i].COLOR !== color) {
+      if (state.board[i].COLOR!==color) {
         moves.push([from,i,0]);
       }
       break;
     }
   }
   for (let i=from+w_squares; i<(w_squares*h_squares); i+=w_squares) {
-    if (state.board[i].TYPE === EMPTY) {
+    if (state.board[i].TYPE===EMPTY) {
       moves.push([from,i,0]);
     }
     else {
-      if (state.board[i].COLOR !== color) {
+      if (state.board[i].COLOR!==color) {
         moves.push([from,i,0]);
       }
       break;
@@ -220,32 +221,32 @@ function kingMoves(from, color, state) {
       }
     }
   }
-  if (color === WHITE) {
-    if (state.castles[WCS] === 1) {
-      if (state.board[from+1].TYPE === EMPTY && state.board[from+2].TYPE === EMPTY) {
+  if (color===WHITE) {
+    if (state.castles[WCS]) {
+      if (state.board[from+1].TYPE===EMPTY && state.board[from+2].TYPE===EMPTY) {
         if (!underAttack(color, from+1, state) && !underAttack(color, from+2, state)) {
           moves.push([from, from+2, WCS_MOV]);
         }
       }
     }
-    if (state.castles[WCL] === 1) {
-      if (state.board[from-1].TYPE === EMPTY && state.board[from-2].TYPE === EMPTY && state.board[from-3].TYPE === EMPTY) {
+    if (state.castles[WCL]) {
+      if (state.board[from-1].TYPE===EMPTY && state.board[from-2].TYPE===EMPTY && state.board[from-3].TYPE===EMPTY) {
         if (!underAttack(color, from-1, state) && !underAttack(color, from-2, state) && !underAttack(color, from-3, state)) {
           moves.push([from, from-2, WCL_MOV]);
         }
       }
     }
   }
-  if (color === BLACK) {
-    if (state.castles[BCS] === 1) {
-      if (state.board[from+1].TYPE === EMPTY && state.board[from+2].TYPE === EMPTY) {
+  if (color===BLACK) {
+    if (state.castles[BCS]) {
+      if (state.board[from+1].TYPE===EMPTY && state.board[from+2].TYPE===EMPTY) {
         if (!underAttack(color, from+1, state) && !underAttack(color, from+2, state)) {
           moves.push([from, from+2, BCS_MOV]);
         }
       }
     }
-    if (state.castles[BCL] === 1) {
-      if (state.board[from-1].TYPE === EMPTY && state.board[from-2].TYPE === EMPTY && state.board[from-3].TYPE === EMPTY) {
+    if (state.castles[BCL]) {
+      if (state.board[from-1].TYPE===EMPTY && state.board[from-2].TYPE===EMPTY && state.board[from-3].TYPE===EMPTY) {
         if (!underAttack(color, from-1, state) && !underAttack(color, from-2, state) && !underAttack(color, from-3, state)) {
           moves.push([from, from-2, BCL_MOV]);
         }
@@ -269,7 +270,7 @@ function pawnMoves(from, color, state) {
   function calculate(x_offset) {
     let lin_pos = linear(x_offset, y_move);
     if ((state.board[lin_pos].TYPE!==EMPTY && state.board[lin_pos].COLOR!==color) || (state.board[lin_pos].TYPE===EMPTY && color!==state.enpeasant.COLOR && linear(x_offset, y)===state.enpeasant.POSITION)) {
-      moves.push([from,linear(x_offset, y_move),0]);
+      moves.push([from,linear(x_offset, y_move),((state.enpeasant.COLOR===0)? 0 : ONPEASANT)]);
     }
   }
   if (x !== 7) {
@@ -312,9 +313,7 @@ function queenMoves(from, color, state) {
       break;
     }
   }
-
   // column check
-
   for (let i=from-w_squares; i>=x; i-=w_squares) {
     if (state.board[i].TYPE === EMPTY) {
       moves.push([from,i,0]);
@@ -342,28 +341,12 @@ function queenMoves(from, color, state) {
 function movesFrom(from, state) {
   let moves = [];
   let color = state.board[from].COLOR;
-  switch(state.board[from].TYPE) {
-    case ROOK:
-      moves = rookMoves(from, color, state);
-      break;
-    case KNIGHT:
-      moves = knightMoves(from, color, state);
-      break;
-    case BISHOP:
-      moves = bishopMoves(from, color, state);
-      break;
-    case KING:
-      moves = kingMoves(from, color, state);
-      break;
-    case QUEEN:
-      moves = queenMoves(from, color, state);
-      break;
-    case PAWN:
-      moves = pawnMoves(from, color, state);
-      break;
-    default:
-      break;
-  }
+  if (state.board[from].TYPE===ROOK) { moves = rookMoves(from, color, state); }
+  else if (state.board[from].TYPE===KNIGHT) { moves = knightMoves(from, color, state); }
+  else if (state.board[from].TYPE===BISHOP) { moves = bishopMoves(from, color, state); }
+  else if (state.board[from].TYPE===KING)   { moves = kingMoves(from, color, state); }
+  else if (state.board[from].TYPE===QUEEN)  { moves = queenMoves(from, color, state); }
+  else if (state.board[from].TYPE===PAWN)   { moves = pawnMoves(from, color, state); }
   return filter_moves(color, moves, state);
 }
 function filter_moves(color, moves, state) {
@@ -469,20 +452,10 @@ function move(mov, state) {
   let from = mov[0];
   let to = mov[1];
   let special = mov[2];
-  switch(to) {
-    case 63:
-      state.castles[WCS] = 0;
-      break;
-    case 56:
-      state.castles[WCL] = 0;
-      break;
-    case 7:
-      state.castles[BCS] = 0;
-      break;
-    case 0:
-      state.castles[BCL] = 0;
-      break;
-  }
+  if (to===63)      { state.castles[WCS] = 0; }
+  else if (to===56) { state.castles[WCL] = 0; }
+  else if (to===7)  { state.castles[BCS] = 0; }
+  else if (to===0)  { state.castles[BCL] = 0; }
   if (state.board[from].TYPE===PAWN) {
     let [x, y] = nonlinear(to);
     if (Math.abs(to-from) > 15) {
@@ -495,23 +468,21 @@ function move(mov, state) {
       state.enpeasant.POSITION = -1;
     }
     else {
+      if (special===ONPEASANT) {
+        let pos = (state.board[from].COLOR===WHITE) ? to + 8 : to - 8;
+        console.log(pos);
+        state.board[pos].TYPE = EMPTY;
+        state.board[pos].COLOR = EMPTY;
+      }
       state.enpeasant.COLOR = 0;
       state.enpeasant.POSITION = -1;
     }
   }
   else if (state.board[from].TYPE===ROOK) {
-    if (from === 63) {
-      state.castles[WCS] = 0;
-    }
-    else if (from === 56) {
-      state.castles[WCL] = 0;
-    }
-    else if (from === 7) {
-      state.castles[BCS] = 0;
-    }
-    else if (from === 0) {
-      state.castles[BCL] = 0;
-    }
+    if (from===63)      { state.castles[WCS] = 0; }
+    else if (from===56) { state.castles[WCL] = 0; }
+    else if (from===7)  { state.castles[BCS] = 0; }
+    else if (from===0)  { state.castles[BCL] = 0; }
   }
   else if (state.board[from].TYPE===KING) {
     if (state.board[from].COLOR===WHITE) {
@@ -529,46 +500,34 @@ function move(mov, state) {
   state.board[to].COLOR = state.board[from].COLOR;
   state.board[from].TYPE = EMPTY;
   state.board[from].COLOR = EMPTY;
-  switch(special) {
-    case WCS_MOV:
-      state.board[63].TYPE = EMPTY;
-      state.board[63].COLOR = EMPTY;
-      state.board[from+1].TYPE = ROOK;
-      state.board[from+1].COLOR = state.board[to].COLOR;
-      break;
-    case WCL_MOV:
-      state.board[56].TYPE = EMPTY;
-      state.board[56].COLOR = EMPTY;
-      state.board[from-1].TYPE = ROOK;
-      state.board[from-1].COLOR = state.board[to].COLOR;
-      break;
-    case BCS_MOV:
-      state.board[7].TYPE = EMPTY;
-      state.board[7].COLOR = EMPTY;
-      state.board[from+1].TYPE = ROOK;
-      state.board[from+1].COLOR = state.board[to].COLOR;
-      break;
-    case BCL_MOV:
-      state.board[0].TYPE = EMPTY;
-      state.board[0].COLOR = EMPTY;
-      state.board[from-1].TYPE = ROOK;
-      state.board[from-1].COLOR = state.board[to].COLOR;
-      break;
-    default:
-      break;
+  // castling
+  if (special>=WCS_MOV && special<=BCL_MOV) {
+    let rook_pos;
+    let r_mov = (special===WCS_MOV || special===BCS_MOV) ? from+1 : from-1;
+    if (special===WCS_MOV)      { rook_pos = 63; }
+    else if (special===WCL_MOV) { rook_pos = 56; }
+    else if (special===BCS_MOV) { rook_pos = 7; }
+    else if (special===BCL_MOV) { rook_pos = 0; }
+    state.board[rook_pos].TYPE = EMPTY;
+    state.board[rook_pos].COLOR = EMPTY;
+    state.board[r_mov].TYPE = ROOK;
+    state.board[r_mov].COLOR = state.board[to].COLOR;
   }
+  state.turn = (state.turn===WHITE) ? BLACK : WHITE;
 }
 
 ////////////////////////////////////////////////////////////////////
 
 function render_board() {
+  let WK_POS = main_state.king_positions.WHITE;
+  let BK_POS = main_state.king_positions.BLACK;
   for (let i = 0; i < w_squares; i++) {
     for (let j = 0; j < h_squares; j++) {
-      ctx.fillStyle = border_color;
-      ctx.fillRect(i*width,j*height,width,height);
-      ctx.fillStyle = (j % 2 === i % 2) ? sq_lcolor : sq_dcolor;
       let [x,y] = (gitflip) ? [7-i,7-j] : [i,j]; 
       let pos = linear(x,y);
+      ctx.fillStyle =  border_color;
+      ctx.fillRect(i*width,j*height,width,height);
+      ctx.fillStyle = ((pos===WK_POS && white_checked) || (pos===BK_POS && black_checked)) ? checkb_color : ((j % 2 === i % 2) ? sq_lcolor : sq_dcolor);
       if (selected === pos) ctx.fillStyle = selected_color;
       else if (findSelected(moves_highlight, pos) !== null) ctx.fillStyle = highlight_color;
       ctx.fillRect(i*width,j*height,width-1,height-1);
@@ -604,15 +563,24 @@ function bind_click() {
     if (x > 7 || y > 7) return;
     [x, y] = (gitflip) ? [7-x,7-y] : [x,y];
     let position = linear(x, y);
-    if (selected === -1 && main_state.board[position].TYPE !== EMPTY && main_state.board[position].COLOR === curr_player) {
+    if (selected===-1 && main_state.board[position].TYPE!==EMPTY && main_state.board[position].COLOR===curr_player) {
       selected = position;
       moves_highlight = movesFrom(position, main_state);
-      if(moves_highlight.length < 1) selected = -1;
+      if(moves_highlight.length<1) selected = -1;
     }
-    else if (selected !== -1) {
+    else if (selected!==-1) {
       let mov = findSelected(moves_highlight, position);
       if (mov !== null) {
         move(mov, main_state);
+        curr_player = main_state.turn;
+        if (curr_player===WHITE) {
+          black_checked = false;
+          white_checked = underAttack(WHITE, main_state.king_positions.WHITE, main_state);
+        }
+        else {
+          white_checked = false;
+          black_checked = underAttack(BLACK, main_state.king_positions.BLACK, main_state);
+        }
       }
       selected = -1;
       moves_highlight = [];
