@@ -11,25 +11,26 @@
     <link rel="icon" href="assets/favicon-96x96.png" type="image/x-icon">
   </head>
   <body>
+    <div class="dropdown">
+      <button class="dropbtn">Promotion</button>
+      <div class="dropdown-content">
+        <a onclick="promote(5)">Queen</a>
+        <a onclick="promote(6)">Bishop</a>
+        <a onclick="promote(2)">Knight</a>
+        <a onclick="promote(1)">Rook</a>
+       </div>
+    </div>
+    <div class="dropdown">
+      <button class="dropbtn">Color</button>
+      <div class="dropdown-content">
+        <a onclick="pickColor(1)">White</a>
+        <a onclick="pickColor(2)">Black</a>
+      </div>
+    </div>
+    <div class="dropdown">
+      <button class="dropbtn" onclick="flip()">Flip</button>
+    </div>
     <canvas id="chessBoard" width="600" height="600" style="border:3px solid #913c3c; position:absolute; top:100px; left:350px;"></canvas>
     <script  src="./schess.js"></script>
-    <nav class="top-right open">
-	<a class="disc l1">
-		<div>Setting 4</div>
-	</a>
-	<a class="disc l2">
-		<div>Setting 3</div>
-	</a>
-	<a class="disc l3" onclick="flip()">
-		<div>Flip</div>
-	</a>
-	<a class="disc l4" onclick="render_set()">
-		<div id="piece_setting">alpha</div>
-	</a>
-	<a class="disc l5 toggle">
-		Settings
-	</a>
-</nav>
-  <script  src="./script.js"></script>
   </body>
 </html>
