@@ -44,20 +44,24 @@ const images = {"21" : loadImage(`./assets/pieces/${piece_set}/bR.svg`),
                 "14" : loadImage(`./assets/pieces/${piece_set}/wP.svg`),
                 "15" : loadImage(`./assets/pieces/${piece_set}/wQ.svg`),
                 "16" : loadImage(`./assets/pieces/${piece_set}/wB.svg`),};
+const audio = {"move": new Audio("./assets/sound/move.wav")};
 class chess_state {
-  constructor(board, king_positions, enpeasant, castles, turn) {
+  constructor(board, king_positions, enpeasant, castles, player) {
     this.board = board;
     this.king_positions = king_positions;
     this.enpeasant = enpeasant;
     this.castles = castles;
-    this.turn = turn;
+    this.player = player;
   }
   static copy(other) {
     return new chess_state(structuredClone(other.board),
                            {...other.king_positions},
                            {...other.enpeasant},
                            [...other.castles],
-                           other.turn);
+                           other.player);
+  }
+  static copyBoard(other) {
+    return new structuredClone(other.board);
   }
 }
 let main_state = new chess_state([{TYPE: ROOK, COLOR: BLACK}, {TYPE: KNIGHT, COLOR: BLACK}, {TYPE: BISHOP, COLOR: BLACK}, {TYPE: QUEEN, COLOR: BLACK}, {TYPE: KING, COLOR: BLACK}, {TYPE: BISHOP, COLOR: BLACK}, {TYPE: KNIGHT, COLOR: BLACK}, {TYPE: ROOK, COLOR: BLACK},
@@ -77,7 +81,6 @@ let recent_to = -1;
 let selected = -1;
 let black_checked = false;
 let white_checked = false;
-let curr_player = WHITE;
 let gitflip = false;
 let promote_piece = 5;
 
@@ -85,7 +88,7 @@ function promote(input) {
   promote_piece = input;
 }
 function pickColor(input) {
-  curr_player = input;
+  return;;
 }
 function flip() {
   gitflip = !gitflip;
@@ -269,8 +272,11 @@ function pawnMoves(from, color, state) {
   let y_move = (going_up) ? y-1 : y+1;
   function calculate(x_offset) {
     let lin_pos = linear(x_offset, y_move);
-    if ((state.board[lin_pos].TYPE!==EMPTY && state.board[lin_pos].COLOR!==color) || (state.board[lin_pos].TYPE===EMPTY && color!==state.enpeasant.COLOR && linear(x_offset, y)===state.enpeasant.POSITION)) {
-      moves.push([from,linear(x_offset, y_move),((state.enpeasant.COLOR===0)? 0 : ONPEASANT)]);
+    if ((state.board[lin_pos].TYPE!==EMPTY && state.board[lin_pos].COLOR!==color)) {
+      moves.push([from,linear(x_offset, y_move),0]);
+    }
+    else if (state.board[lin_pos].TYPE===EMPTY && color!==state.enpeasant.COLOR && linear(x_offset, y)===state.enpeasant.POSITION) {
+      moves.push([from,linear(x_offset, y_move),ONPEASANT]);
     }
   }
   if (x !== 7) {
@@ -513,7 +519,7 @@ function move(mov, state) {
     state.board[r_mov].TYPE = ROOK;
     state.board[r_mov].COLOR = state.board[to].COLOR;
   }
-  state.turn = (state.turn===WHITE) ? BLACK : WHITE;
+  state.player = (state.player===WHITE) ? BLACK : WHITE;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -563,7 +569,7 @@ function bind_click() {
     if (x > 7 || y > 7) return;
     [x, y] = (gitflip) ? [7-x,7-y] : [x,y];
     let position = linear(x, y);
-    if (selected===-1 && main_state.board[position].TYPE!==EMPTY && main_state.board[position].COLOR===curr_player) {
+    if (selected===-1 && main_state.board[position].TYPE!==EMPTY && main_state.board[position].COLOR===main_state.player) {
       selected = position;
       moves_highlight = movesFrom(position, main_state);
       if(moves_highlight.length<1) selected = -1;
@@ -572,8 +578,8 @@ function bind_click() {
       let mov = findSelected(moves_highlight, position);
       if (mov !== null) {
         move(mov, main_state);
-        curr_player = main_state.turn;
-        if (curr_player===WHITE) {
+        audio["move"].play();
+        if (main_state.player===WHITE) {
           black_checked = false;
           white_checked = underAttack(WHITE, main_state.king_positions.WHITE, main_state);
         }
