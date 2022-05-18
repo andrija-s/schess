@@ -1,4 +1,5 @@
 const c = document.getElementById("chessBoard");
+c.onselectstart = function () { return false; }
 const ctx = c.getContext("2d");
 const w_squares = 8;
 const h_squares = 8;
@@ -46,19 +47,19 @@ const images = {"21" : loadImage(`./assets/pieces/${piece_set}/bR.svg`),
                 "16" : loadImage(`./assets/pieces/${piece_set}/wB.svg`),};
 const audio = {"move": new Audio("./assets/sound/move.wav")};
 class chess_state {
-  constructor(board, king_positions, enpeasant, castles, player) {
+  constructor(board, king_positions, enpeasant, castles, turn) {
     this.board = board;
     this.king_positions = king_positions;
     this.enpeasant = enpeasant;
     this.castles = castles;
-    this.player = player;
+    this.turn = turn;
   }
   static copy(other) {
     return new chess_state(structuredClone(other.board),
                            {...other.king_positions},
                            {...other.enpeasant},
                            [...other.castles],
-                           other.player);
+                           other.turn);
   }
   static copyBoard(other) {
     return new structuredClone(other.board);
@@ -75,13 +76,13 @@ let main_state = new chess_state([{TYPE: ROOK, COLOR: BLACK}, {TYPE: KNIGHT, COL
                          {WHITE: 60, BLACK: 4},
                          {COLOR: 0, POSITION: -1},
                          [1,1,1,1],
-                         WHITE);
+                         0);
 let recent_from = -1;
 let recent_to = -1;
 let selected = -1;
 let black_checked = false;
 let white_checked = false;
-let gitflip = false;
+let flipped = false;
 let promote_piece = 5;
 
 function promote(input) {
@@ -91,7 +92,7 @@ function pickColor(input) {
   return;;
 }
 function flip() {
-  gitflip = !gitflip;
+  flipped = !flipped;
   selected = -1;
   moves_highlight = [];
   render_state();
@@ -217,7 +218,7 @@ function kingMoves(from, color, state) {
   let [x, y] = nonlinear(from);
   for (let i = -1; i <= 1; i++) {
     for (let j = -1; j <= 1; j++) {
-      if ((i===0&&j===0) || x+i<0 || x+i>7 || y+j<0 || y+j>7) continue;
+      if ((i===0&&j===0) || !inBound(x+i,y+j)) continue;
       let pos = linear(x+i,y+j);
       if (state.board[pos].COLOR !== color) {
         moves.push([from,pos,0]);
@@ -225,35 +226,25 @@ function kingMoves(from, color, state) {
     }
   }
   if (color===WHITE) {
-    if (state.castles[WCS]) {
-      if (state.board[from+1].TYPE===EMPTY && state.board[from+2].TYPE===EMPTY) {
-        if (!underAttack(color, from+1, state) && !underAttack(color, from+2, state)) {
-          moves.push([from, from+2, WCS_MOV]);
-        }
-      }
+    if (state.castles[WCS] && state.board[from+1].TYPE===EMPTY && state.board[from+2].TYPE===EMPTY 
+        && !underAttack(color, from+1, state) && !underAttack(color, from+2, state)) {
+      moves.push([from, from+2, WCS_MOV]);
     }
-    if (state.castles[WCL]) {
-      if (state.board[from-1].TYPE===EMPTY && state.board[from-2].TYPE===EMPTY && state.board[from-3].TYPE===EMPTY) {
-        if (!underAttack(color, from-1, state) && !underAttack(color, from-2, state) && !underAttack(color, from-3, state)) {
-          moves.push([from, from-2, WCL_MOV]);
-        }
-      }
+    if (state.castles[WCL] && state.board[from-1].TYPE===EMPTY && state.board[from-2].TYPE===EMPTY
+        && state.board[from-3].TYPE===EMPTY && !underAttack(color, from-1, state) 
+        && !underAttack(color, from-2, state) && !underAttack(color, from-3, state)) {
+      moves.push([from, from-2, WCL_MOV]);
     }
   }
   if (color===BLACK) {
-    if (state.castles[BCS]) {
-      if (state.board[from+1].TYPE===EMPTY && state.board[from+2].TYPE===EMPTY) {
-        if (!underAttack(color, from+1, state) && !underAttack(color, from+2, state)) {
-          moves.push([from, from+2, BCS_MOV]);
-        }
-      }
+    if (state.castles[BCS] && state.board[from+1].TYPE===EMPTY && state.board[from+2].TYPE===EMPTY
+        && !underAttack(color, from+1, state) && !underAttack(color, from+2, state)) {
+      moves.push([from, from+2, BCS_MOV]);
     }
-    if (state.castles[BCL]) {
-      if (state.board[from-1].TYPE===EMPTY && state.board[from-2].TYPE===EMPTY && state.board[from-3].TYPE===EMPTY) {
-        if (!underAttack(color, from-1, state) && !underAttack(color, from-2, state) && !underAttack(color, from-3, state)) {
-          moves.push([from, from-2, BCL_MOV]);
-        }
-      }
+    if (state.castles[BCL] && state.board[from-1].TYPE===EMPTY && state.board[from-2].TYPE===EMPTY 
+        && state.board[from-3].TYPE===EMPTY && !underAttack(color, from-1, state) 
+        && !underAttack(color, from-2, state) && !underAttack(color, from-3, state)) {
+      moves.push([from, from-2, BCL_MOV]);
     }
   }
   return moves;
@@ -347,7 +338,7 @@ function queenMoves(from, color, state) {
 function movesFrom(from, state) {
   let moves = [];
   let color = state.board[from].COLOR;
-  if (state.board[from].TYPE===ROOK) { moves = rookMoves(from, color, state); }
+  if (state.board[from].TYPE===ROOK)        { moves = rookMoves(from, color, state); }
   else if (state.board[from].TYPE===KNIGHT) { moves = knightMoves(from, color, state); }
   else if (state.board[from].TYPE===BISHOP) { moves = bishopMoves(from, color, state); }
   else if (state.board[from].TYPE===KING)   { moves = kingMoves(from, color, state); }
@@ -464,7 +455,7 @@ function move(mov, state) {
   else if (to===0)  { state.castles[BCL] = 0; }
   if (state.board[from].TYPE===PAWN) {
     let [x, y] = nonlinear(to);
-    if (Math.abs(to-from) > 15) {
+    if (Math.abs(to-from) === 16) {
       state.enpeasant.COLOR = state.board[from].COLOR;
       state.enpeasant.POSITION = to;
     }
@@ -476,7 +467,6 @@ function move(mov, state) {
     else {
       if (special===ONPEASANT) {
         let pos = (state.board[from].COLOR===WHITE) ? to + 8 : to - 8;
-        console.log(pos);
         state.board[pos].TYPE = EMPTY;
         state.board[pos].COLOR = EMPTY;
       }
@@ -508,18 +498,31 @@ function move(mov, state) {
   state.board[from].COLOR = EMPTY;
   // castling
   if (special>=WCS_MOV && special<=BCL_MOV) {
-    let rook_pos;
-    let r_mov = (special===WCS_MOV || special===BCS_MOV) ? from+1 : from-1;
-    if (special===WCS_MOV)      { rook_pos = 63; }
-    else if (special===WCL_MOV) { rook_pos = 56; }
-    else if (special===BCS_MOV) { rook_pos = 7; }
-    else if (special===BCL_MOV) { rook_pos = 0; }
+    let rook_pos, r_mov;
+    switch(special) {
+      case WCS_MOV:
+        r_mov = from + 1;
+        rook_pos = 63;
+        break;
+      case WCL_MOV:
+        r_mov = from - 1;
+        rook_pos = 56;
+        break;
+      case BCS_MOV:
+        r_mov = from + 1;
+        rook_pos = 7;
+        break;
+      case BCL_MOV:
+        r_mov = from - 1;
+        rook_pos = 0;
+        break;
+    }
     state.board[rook_pos].TYPE = EMPTY;
     state.board[rook_pos].COLOR = EMPTY;
     state.board[r_mov].TYPE = ROOK;
     state.board[r_mov].COLOR = state.board[to].COLOR;
   }
-  state.player = (state.player===WHITE) ? BLACK : WHITE;
+  state.turn += 1;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -529,7 +532,7 @@ function render_board() {
   let BK_POS = main_state.king_positions.BLACK;
   for (let i = 0; i < w_squares; i++) {
     for (let j = 0; j < h_squares; j++) {
-      let [x,y] = (gitflip) ? [7-i,7-j] : [i,j]; 
+      let [x,y] = (flipped) ? [7-i,7-j] : [i,j]; 
       let pos = linear(x,y);
       ctx.fillStyle =  border_color;
       ctx.fillRect(i*width,j*height,width,height);
@@ -547,7 +550,7 @@ async function render_state() {
       continue;
     };
     let [x, y] = nonlinear(i);
-    [x, y] = (gitflip) ? [7-x,7-y] : [x,y];
+    [x, y] = (flipped) ? [7-x,7-y] : [x,y];
     let str = main_state.board[i].COLOR + "" + main_state.board[i].TYPE;
     let img = await images[str];
     ctx.drawImage(img, (x*width)+(width/16), (y*height)+(width/16), 65, 65);
@@ -567,9 +570,11 @@ function bind_click() {
     let x = ((e.clientX - rect.left) / width) | 0;
     let y = ((e.clientY - rect.top) / height) | 0;
     if (x > 7 || y > 7) return;
-    [x, y] = (gitflip) ? [7-x,7-y] : [x,y];
+    let player = (main_state.turn % 2 === 0) ? WHITE : BLACK;
+    [x, y] = (flipped) ? [7-x,7-y] : [x,y];
     let position = linear(x, y);
-    if (selected===-1 && main_state.board[position].TYPE!==EMPTY && main_state.board[position].COLOR===main_state.player) {
+    console.log(player);
+    if (selected===-1 && main_state.board[position].TYPE!==EMPTY && main_state.board[position].COLOR===player) {
       selected = position;
       moves_highlight = movesFrom(position, main_state);
       if(moves_highlight.length<1) selected = -1;
@@ -579,7 +584,7 @@ function bind_click() {
       if (mov !== null) {
         move(mov, main_state);
         audio["move"].play();
-        if (main_state.player===WHITE) {
+        if (player===BLACK) {
           black_checked = false;
           white_checked = underAttack(WHITE, main_state.king_positions.WHITE, main_state);
         }
@@ -595,7 +600,6 @@ function bind_click() {
   });
 }
 function init() {
-  c.onselectstart = function () { return false; }
   render_state();
   bind_click();
 }
