@@ -1,23 +1,17 @@
-import { chess_state } from "./chess_class.js";
+import {chess_state,Q_PROM,R_PROM,B_PROM,K_PROM,
+        WHITE,BLACK,EMPTY,w_squares,h_squares} from "./chess_class.js";
 const c = document.getElementById("chessBoard");
 c.onselectstart = function () { return false; }
 const ctx = c.getContext("2d");
-const w_squares = 8;
-const h_squares = 8;
 const width = c.width/w_squares;
 const height = c.height/h_squares;
 const checkb_color = "blue";
 const border_color = "black";
 const selected_color = "yellow";
-const piece_color = "black";
 const sq_lcolor = "#ff7a39";
 const sq_dcolor = "green";
 const highlight_color = "red";
-let moves_highlight = [];
 const piece_set = "anarcandy";
-const WHITE = 0;
-const BLACK = 1;
-const EMPTY = -1;
 const images = {"11" : loadImage(`./assets/pieces/${piece_set}/bR.svg`),
                 "12" : loadImage(`./assets/pieces/${piece_set}/bN.svg`),
                 "13" : loadImage(`./assets/pieces/${piece_set}/bK.svg`),
@@ -35,6 +29,7 @@ const audio = {"move": new Audio("./assets/sound/move.wav")};
 
 // default: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
 let main_state = new chess_state("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
+let moves_highlight = [];
 let recent_from = -1;
 let recent_to = -1;
 let selected = -1;
@@ -99,6 +94,23 @@ function findSelected(moves, pos) {
   }
   return null;
 }
+function bind_buttons() {
+  let buttons = document.getElementById("flipbtn");
+  let val;
+  buttons.addEventListener("click", () => {
+    flip();
+  });
+  buttons = document.querySelectorAll(".dropdown-content > a");
+  for (let btn of buttons) {
+    btn.addEventListener("click", () => {
+      if (btn.innerHTML==="Queen") { val=Q_PROM; }
+      else if (btn.innerHTML==="Bishop")  { val=B_PROM; }
+      else if (btn.innerHTML==="Knight") { val=K_PROM; }
+      else if (btn.innerHTML==="Rook") { val=R_PROM; }
+      promote(val);
+    })
+  }
+}
 function bind_click() {
   c.addEventListener("mousedown", function(e) {
     let rect = c.getBoundingClientRect();
@@ -116,6 +128,9 @@ function bind_click() {
     else if (selected!==-1) {
       let mov = findSelected(moves_highlight, position);
       if (mov !== null) {
+        if (mov[2] >= Q_PROM && mov[2] <= R_PROM) {
+          mov[2] = promote_piece;
+        }
         main_state.move(mov);
         audio["move"].play();
         if (player===BLACK) {
@@ -136,6 +151,7 @@ function bind_click() {
 //import { performance_nodes_test } from "./test.js";
 function init() {
   //performance_nodes_test(4);
+  bind_buttons();
   render_state();
   bind_click();
 }

@@ -11,26 +11,19 @@
     <link rel="icon" href="assets/favicon-96x96.png" type="image/x-icon">
   </head>
   <body>
+    <canvas id="chessBoard" width="600" height="600" style="border:3px solid #913c3c; position:absolute; top:100px; left:350px;"></canvas>
+    <script  type="module" src="./schess.js"></script>
     <div class="dropdown">
-      <button class="dropbtn">Promotion</button>
+      <button id="prombtn" class="dropbtn">Promotion</button>
       <div class="dropdown-content">
-        <a onclick="promote(5)">Queen</a>
-        <a onclick="promote(6)">Bishop</a>
-        <a onclick="promote(2)">Knight</a>
-        <a onclick="promote(1)">Rook</a>
+        <a>Queen</a>
+        <a>Bishop</a>
+        <a>Knight</a>
+        <a>Rook</a>
        </div>
     </div>
     <div class="dropdown">
-      <button class="dropbtn">Color</button>
-      <div class="dropdown-content">
-        <a onclick="pickColor(1)">White</a>
-        <a onclick="pickColor(2)">Black</a>
-      </div>
+      <button id="flipbtn" class="dropbtn">Flip</button>
     </div>
-    <div class="dropdown">
-      <button class="dropbtn" onclick="flip()">Flip</button>
-    </div>
-    <canvas id="chessBoard" width="600" height="600" style="border:3px solid #913c3c; position:absolute; top:100px; left:350px;"></canvas>
-    <script  type="module" src="./schess.js"></script>
   </body>
 </html>
