@@ -133,9 +133,9 @@ function bind_click() {
     render_state();
   });
 }
-import { performance_nodes_test } from "./test.js";
+//import { performance_nodes_test } from "./test.js";
 function init() {
-  performance_nodes_test(4);
+  //performance_nodes_test(4);
   render_state();
   bind_click();
 }
