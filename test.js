@@ -1,11 +1,11 @@
 import { chess_state } from "./chess_class.js";
 function PERFT(state, depth) {
-  if (depth===0) {
-    return 1;
+  let legal_moves = state.allMoves();
+  if (depth===1) {
+    return legal_moves.length;
   }
   let temp_state;
   let sum=0;
-  let legal_moves = state.allMoves();
   for (let mov of legal_moves) {
     temp_state = state.copy();
     temp_state.move(mov);
