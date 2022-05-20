@@ -1,3 +1,4 @@
+import { chess_state } from "./chess_class.js";
 const c = document.getElementById("chessBoard");
 c.onselectstart = function () { return false; }
 const ctx = c.getContext("2d");
@@ -14,107 +15,33 @@ const sq_dcolor = "green";
 const highlight_color = "red";
 let moves_highlight = [];
 const piece_set = "anarcandy";
-// CASTLES
-const WCS = 0;
-const WCL = 1;
-const BCS = 2;
-const BCL = 3;
-const WCS_MOV = 9;
-const WCL_MOV = 10;
-const BCS_MOV = 11;
-const BCL_MOV = 12;
-const ONPEASANT = 13;
-const Q_PROM = 14;
-const B_PROM = 15;
-const K_PROM = 16;
-const R_PROM = 17;
-const WHITE = 1;
-const BLACK = 2;
-const EMPTY = 0;
-const ROOK   = 1;
-const KNIGHT = 2;
-const KING   = 3;
-const PAWN   = 4;
-const QUEEN  = 5;
-const BISHOP = 6;
-const images = {"21" : loadImage(`./assets/pieces/${piece_set}/bR.svg`),
-                "22" : loadImage(`./assets/pieces/${piece_set}/bN.svg`),
-                "23" : loadImage(`./assets/pieces/${piece_set}/bK.svg`),
-                "24" : loadImage(`./assets/pieces/${piece_set}/bP.svg`),
-                "25" : loadImage(`./assets/pieces/${piece_set}/bQ.svg`),
-                "26" : loadImage(`./assets/pieces/${piece_set}/bB.svg`),
-                "11" : loadImage(`./assets/pieces/${piece_set}/wR.svg`),
-                "12" : loadImage(`./assets/pieces/${piece_set}/wN.svg`),
-                "13" : loadImage(`./assets/pieces/${piece_set}/wK.svg`),
-                "14" : loadImage(`./assets/pieces/${piece_set}/wP.svg`),
-                "15" : loadImage(`./assets/pieces/${piece_set}/wQ.svg`),
-                "16" : loadImage(`./assets/pieces/${piece_set}/wB.svg`),};
+const WHITE = 0;
+const BLACK = 1;
+const EMPTY = -1;
+const images = {"11" : loadImage(`./assets/pieces/${piece_set}/bR.svg`),
+                "12" : loadImage(`./assets/pieces/${piece_set}/bN.svg`),
+                "13" : loadImage(`./assets/pieces/${piece_set}/bK.svg`),
+                "14" : loadImage(`./assets/pieces/${piece_set}/bP.svg`),
+                "15" : loadImage(`./assets/pieces/${piece_set}/bQ.svg`),
+                "16" : loadImage(`./assets/pieces/${piece_set}/bB.svg`),
+                "01" : loadImage(`./assets/pieces/${piece_set}/wR.svg`),
+                "02" : loadImage(`./assets/pieces/${piece_set}/wN.svg`),
+                "03" : loadImage(`./assets/pieces/${piece_set}/wK.svg`),
+                "04" : loadImage(`./assets/pieces/${piece_set}/wP.svg`),
+                "05" : loadImage(`./assets/pieces/${piece_set}/wQ.svg`),
+                "06" : loadImage(`./assets/pieces/${piece_set}/wB.svg`),};
 const audio = {"move": new Audio("./assets/sound/move.wav")};
-class chess_state {
-  constructor(board, enpeasant, castles, turn) {
-    [this.board,this.king_positions] = chess_state.convert(board);
-    this.enpeasant = enpeasant;
-    this.castles = castles;
-    this.turn = turn;
-  }
-  static convert(string) {
-    if (string==="") return [null,null];
-    let arr = [];
-    let curr_char, type, color, upper, wk_pos, bk_pos;
-    let count = 0;
-    for (let i = 0; i < string.length; i++) {
-      curr_char = string.toString().charAt(i);
-      if (curr_char==="/") continue;
-      if (!isNaN(parseInt(curr_char))) {
-        for (let j = 0; j < parseInt(curr_char); j++) {
-          arr.push({TYPE:EMPTY, COLOR:EMPTY});
-          count += 1;
-        }
-        continue;
-      }
-      upper = curr_char.toUpperCase();
-      color = (upper===curr_char) ? WHITE : BLACK;
-      if (upper==="R") type = ROOK;
-      else if (upper==="Q") type = QUEEN;
-      else if (upper==="K") {
-        type = KING;
-        if (color===WHITE) wk_pos=count;
-        else bk_pos=count;
-      }
-      else if (upper==="B") type = BISHOP;
-      else if (upper==="N") type = KNIGHT;
-      else if (upper==="P") type = PAWN;
-      arr.push({TYPE:type,COLOR:color});
-      count += 1;
-    }
-    return [arr, {WHITE:wk_pos,BLACK:bk_pos}];
-  }
-  static copy(other) {
-    let ret = new chess_state("",
-                           {...other.enpeasant},
-                           [...other.castles],
-                           other.turn);
-    ret.board = structuredClone(other.board);
-    ret.king_positions = {WHITE:other.king_positions.WHITE,BLACK:other.king_positions.BLACK};
-    return ret;
-  }
-  static copyBoard(other) {
-    return new structuredClone(other.board);
-  }
-}
+
 
 // default: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
-let main_state = new chess_state("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
-                         {COLOR: 0, POSITION: -1},
-                         [1,1,1,1],
-                         0);
+let main_state = new chess_state("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
 let recent_from = -1;
 let recent_to = -1;
 let selected = -1;
 let black_checked = false;
 let white_checked = false;
 let flipped = false;
-let promote_piece = KNIGHT;
+let promote_piece = 2;
 
 function promote(input) {
   promote_piece = input;
@@ -128,482 +55,20 @@ function flip() {
   moves_highlight = [];
   render_state();
 }
-function linear(x, y) {
-  return ((h_squares*y)+x);
-}
-function nonlinear(z) {
-  let x = z % w_squares;
-  let y = (z / h_squares) | 0;
-  return [x, y];
-}
 function loadImage(url) {
   return new Promise(r => { let i = new Image(); i.onload = (() => r(i)); i.src = url; });
 }
-function inBound(x, y) {
-  return (x >= 0 && x < 8 && y >= 0 && y < 8);
-}
-function rookMoves(from, color, state) {
-  let moves = [];
-  let [x, y] = nonlinear(from);
-  // row check
-  for (let i=from-1; i>=from-x; i--) {
-    if (state.board[i].TYPE===EMPTY) {
-      moves.push([from,i,0]);
-    }
-    else {
-      if (state.board[i].COLOR!==color) {
-        moves.push([from,i,0]);
-      }
-      break;
-    }
-  }
-  for (let i = from+1; i<(y*w_squares)+8; i++) {
-    if (state.board[i].TYPE===EMPTY) {
-      moves.push([from,i,0]);
-    }
-    else {
-      if (state.board[i].COLOR!==color) {
-        moves.push([from,i,0]);
-      }
-      break;
-    }
-  }
 
-  // column check
-
-  for (let i=from-w_squares; i>=x; i-=w_squares) {
-    if (state.board[i].TYPE===EMPTY) {
-      moves.push([from,i,0]);
-    }
-    else {
-      if (state.board[i].COLOR!==color) {
-        moves.push([from,i,0]);
-      }
-      break;
-    }
-  }
-  for (let i=from+w_squares; i<(w_squares*h_squares); i+=w_squares) {
-    if (state.board[i].TYPE===EMPTY) {
-      moves.push([from,i,0]);
-    }
-    else {
-      if (state.board[i].COLOR!==color) {
-        moves.push([from,i,0]);
-      }
-      break;
-    }
-  }
-  return moves;
-}
-
-function knightMoves(from, color, state) {
-  let moves = [];
-  let [x,y] = nonlinear(from);
-  let x_mov, y_mov, lin_pos;
-  for (let i=-2;i<3;i++) {
-    for (let j=-2;j<3;j++) {
-      if (i===0 || j===0 || Math.abs(i)===Math.abs(j))
-        continue;
-      [x_mov,y_mov] = [x+i, y+j];
-      lin_pos = linear(x_mov,y_mov);
-      if (inBound(x_mov,y_mov) && (state.board[lin_pos].TYPE === EMPTY || state.board[lin_pos].COLOR  !== color))
-        moves.push([from,lin_pos,0]);
-    }
-  }
-  return moves;
-}
-function diag_calc(x, y, color, state, moves, from, booli) {
-  if (booli && inBound(x, y)) {
-      let pos = linear(x, y);
-      if (state.board[pos].COLOR !== color) moves.push([from,pos,0]);
-      if (state.board[pos].TYPE !== EMPTY) {
-        return false;
-      }
-    }
-  return booli;
-}
-function check_diag(x, y, color, board, checked, booli, offset) {
-  if (booli[offset] && inBound(x, y)) {
-    let pos = linear(x, y);
-    if (board[pos].TYPE!==EMPTY) booli[offset] = false;
-    if (board[pos].COLOR!==color && board[pos].TYPE>PAWN) {
-      checked = true;
-    }
-  }
-  return checked;
-}
-function bishopMoves(from, color, state) {
-  let moves = [];
-  let [x, y] = nonlinear(from);
-  let direction = [true, true, true, true];
-  for (let i = 1; i < w_squares; i++) {
-    direction[0] = diag_calc(x+i,y+i,color,state,moves,from,direction[0]);
-    direction[1] = diag_calc(x+i,y-i,color,state,moves,from,direction[1]);
-    direction[2] = diag_calc(x-i,y+i,color,state,moves,from,direction[2]);
-    direction[3] = diag_calc(x-i,y-i,color,state,moves,from,direction[3]);
-  }
-  return moves;
-}
-function kingMoves(from, color, state) {
-  let moves = [];
-  let pos;
-  let [x, y] = nonlinear(from);
-  for (let i = -1; i <= 1; i++) {
-    for (let j = -1; j <= 1; j++) {
-      if (!(i===0&&j===0) && inBound(x+i,y+j)) {
-        pos = linear(x+i,y+j);
-        if (state.board[pos].COLOR !== color) {
-          moves.push([from,pos,0]);
-        }
-      }
-    }
-  }
-  if (!underAttack(color, from, state)){
-    if (color===BLACK) {
-      if (state.castles[BCS] && state.board[from+1].TYPE===EMPTY && state.board[from+2].TYPE===EMPTY
-          && !underAttack(color, from+1, state) && !underAttack(color, from+2, state)) {
-        moves.push([from, from+2, BCS_MOV]);
-      }
-      if (state.castles[BCL] && state.board[from-1].TYPE===EMPTY && state.board[from-2].TYPE===EMPTY 
-          && state.board[from-3].TYPE===EMPTY && !underAttack(color, from-1, state) 
-          && !underAttack(color, from-2, state)) {
-        moves.push([from, from-2, BCL_MOV]);
-      }
-    }
-    else {
-      if (state.castles[WCS] && state.board[from+1].TYPE===EMPTY && state.board[from+2].TYPE===EMPTY 
-          && !underAttack(color, from+1, state) && !underAttack(color, from+2, state)) {
-        moves.push([from, from+2, WCS_MOV]);
-      }
-      if (state.castles[WCL] && state.board[from-1].TYPE===EMPTY && state.board[from-2].TYPE===EMPTY
-          && state.board[from-3].TYPE===EMPTY && !underAttack(color, from-1, state) 
-          && !underAttack(color, from-2, state)) {
-        moves.push([from, from-2, WCL_MOV]);
-      }
-    }
-  }
-  return moves;
-}
-function pawnMoves(from, color, state) {
-  let moves = [];
-  let [x, y] = nonlinear(from);
-  let going_up = (color===WHITE);
-  let inc = w_squares - ((w_squares * 2) * going_up);
-  let proms = ((going_up && y===1) || (!going_up && y===6)) ? [K_PROM,B_PROM, R_PROM, Q_PROM] : [0];
-  if (state.board[from + inc].TYPE===EMPTY) {
-    proms.forEach(x => moves.push([from,from + inc,x]));
-    if (((going_up && y===6) || (!going_up && y===1)) && (state.board[from + inc + inc].TYPE===EMPTY)) {
-      moves.push([from,from + inc + inc,0]);
-    }
-  }
-  let y_move = (going_up) ? y-1 : y+1;
-  function calculate(x_offset) {
-    let lin_pos = linear(x_offset, y_move);
-    if ((state.board[lin_pos].TYPE!==EMPTY && state.board[lin_pos].COLOR!==color)) {
-      proms.forEach(x => moves.push([from,linear(x_offset, y_move),x]));
-    }
-    else if (state.board[lin_pos].TYPE===EMPTY && color!==state.enpeasant.COLOR && linear(x_offset, y)===state.enpeasant.POSITION) {
-      moves.push([from,linear(x_offset, y_move),ONPEASANT]);
-    }
-  }
-  if (x !== 7) {
-    calculate(x+1);
-  }
-  if (x !== 0) {
-    calculate(x-1);
-  }
-  return moves;
-}
-function queenMoves(from, color, state) {
-  let moves = [];
-  let [x, y] = nonlinear(from);
-  let direction = [true, true, true, true];
-  for (let i = 1; i < w_squares; i++) {
-    direction[0] = diag_calc(x+i,y+i,color,state,moves,from,direction[0]);
-    direction[1] = diag_calc(x+i,y-i,color,state,moves,from,direction[1]);
-    direction[2] = diag_calc(x-i,y+i,color,state,moves,from,direction[2]);
-    direction[3] = diag_calc(x-i,y-i,color,state,moves,from,direction[3]);
-  }
-  for (let i=from-1; i>=from-x; i--) {
-    if (state.board[i].TYPE === EMPTY) {
-      moves.push([from,i,0]);
-    }
-    else {
-      if (state.board[i].COLOR !== color) {
-        moves.push([from,i,0]);
-      }
-      break;
-    }
-  }
-  for (let i=from+1; i<(y*w_squares)+8; i++) {
-    if (state.board[i].TYPE === EMPTY) {
-      moves.push([from,i,0]);
-    }
-    else {
-      if (state.board[i].COLOR !== color) {
-        moves.push([from,i,0]);
-      }
-      break;
-    }
-  }
-  // column check
-  for (let i=from-w_squares; i>=x; i-=w_squares) {
-    if (state.board[i].TYPE === EMPTY) {
-      moves.push([from,i,0]);
-    }
-    else {
-      if (state.board[i].COLOR !== color) {
-        moves.push([from,i,0]);
-      }
-      break;
-    }
-  }
-  for (let i=from+w_squares; i<(w_squares*h_squares); i+=w_squares) {
-    if (state.board[i].TYPE === EMPTY) {
-      moves.push([from,i,0]);
-    }
-    else {
-      if (state.board[i].COLOR !== color) {
-        moves.push([from,i,0]);
-      }
-      break;
-    }
-  }
-  return moves;
-}
-function movesFrom(from, state) {
-  let moves = [];
-  let color = state.board[from].COLOR;
-  if (state.board[from].TYPE===ROOK)        { moves = rookMoves(from, color, state); }
-  else if (state.board[from].TYPE===KNIGHT) { moves = knightMoves(from, color, state); }
-  else if (state.board[from].TYPE===BISHOP) { moves = bishopMoves(from, color, state); }
-  else if (state.board[from].TYPE===KING)   { moves = kingMoves(from, color, state); }
-  else if (state.board[from].TYPE===QUEEN)  { moves = queenMoves(from, color, state); }
-  else if (state.board[from].TYPE===PAWN)   { moves = pawnMoves(from, color, state); }
-  return filter_moves(color, moves, state);
-}
-function allMoves(state) {
-  let moves = [];
-  let color = (state.turn % 2===0) ? WHITE : BLACK;
-  for (let pos=0; pos<state.board.length;pos++) {
-    if (state.board[pos].COLOR===color) {
-    if (state.board[pos].TYPE===ROOK) { 
-      moves = moves.concat(rookMoves(pos, color, state)); }
-    else if (state.board[pos].TYPE===KNIGHT) {
-      moves = moves.concat(knightMoves(pos, color, state)); }
-    else if (state.board[pos].TYPE===BISHOP) { 
-      moves = moves.concat(bishopMoves(pos, color, state)); }
-    else if (state.board[pos].TYPE===KING) { 
-      moves = moves.concat(kingMoves(pos, color, state)); }
-    else if (state.board[pos].TYPE===QUEEN) { 
-      moves = moves.concat(queenMoves(pos, color, state)); }
-    else if (state.board[pos].TYPE===PAWN) { 
-      moves = moves.concat(pawnMoves(pos, color, state)); }
-    }
-  }
-  return filter_moves(color, moves, state);
-}
-function filter_moves(color, moves, state) {
-  let temp_state;
-  let good_moves = [];
-  for (let val of moves) {
-    temp_state = chess_state.copy(state);
-    move(val,temp_state);
-    if (!underAttack(color, ((color === WHITE) ? temp_state.king_positions.WHITE : temp_state.king_positions.BLACK), temp_state)) {
-      good_moves.push(val);
-    }
-  }
-  return good_moves;
-}
-function underAttack(color, pos, state) {
-  let [x,y] = nonlinear(pos);
-  let checked = false;
-  // pawn checks
-  let temp_x,temp_y, temp_val;
-  let offset = (color===WHITE) ? 1 : -1;
-  for (let val of [x-1,x+1]) {
-    if (inBound(val, y-offset)) {
-      temp_val = linear(val, y-offset);
-      if (state.board[temp_val].TYPE>KNIGHT && state.board[temp_val].COLOR!==color) {
-        return true;
-      }
-    }
-  }
-  // oppo king check
-  for (let i = -1; i <= 1; i++) {
-    for (let j = -1; j <= 1; j++) {
-      temp_x = x+i;
-      temp_y = y+j;
-      if (!(i===0&&j===0) && inBound(temp_x,temp_y) && state.board[linear(temp_x,temp_y)].TYPE===KING 
-          && state.board[linear(temp_x,temp_y)].COLOR!==color) {
-        return true;
-      }
-    }
-  }
-
-  // diagonal check for queen/bishops
-  let lines = [true, true, true, true];
-  for (let i=1; i<w_squares; i++) {
-    if (checked=check_diag(x+i,y+i,color,state.board,checked,lines,0))
-      return checked;
-    if (checked=check_diag(x+i,y-i,color,state.board,checked,lines,1))
-      return checked;
-    if (checked=check_diag(x-i,y+i,color,state.board,checked,lines,2))
-      return checked;
-    if (checked=check_diag(x-i,y-i,color,state.board,checked,lines,3))
-      return checked;
-  }
-  // column/row check for queen/rooks
-  for (let i=pos-1; i>=pos-x; i--) {
-    if (state.board[i].TYPE!==EMPTY) {
-      if (state.board[i].COLOR!==color && (state.board[i].TYPE===ROOK || state.board[i].TYPE===QUEEN)) {
-          return true;
-      }
-      break;
-    }
-  }
-  for (let i=pos+1; i<(y*w_squares)+8; i++) {
-    if (state.board[i].TYPE!==EMPTY) {
-      if (state.board[i].COLOR!==color && (state.board[i].TYPE===ROOK || state.board[i].TYPE===QUEEN)) {
-          return true;
-      }
-      break;
-    }
-  }
-
-  // column check
-
-  for (let i=pos-w_squares; i>=x; i-=w_squares) {
-    if (state.board[i].TYPE!==EMPTY) {
-      if (state.board[i].COLOR!==color && (state.board[i].TYPE===ROOK || state.board[i].TYPE===QUEEN)) {
-          return true;
-      }
-      break;
-    }
-  }
-  for (let i=pos+w_squares; i<(w_squares*h_squares); i+=w_squares) {
-    if (state.board[i].TYPE!==EMPTY) {
-      if (state.board[i].COLOR!==color && (state.board[i].TYPE===ROOK || state.board[i].TYPE===QUEEN)) {
-          return true;
-      }
-      break;
-    }
-  }
-  // knight check
-  for (let i=-2;i<3;i++) {
-    for (let j=-2;j<3;j++) {
-      if (i===0 || j===0 || Math.abs(i)===Math.abs(j))
-        continue;
-      [temp_x,temp_y] = [x+i, y+j];
-      temp_val = linear(temp_x,temp_y);
-      if (inBound(temp_x,temp_y) && state.board[temp_val].TYPE===KNIGHT && state.board[temp_val].COLOR!==color)
-        return true;
-    }
-  }
-  return checked;
-}
-function move(mov, state) {
-  let from = mov[0];
-  let to = mov[1];
-  let special = mov[2];
-  if (to===63)      { state.castles[WCS] = 0; }
-  else if (to===56) { state.castles[WCL] = 0; }
-  else if (to===7)  { state.castles[BCS] = 0; }
-  else if (to===0)  { state.castles[BCL] = 0; }
-  state.enpeasant.COLOR = 0;
-  state.enpeasant.POSITION = -1;
-  if (state.board[from].TYPE===PAWN) {
-    let [x_to, y_to] = nonlinear(to);
-    if (Math.abs(to-from) === 16) {
-      state.enpeasant.COLOR = state.board[from].COLOR;
-      state.enpeasant.POSITION = to;
-    }
-    else if (y_to===0 || y_to===7) {
-      switch(special) {
-        case B_PROM:
-          state.board[from].TYPE = BISHOP;
-          break;
-        case Q_PROM:
-          state.board[from].TYPE = QUEEN;
-          break;
-        case R_PROM:
-          state.board[from].TYPE = ROOK;
-          break;
-        case K_PROM:
-          state.board[from].TYPE = KNIGHT;
-          break;
-        default:
-          state.board[from].TYPE = promote_piece
-      }
-    }
-    else {
-      if (special===ONPEASANT) {
-        let pos = (state.board[from].COLOR===WHITE) ? to + 8 : to - 8;
-        state.board[pos].TYPE = EMPTY;
-        state.board[pos].COLOR = EMPTY;
-      }
-    }
-  }
-  else if (state.board[from].TYPE===ROOK) {
-    if (from===63)      { state.castles[WCS] = 0; }
-    else if (from===56) { state.castles[WCL] = 0; }
-    else if (from===7)  { state.castles[BCS] = 0; }
-    else if (from===0)  { state.castles[BCL] = 0; }
-  }
-  else if (state.board[from].TYPE===KING) {
-    if (state.board[from].COLOR===WHITE) {
-      state.castles[WCS] = 0;
-      state.castles[WCL] = 0;
-      state.king_positions.WHITE = to;
-    }
-    else {
-      state.castles[BCS] = 0;
-      state.castles[BCL] = 0;
-      state.king_positions.BLACK = to;
-    }
-  }
-  state.board[to].TYPE = state.board[from].TYPE;
-  state.board[to].COLOR = state.board[from].COLOR;
-  state.board[from].TYPE = EMPTY;
-  state.board[from].COLOR = EMPTY;
-  // castling
-  if (special>=WCS_MOV && special<=BCL_MOV) {
-    let rook_pos, r_mov;
-    switch(special) {
-      case WCS_MOV:
-        r_mov = from + 1;
-        rook_pos = 63;
-        break;
-      case WCL_MOV:
-        r_mov = from - 1;
-        rook_pos = 56;
-        break;
-      case BCS_MOV:
-        r_mov = from + 1;
-        rook_pos = 7;
-        break;
-      case BCL_MOV:
-        r_mov = from - 1;
-        rook_pos = 0;
-        break;
-    }
-    state.board[rook_pos].TYPE = EMPTY;
-    state.board[rook_pos].COLOR = EMPTY;
-    state.board[r_mov].TYPE = ROOK;
-    state.board[r_mov].COLOR = state.board[to].COLOR;
-  }
-  state.turn += 1;
-}
 
 ////////////////////////////////////////////////////////////////////
 
 function render_board() {
-  let WK_POS = main_state.king_positions.WHITE;
-  let BK_POS = main_state.king_positions.BLACK;
+  let WK_POS = main_state.king_positions[WHITE];
+  let BK_POS = main_state.king_positions[BLACK];
   for (let i = 0; i < w_squares; i++) {
     for (let j = 0; j < h_squares; j++) {
       let [x,y] = (flipped) ? [7-i,7-j] : [i,j]; 
-      let pos = linear(x,y);
+      let pos = chess_state.linear(x,y);
       ctx.fillStyle =  border_color;
       ctx.fillRect(i*width,j*height,width,height);
       ctx.fillStyle = ((pos===WK_POS && white_checked) || (pos===BK_POS && black_checked)) ? checkb_color : ((j % 2 === i % 2) ? sq_lcolor : sq_dcolor);
@@ -619,7 +84,7 @@ async function render_state() {
     if (main_state.board[i].TYPE===EMPTY) {
       continue;
     };
-    let [x, y] = nonlinear(i);
+    let [x, y] = chess_state.nonlinear(i);
     [x, y] = (flipped) ? [7-x,7-y] : [x,y];
     let str = main_state.board[i].COLOR + "" + main_state.board[i].TYPE;
     let img = await images[str];
@@ -642,24 +107,24 @@ function bind_click() {
     if (x > 7 || y > 7) return;
     let player = (main_state.turn % 2 === 0) ? WHITE : BLACK;
     [x, y] = (flipped) ? [7-x,7-y] : [x,y];
-    let position = linear(x, y);
+    let position = chess_state.linear(x, y);
     if (selected===-1 && main_state.board[position].TYPE!==EMPTY && main_state.board[position].COLOR===player) {
       selected = position;
-      moves_highlight = movesFrom(position, main_state);
+      moves_highlight = main_state.movesFrom(position);
       if(moves_highlight.length<1) selected = -1;
     }
     else if (selected!==-1) {
       let mov = findSelected(moves_highlight, position);
       if (mov !== null) {
-        move(mov, main_state);
+        main_state.move(mov);
         audio["move"].play();
         if (player===BLACK) {
           black_checked = false;
-          white_checked = underAttack(WHITE, main_state.king_positions.WHITE, main_state);
+          white_checked = main_state.underAttack(WHITE, main_state.king_positions[WHITE]);
         }
         else {
           white_checked = false;
-          black_checked = underAttack(BLACK, main_state.king_positions.BLACK, main_state);
+          black_checked = main_state.underAttack(BLACK, main_state.king_positions[BLACK]);
         }
       }
       selected = -1;
@@ -668,34 +133,9 @@ function bind_click() {
     render_state();
   });
 }
-
-function PERFT(state, depth) {
-  let legal_moves = allMoves(state);
-  if (depth===0 || legal_moves===0) {
-    return legal_moves.length;
-  }
-  let temp_state;
-  let sum=0;
-  for (let mov of legal_moves) {
-    temp_state = chess_state.copy(state);
-    move(mov, temp_state);
-    sum += PERFT(temp_state, depth-1);
-  }
-  return sum;
-}
-const test_state = new chess_state("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R",
-                         {COLOR: 0, POSITION: -1},
-                         [1,1,1,1],
-                         0);
-function performance_nodes_test(depth) {
-  let time = performance.now();
-  let nodes = PERFT(test_state, depth);
-  time = performance.now() - time;
-  return [nodes, time];
-}
+//import { performance_nodes_test } from "./test.js";
 function init() {
-  console.log(performance_nodes_test(2));
-  main_state = test_state;
+  //performance_nodes_test(4);
   render_state();
   bind_click();
 }
