@@ -7,6 +7,12 @@ const WCL_MOV = 10;
 const BCS_MOV = 11;
 const BCL_MOV = 12;
 const ONPEASANT = 13;
+const ROOK   = 1;
+const KNIGHT = 2;
+const KING   = 3;
+const PAWN   = 4;
+const QUEEN  = 5;
+const BISHOP = 6;
 export const Q_PROM = 14;
 export const B_PROM = 15;
 export const K_PROM = 16;
@@ -14,12 +20,6 @@ export const R_PROM = 17;
 export const WHITE = 0;
 export const BLACK = 1;
 export const EMPTY = -1;
-const ROOK   = 1;
-const KNIGHT = 2;
-const KING   = 3;
-const PAWN   = 4;
-const QUEEN  = 5;
-const BISHOP = 6;
 export const w_squares = 8;
 export const h_squares = 8;
 export class chess_state {
@@ -364,17 +364,17 @@ export class chess_state {
     for (let pos=0; pos<this.board.length;pos++) {
       if (this.board[pos].COLOR===color) {
       if (this.board[pos].TYPE===ROOK) { 
-        moves = moves.concat(this.rookMoves(pos)); }
+        moves.push(...this.rookMoves(pos)); }
       else if (this.board[pos].TYPE===KNIGHT) {
-        moves = moves.concat(this.knightMoves(pos)); }
+        moves.push(...this.knightMoves(pos)); }
       else if (this.board[pos].TYPE===BISHOP) { 
-        moves = moves.concat(this.bishopMoves(pos)); }
+        moves.push(...this.bishopMoves(pos)); }
       else if (this.board[pos].TYPE===KING) { 
-        moves = moves.concat(this.kingMoves(pos)); }
+        moves.push(...this.kingMoves(pos)); }
       else if (this.board[pos].TYPE===QUEEN) { 
-        moves = moves.concat(this.queenMoves(pos)); }
+        moves.push(...this.queenMoves(pos)); }
       else if (this.board[pos].TYPE===PAWN) { 
-        moves = moves.concat(this.pawnMoves(pos)); }
+        moves.push(...this.pawnMoves(pos)); }
       }
     }
     return this.filter_moves(color, moves);

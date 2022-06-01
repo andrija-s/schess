@@ -83,7 +83,7 @@ async function render_state() {
     [x, y] = (flipped) ? [7-x,7-y] : [x,y];
     let str = main_state.board[i].COLOR + "" + main_state.board[i].TYPE;
     let img = await images[str];
-    ctx.drawImage(img, (x*width)+(width/16), (y*height)+(width/16), 65, 65);
+    ctx.drawImage(img, (x*width)+(width/16), (y*height)+(width/16), c.width/9, c.height/9);
   }
 }
 function findSelected(moves, pos) {
@@ -96,18 +96,20 @@ function findSelected(moves, pos) {
 }
 function bind_buttons() {
   let buttons = document.getElementById("flipbtn");
-  let val;
   buttons.addEventListener("click", () => {
     flip();
   });
   buttons = document.querySelectorAll(".dropdown-content > a");
   for (let btn of buttons) {
-    btn.addEventListener("click", () => {
-      if (btn.innerHTML==="Queen") { val=Q_PROM; }
-      else if (btn.innerHTML==="Bishop")  { val=B_PROM; }
-      else if (btn.innerHTML==="Knight") { val=K_PROM; }
-      else if (btn.innerHTML==="Rook") { val=R_PROM; }
-      promote(val);
+    btn.addEventListener("click", (e) => {
+      if (btn.innerHTML==="Queen") { promote_piece=Q_PROM; }
+      else if (btn.innerHTML==="Bishop")  { promote_piece=B_PROM; }
+      else if (btn.innerHTML==="Knight") { promote_piece=K_PROM; }
+      else if (btn.innerHTML==="Rook") { promote_piece=R_PROM; }
+      for (let opt of buttons) {
+        opt.style["background-color"] = "";
+      }
+      e.target.style["background-color"] = "#aaff80";
     })
   }
 }
@@ -148,9 +150,8 @@ function bind_click() {
     render_state();
   });
 }
-//import { performance_nodes_test } from "./test.js";
+
 function init() {
-  //performance_nodes_test(4);
   bind_buttons();
   render_state();
   bind_click();
