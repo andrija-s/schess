@@ -1,4 +1,5 @@
 import {chess_state} from "./chess_class.js";
+import { strict as assert } from 'node:assert';
 function PERFT(state, depth) {
   let legal_moves = state.allMoves();
   if (depth===1) {
@@ -20,6 +21,7 @@ function test(board, expected, depth) {
   time = ((Date.now() - time) / 1000).toFixed(2);
   let result = (expected===nodes) ? "\u2713\n" : "!!!\n";
   console.log(result + "expected: " + expected + " result: " + nodes + " \n" + "depth: " +depth+"\n"+ "time: " + time + " sec\n" + board + "\n");
+  assert.deepEqual(nodes, expected);
 }
 const DEPTH = 3
 test("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -", 97862, DEPTH);
