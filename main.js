@@ -1,5 +1,5 @@
 import {chess_state,Q_PROM,R_PROM,B_PROM,K_PROM,
-        WHITE,BLACK,EMPTY,w_squares,h_squares} from "./chess_class.js";
+        WHITE,BLACK,EMPTY,w_squares,h_squares} from "./scripts/chess_class.js";
 const c = document.getElementById("chessBoard");
 c.onselectstart = function () { return false; }
 const ctx = c.getContext("2d");
@@ -12,19 +12,19 @@ const sq_lcolor = "#ff7a39";
 const sq_dcolor = "green";
 const highlight_color = "red";
 const piece_set = "anarcandy";
-const images = {"11" : loadImage(`../assets/pieces/${piece_set}/bR.svg`),
-                "12" : loadImage(`../assets/pieces/${piece_set}/bN.svg`),
-                "13" : loadImage(`../assets/pieces/${piece_set}/bK.svg`),
-                "14" : loadImage(`../assets/pieces/${piece_set}/bP.svg`),
-                "15" : loadImage(`../assets/pieces/${piece_set}/bQ.svg`),
-                "16" : loadImage(`../assets/pieces/${piece_set}/bB.svg`),
-                "01" : loadImage(`../assets/pieces/${piece_set}/wR.svg`),
-                "02" : loadImage(`../assets/pieces/${piece_set}/wN.svg`),
-                "03" : loadImage(`../assets/pieces/${piece_set}/wK.svg`),
-                "04" : loadImage(`../assets/pieces/${piece_set}/wP.svg`),
-                "05" : loadImage(`../assets/pieces/${piece_set}/wQ.svg`),
-                "06" : loadImage(`../assets/pieces/${piece_set}/wB.svg`),};
-const audio = {"move": new Audio("../assets/sound/move.wav")};
+const images = {"11" : loadImage(`./assets/pieces/${piece_set}/bR.svg`),
+                "12" : loadImage(`./assets/pieces/${piece_set}/bN.svg`),
+                "13" : loadImage(`./assets/pieces/${piece_set}/bK.svg`),
+                "14" : loadImage(`./assets/pieces/${piece_set}/bP.svg`),
+                "15" : loadImage(`./assets/pieces/${piece_set}/bQ.svg`),
+                "16" : loadImage(`./assets/pieces/${piece_set}/bB.svg`),
+                "01" : loadImage(`./assets/pieces/${piece_set}/wR.svg`),
+                "02" : loadImage(`./assets/pieces/${piece_set}/wN.svg`),
+                "03" : loadImage(`./assets/pieces/${piece_set}/wK.svg`),
+                "04" : loadImage(`./assets/pieces/${piece_set}/wP.svg`),
+                "05" : loadImage(`./assets/pieces/${piece_set}/wQ.svg`),
+                "06" : loadImage(`./assets/pieces/${piece_set}/wB.svg`),};
+const audio = {"move": new Audio("./assets/sound/move.wav")};
 
 
 // default: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
