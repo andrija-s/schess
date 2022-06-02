@@ -122,7 +122,8 @@ function bind_click() {
     let player = (main_state.turn % 2 === 0) ? WHITE : BLACK;
     [x, y] = (flipped) ? [7-x,7-y] : [x,y];
     let position = chess_state.linear(x, y);
-    if (selected===-1 && main_state.board[position].TYPE!==EMPTY && main_state.board[position].COLOR===player) {
+    if (selected===-1 && main_state.board[position].TYPE!==EMPTY
+        && main_state.board[position].COLOR===player) {
       selected = position;
       moves_highlight = main_state.movesFrom(position);
       if(moves_highlight.length<1) selected = -1;
