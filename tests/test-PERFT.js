@@ -50,12 +50,8 @@ for (let pos of POSITIONS) {
   count += (temp) ? 1 : 0;
 }
 
-try { 
-  assert.deepEqual(count===POSITIONS.length);
-}
-catch (e) {
-  console.error("");
-}
-finally {
-  console.log(`${result} ${count}/${POSITIONS.length} PERFT tests passed\n`);
-}
+
+console.log(`${result} ${count}/${POSITIONS.length} PERFT tests passed\n`);
+assert.deepEqual(count, POSITIONS.length);
+
+
