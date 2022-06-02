@@ -30,4 +30,4 @@ jobs:
     - run: npm run build --if-present
     - name: PERFT
       run: |
-        node test.js
+        node test-PERFT.js
