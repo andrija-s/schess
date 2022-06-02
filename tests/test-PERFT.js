@@ -1,5 +1,5 @@
 import {chess_state} from "../scripts/chess_class.js";
-//import { strict as assert } from 'node:assert';
+import { strict as assert } from 'node:assert';
 function PERFT(state, depth) {
   let legal_moves = state.allMoves();
   if (depth===1) {
@@ -51,7 +51,10 @@ for (let pos of POSITIONS) {
 }
 
 try { 
-  console.assert(count===POSITIONS.length);
+  assert.deepEqual(count===POSITIONS.length);
+}
+catch (e) {
+  console.error("");
 }
 finally {
   console.log(`${result} ${count}/${POSITIONS.length} PERFT tests passed\n`);
