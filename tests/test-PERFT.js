@@ -1,4 +1,4 @@
-import {chess_state} from "./chess_class.js";
+import {chess_state} from "../scripts/chess_class.js";
 import { strict as assert } from 'node:assert';
 function PERFT(state, depth) {
   let legal_moves = state.allMoves();
