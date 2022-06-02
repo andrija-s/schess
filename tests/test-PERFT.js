@@ -52,6 +52,6 @@ for (let pos of POSITIONS) {
 
 
 console.log(`${result} ${count}/${POSITIONS.length} PERFT tests passed\n`);
-assert.deepEqual(count, POSITIONS.length);
+if (count !== POSITIONS.length) process.exit(1);
 
 
