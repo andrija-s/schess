@@ -41,7 +41,7 @@ export class chess_state {
     let checked = false;
     // pawn checks
     let temp_x,temp_y, temp_val;
-    let offset = (color===WHITE) ? 1 : 1;
+    let offset = (color===WHITE) ? 1 : -1;
     for (let val of [x-1,x+1]) {
       if (chess_state.inBound(val, y-offset)) {
         temp_val = chess_state.linear(val, y-offset);
