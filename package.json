@@ -1,3 +1,21 @@
 {
-  "type": "module"
+  "type": "module",
+  "name": "page",
+  "description": "<https://andrija-s.github.io/schess/>",
+  "version": "1.0.0",
+  "main": "chess_class.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andrija-s/page.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/andrija-s/page/issues"
+  },
+  "homepage": "https://github.com/andrija-s/page#readme"
 }
