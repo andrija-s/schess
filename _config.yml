@@ -1,6 +1,8 @@
 lsi: false
 safe: true
 source: [https://github.com/andrija-s/schess]
+url: https://andrija-s.github.io
+baseurl: /schess
 incremental: false
 highlighter: rouge
 gist:
