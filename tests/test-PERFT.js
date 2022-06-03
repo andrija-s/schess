@@ -43,15 +43,13 @@ const POSITIONS = [
 
 console.log("\n-- PERFT TESTS --\n")
 let count = 0;
-let result = "";
 for (let pos of POSITIONS) {
   let temp = test(pos.FEN, pos.NODES[DEPTH], DEPTH);
-  result += (temp) ? "\u2705" : "\u274c";
   count += (temp) ? 1 : 0;
 }
 
 
-console.log(`${result} ${count}/${POSITIONS.length} PERFT tests passed\n`);
+console.log(`${(count === POSITIONS.length ? "\u2705" : "\u274c")} ${count}/${POSITIONS.length} PERFT tests passed\n`);
 if (count !== POSITIONS.length) process.exit(1);
 
 

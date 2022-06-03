@@ -1,10 +1,20 @@
-import {chess_state,Q_PROM,R_PROM,B_PROM,K_PROM,
+import {chess_state,Q_PROM,R_PROM,B_PROM,K_PROM, ONPEASANT,
         WHITE,BLACK,EMPTY,w_squares,h_squares} from "./scripts/chess_class.js";
-const c = document.getElementById("chessBoard");
+const c = document.createElement("canvas");
+let attrs = { 
+              id: "chessBoard", 
+              width: "700", 
+              height: "700", 
+              style: "border:2px solid #913c3c; position:absolute; top:60px; left:250px;"
+            };
+for(let key in attrs) {
+  c.setAttribute(key, attrs[key]);
+};
+document.body.appendChild(c);
 c.onselectstart = function () { return false; }
-const ctx = c.getContext("2d");
 const width = c.width/w_squares;
 const height = c.height/h_squares;
+const ctx = c.getContext("2d");
 const checkb_color = "blue";
 const border_color = "black";
 const selected_color = "yellow";
@@ -134,8 +144,13 @@ function bind_click() {
         if (mov[2] >= Q_PROM && mov[2] <= R_PROM) {
           mov[2] = promote_piece;
         }
+        if (main_state.board[mov[1]].TYPE !== EMPTY || mov[2] === ONPEASANT) {
+          audio["move"].play();
+        }
+        else {
+          audio["move"].play();
+        }
         main_state.move(mov);
-        audio["move"].play();
         if (player===BLACK) {
           black_checked = false;
           white_checked = main_state.underAttack(WHITE, main_state.king_positions[WHITE]);
