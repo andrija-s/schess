@@ -22,6 +22,13 @@ export const BLACK = 1;
 export const EMPTY = -1;
 export const w_squares = 8;
 export const h_squares = 8;
+class Move {
+  constructor(from, to, special) {
+    this.FROM = from;
+    this.TO = to;
+    this.SPECIAL = special;
+  }
+}
 export class chess_state {
   constructor(board) {
     [this.board, this.king_positions, this.turn, this.castles, this.enpeasant] = chess_state.convert(board);
@@ -134,7 +141,7 @@ export class chess_state {
         if (!(i===0&&j===0) && chess_state.inBound(x+i,y+j)) {
           pos = chess_state.linear(x+i,y+j);
           if (this.board[pos].COLOR !== color) {
-            moves.push([from,pos,0]);
+            moves.push(new Move(from, pos, 0));
           }
         }
       }
@@ -143,23 +150,23 @@ export class chess_state {
       if (color===BLACK) {
         if (this.castles[BCS] && this.board[from+1].TYPE===EMPTY && this.board[from+2].TYPE===EMPTY
             && !this.underAttack(color, from+1) && !this.underAttack(color, from+2)) {
-          moves.push([from, from+2, BCS_MOV]);
+          moves.push(new Move(from, from+2, BCS_MOV));
         }
         if (this.castles[BCL] && this.board[from-1].TYPE===EMPTY && this.board[from-2].TYPE===EMPTY 
             && this.board[from-3].TYPE===EMPTY && !this.underAttack(color, from-1) 
             && !this.underAttack(color, from-2)) {
-          moves.push([from, from-2, BCL_MOV]);
+          moves.push(new Move(from, from-2, BCL_MOV));
         }
       }
       else {
         if (this.castles[WCS] && this.board[from+1].TYPE===EMPTY && this.board[from+2].TYPE===EMPTY 
             && !this.underAttack(color, from+1) && !this.underAttack(color, from+2)) {
-          moves.push([from, from+2, WCS_MOV]);
+          moves.push(new Move(from, from+2, WCS_MOV));
         }
         if (this.castles[WCL] && this.board[from-1].TYPE===EMPTY && this.board[from-2].TYPE===EMPTY
             && this.board[from-3].TYPE===EMPTY && !this.underAttack(color, from-1) 
             && !this.underAttack(color, from-2)) {
-          moves.push([from, from-2, WCL_MOV]);
+          moves.push(new Move(from, from-2, WCL_MOV));
         }
       }
     }
@@ -173,19 +180,19 @@ export class chess_state {
     let inc = w_squares - ((w_squares * 2) * going_up);
     let proms = ((going_up && y===1) || (!going_up && y===6)) ? [K_PROM,B_PROM, R_PROM, Q_PROM] : [0];
     if (this.board[from + inc].TYPE===EMPTY) {
-      proms.forEach(x => moves.push([from,from + inc,x]));
+      proms.forEach(x => moves.push(new Move(from,from + inc,x)));
       if (((going_up && y===6) || (!going_up && y===1)) && (this.board[from + inc + inc].TYPE===EMPTY)) {
-        moves.push([from,from + inc + inc,0]);
+        moves.push(new Move(from,from + inc + inc,0));
       }
     }
     let y_move = (going_up) ? y-1 : y+1;
     function calculate(x_offset, state) {
       let lin_pos = chess_state.linear(x_offset, y_move);
       if ((state.board[lin_pos].TYPE!==EMPTY && state.board[lin_pos].COLOR!==color)) {
-        proms.forEach(x => moves.push([from,lin_pos,x]));
+        proms.forEach(x => moves.push(new Move(from,lin_pos,x)));
       }
       else if (lin_pos===state.enpeasant) {
-        moves.push([from,lin_pos,ONPEASANT]);
+        moves.push(new Move(from,lin_pos,ONPEASANT));
       }
     }
     if (x !== 7) {
@@ -200,7 +207,7 @@ export class chess_state {
     let color = (this.turn % 2===0) ? WHITE : BLACK;
     if (booli && chess_state.inBound(x, y)) {
         let pos = chess_state.linear(x, y);
-        if (this.board[pos].COLOR !== color) moves.push([from,pos,0]);
+        if (this.board[pos].COLOR !== color) moves.push(new Move(from,pos,0));
         if (this.board[pos].TYPE !== EMPTY) {
           return false;
         }
@@ -232,22 +239,22 @@ export class chess_state {
     }
     for (let i=from-1; i>=from-x; i--) {
       if (this.board[i].TYPE === EMPTY) {
-        moves.push([from,i,0]);
+        moves.push(new Move(from,i,0));
       }
       else {
         if (this.board[i].COLOR !== color) {
-          moves.push([from,i,0]);
+          moves.push(new Move(from,i,0));
         }
         break;
       }
     }
     for (let i=from+1; i<(y*w_squares)+8; i++) {
       if (this.board[i].TYPE === EMPTY) {
-        moves.push([from,i,0]);
+        moves.push(new Move(from,i,0));
       }
       else {
         if (this.board[i].COLOR !== color) {
-          moves.push([from,i,0]);
+          moves.push(new Move(from,i,0));
         }
         break;
       }
@@ -255,22 +262,22 @@ export class chess_state {
     // column check
     for (let i=from-w_squares; i>=x; i-=w_squares) {
       if (this.board[i].TYPE === EMPTY) {
-        moves.push([from,i,0]);
+        moves.push(new Move(from,i,0));
       }
       else {
         if (this.board[i].COLOR !== color) {
-          moves.push([from,i,0]);
+          moves.push(new Move(from,i,0));
         }
         break;
       }
     }
     for (let i=from+w_squares; i<(w_squares*h_squares); i+=w_squares) {
       if (this.board[i].TYPE === EMPTY) {
-        moves.push([from,i,0]);
+        moves.push(new Move(from,i,0));
       }
       else {
         if (this.board[i].COLOR !== color) {
-          moves.push([from,i,0]);
+          moves.push(new Move(from,i,0));
         }
         break;
       }
@@ -289,7 +296,7 @@ export class chess_state {
         [x_mov,y_mov] = [x+i, y+j];
         lin_pos = chess_state.linear(x_mov,y_mov);
         if (chess_state.inBound(x_mov,y_mov) && (this.board[lin_pos].TYPE === EMPTY || this.board[lin_pos].COLOR  !== color))
-          moves.push([from,lin_pos,0]);
+          moves.push(new Move(from,lin_pos,0));
       }
     }
     return moves;
@@ -301,22 +308,22 @@ export class chess_state {
     // row check
     for (let i=from-1; i>=from-x; i--) {
       if (this.board[i].TYPE===EMPTY) {
-        moves.push([from,i,0]);
+        moves.push(new Move(from,i,0));
       }
       else {
         if (this.board[i].COLOR!==color) {
-          moves.push([from,i,0]);
+          moves.push(new Move(from,i,0));
         }
         break;
       }
     }
     for (let i = from+1; i<(y*w_squares)+8; i++) {
       if (this.board[i].TYPE===EMPTY) {
-        moves.push([from,i,0]);
+        moves.push(new Move(from,i,0));
       }
       else {
         if (this.board[i].COLOR!==color) {
-          moves.push([from,i,0]);
+          moves.push(new Move(from,i,0));
         }
         break;
       }
@@ -324,22 +331,22 @@ export class chess_state {
     // column check
     for (let i=from-w_squares; i>=x; i-=w_squares) {
       if (this.board[i].TYPE===EMPTY) {
-        moves.push([from,i,0]);
+        moves.push(new Move(from,i,0));
       }
       else {
         if (this.board[i].COLOR!==color) {
-          moves.push([from,i,0]);
+          moves.push(new Move(from,i,0));
         }
         break;
       }
     }
     for (let i=from+w_squares; i<(w_squares*h_squares); i+=w_squares) {
       if (this.board[i].TYPE===EMPTY) {
-        moves.push([from,i,0]);
+        moves.push(new Move(from,i,0));
       }
       else {
         if (this.board[i].COLOR!==color) {
-          moves.push([from,i,0]);
+          moves.push(new Move(from,i,0));
         }
         break;
       }
@@ -391,92 +398,89 @@ export class chess_state {
     return this.filter_moves(color, moves);
   }
   move(mov) {
-    let from = mov[0];
-    let to = mov[1];
-    let special = mov[2];
-    if (to===63)      { this.castles[WCS] = 0; }
-    else if (to===56) { this.castles[WCL] = 0; }
-    else if (to===7)  { this.castles[BCS] = 0; }
-    else if (to===0)  { this.castles[BCL] = 0; }
+    if (mov.TO===63)      { this.castles[WCS] = 0; }
+    else if (mov.TO===56) { this.castles[WCL] = 0; }
+    else if (mov.TO===7)  { this.castles[BCS] = 0; }
+    else if (mov.TO===0)  { this.castles[BCL] = 0; }
     this.enpeasant = -1;
-    if (this.board[from].TYPE===PAWN) {
-      let [x_to, y_to] = chess_state.nonlinear(to);
-      if (Math.abs(to-from) === 16) {
-        this.enpeasant = (this.board[from].COLOR===WHITE) ? to + 8 : to - 8;;
+    if (this.board[mov.FROM].TYPE===PAWN) {
+      let [x_to, y_to] = chess_state.nonlinear(mov.TO);
+      if (Math.abs(mov.TO-mov.FROM) === 16) {
+        this.enpeasant = (this.board[mov.FROM].COLOR===WHITE) ? mov.TO + 8 : mov.TO - 8;;
       }
       else if (y_to===0 || y_to===7) {
-        switch(special) {
+        switch(mov.SPECIAL) {
           case B_PROM:
-            this.board[from].TYPE = BISHOP;
+            this.board[mov.FROM].TYPE = BISHOP;
             break;
           case Q_PROM:
-            this.board[from].TYPE = QUEEN;
+            this.board[mov.FROM].TYPE = QUEEN;
             break;
           case R_PROM:
-            this.board[from].TYPE = ROOK;
+            this.board[mov.FROM].TYPE = ROOK;
             break;
           case K_PROM:
-            this.board[from].TYPE = KNIGHT;
+            this.board[mov.FROM].TYPE = KNIGHT;
             break;
           default:
-            this.board[from].TYPE = promote_piece
+            this.board[mov.FROM].TYPE = promote_piece
         }
       }
       else {
-        if (special===ONPEASANT) {
-          let pos = (this.board[from].COLOR===WHITE) ? to + 8 : to - 8;
+        if (mov.SPECIAL===ONPEASANT) {
+          let pos = (this.board[mov.FROM].COLOR===WHITE) ? mov.TO + 8 : mov.TO - 8;
           this.board[pos].TYPE = EMPTY;
           this.board[pos].COLOR = EMPTY;
         }
       }
     }
-    else if (this.board[from].TYPE===ROOK) {
-      if (from===63)      { this.castles[WCS] = 0; }
-      else if (from===56) { this.castles[WCL] = 0; }
-      else if (from===7)  { this.castles[BCS] = 0; }
-      else if (from===0)  { this.castles[BCL] = 0; }
+    else if (this.board[mov.FROM].TYPE===ROOK) {
+      if (mov.FROM===63)      { this.castles[WCS] = 0; }
+      else if (mov.FROM===56) { this.castles[WCL] = 0; }
+      else if (mov.FROM===7)  { this.castles[BCS] = 0; }
+      else if (mov.FROM===0)  { this.castles[BCL] = 0; }
     }
-    else if (this.board[from].TYPE===KING) {
-      if (this.board[from].COLOR===WHITE) {
+    else if (this.board[mov.FROM].TYPE===KING) {
+      if (this.board[mov.FROM].COLOR===WHITE) {
         this.castles[WCS] = 0;
         this.castles[WCL] = 0;
-        this.king_positions[WHITE] = to;
+        this.king_positions[WHITE] = mov.TO;
       }
       else {
         this.castles[BCS] = 0;
         this.castles[BCL] = 0;
-        this.king_positions[BLACK] = to;
+        this.king_positions[BLACK] = mov.TO;
       }
     }
-    this.board[to].TYPE = this.board[from].TYPE;
-    this.board[to].COLOR = this.board[from].COLOR;
-    this.board[from].TYPE = EMPTY;
-    this.board[from].COLOR = EMPTY;
+    this.board[mov.TO].TYPE = this.board[mov.FROM].TYPE;
+    this.board[mov.TO].COLOR = this.board[mov.FROM].COLOR;
+    this.board[mov.FROM].TYPE = EMPTY;
+    this.board[mov.FROM].COLOR = EMPTY;
     // castling
-    if (special>=WCS_MOV && special<=BCL_MOV) {
+    if (mov.SPECIAL>=WCS_MOV && mov.SPECIAL<=BCL_MOV) {
       let rook_pos, r_mov;
-      switch(special) {
+      switch(mov.SPECIAL) {
         case WCS_MOV:
-          r_mov = from + 1;
+          r_mov = mov.FROM + 1;
           rook_pos = 63;
           break;
         case WCL_MOV:
-          r_mov = from - 1;
+          r_mov = mov.FROM - 1;
           rook_pos = 56;
           break;
         case BCS_MOV:
-          r_mov = from + 1;
+          r_mov = mov.FROM + 1;
           rook_pos = 7;
           break;
         case BCL_MOV:
-          r_mov = from - 1;
+          r_mov = mov.FROM - 1;
           rook_pos = 0;
           break;
       }
       this.board[rook_pos].TYPE = EMPTY;
       this.board[rook_pos].COLOR = EMPTY;
       this.board[r_mov].TYPE = ROOK;
-      this.board[r_mov].COLOR = this.board[to].COLOR;
+      this.board[r_mov].COLOR = this.board[mov.TO].COLOR;
     }
     this.turn += 1;
   }

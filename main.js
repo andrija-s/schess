@@ -98,7 +98,7 @@ async function render_state() {
 }
 function findSelected(moves, pos) {
   for (let mov of moves) {
-    if (mov[1] === pos) {
+    if (mov.TO === pos) {
       return mov;
     }
   }
@@ -141,10 +141,10 @@ function bind_click() {
     else if (selected!==-1) {
       let mov = findSelected(moves_highlight, position);
       if (mov !== null) {
-        if (mov[2] >= Q_PROM && mov[2] <= R_PROM) {
-          mov[2] = promote_piece;
+        if (mov.SPECIAL >= Q_PROM && mov.SPECIAL <= R_PROM) {
+          mov.SPECIAL = promote_piece;
         }
-        if (main_state.board[mov[1]].TYPE !== EMPTY || mov[2] === ONPEASANT) {
+        if (main_state.board[mov.TO].TYPE !== EMPTY || mov.SPECIAL === ONPEASANT) {
           audio["move"].play();
         }
         else {
