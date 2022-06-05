@@ -1,5 +1,6 @@
-import {chess_state,Q_PROM,R_PROM,B_PROM,K_PROM, ONPEASANT,
-        WHITE,BLACK,EMPTY,w_squares,h_squares} from "./scripts/chess_class.js";
+import {Game,Q_PROM,R_PROM,B_PROM,K_PROM, ONPEASANT,
+        WHITE,BLACK,EMPTY,w_squares,h_squares} from "./scripts/game.js";
+import {ai} from "./scripts/ai.js";
 const c = document.createElement("canvas");
 let attrs = { 
               id: "chessBoard", 
@@ -38,7 +39,7 @@ const audio = {"move": new Audio("./assets/sound/move.wav")};
 
 
 // default: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
-let main_state = new chess_state("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
+let main_state = new Game("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
 let moves_highlight = [];
 let recent_from = -1;
 let recent_to = -1;
@@ -73,7 +74,7 @@ function render_board() {
   for (let i = 0; i < w_squares; i++) {
     for (let j = 0; j < h_squares; j++) {
       let [x,y] = (flipped) ? [7-i,7-j] : [i,j]; 
-      let pos = chess_state.linear(x,y);
+      let pos = Game.linear(x,y);
       ctx.fillStyle =  border_color;
       ctx.fillRect(i*width,j*height,width,height);
       ctx.fillStyle = ((pos===WK_POS && white_checked) || (pos===BK_POS && black_checked)) ? checkb_color : ((j % 2 === i % 2) ? sq_lcolor : sq_dcolor);
@@ -89,7 +90,7 @@ async function render_state() {
     if (main_state.board[i].TYPE===EMPTY) {
       continue;
     };
-    let [x, y] = chess_state.nonlinear(i);
+    let [x, y] = Game.nonlinear(i);
     [x, y] = (flipped) ? [7-x,7-y] : [x,y];
     let str = main_state.board[i].COLOR + "" + main_state.board[i].TYPE;
     let img = await images[str];
@@ -131,7 +132,7 @@ function bind_click() {
     if (x > 7 || y > 7) return;
     let player = (main_state.turn % 2 === 0) ? WHITE : BLACK;
     [x, y] = (flipped) ? [7-x,7-y] : [x,y];
-    let position = chess_state.linear(x, y);
+    let position = Game.linear(x, y);
     if (selected===-1 && main_state.board[position].TYPE!==EMPTY
         && main_state.board[position].COLOR===player) {
       selected = position;
@@ -151,7 +152,13 @@ function bind_click() {
           audio["move"].play();
         }
         main_state.move(mov);
-        if (player===BLACK) {
+        let ai_color = (player === WHITE) ? BLACK : WHITE;
+        let time = Date.now();
+        let ai_move = ai(4, main_state, ai_color);
+        time = ((Date.now() - time) / 1000).toFixed(2);
+        console.log(time, ai_move);
+        if (ai_move[1] !== null) main_state.move(ai_move[1]);
+        if (player===WHITE) {
           black_checked = false;
           white_checked = main_state.underAttack(WHITE, main_state.king_positions[WHITE]);
         }

@@ -1,4 +1,4 @@
-import {chess_state} from "../scripts/chess_class.js";
+import {Game} from "../scripts/game.js";
 
 function PERFT(state, depth) {
   let legal_moves = state.allMoves();
@@ -15,7 +15,7 @@ function PERFT(state, depth) {
   return sum;
 }
 function test(board, expected, depth) {
-  let test_state = new chess_state(board);
+  let test_state = new Game(board);
   let time = Date.now();
   let nodes = PERFT(test_state, depth);
   time = ((Date.now() - time) / 1000).toFixed(2);

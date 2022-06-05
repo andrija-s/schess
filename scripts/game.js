@@ -7,12 +7,12 @@ const WCL_MOV = 10;
 const BCS_MOV = 11;
 const BCL_MOV = 12;
 export const ONPEASANT = 13;
-const ROOK   = 1;
-const KNIGHT = 2;
-const KING   = 3;
-const PAWN   = 4;
-const QUEEN  = 5;
-const BISHOP = 6;
+export const ROOK   = 1;
+export const KNIGHT = 2;
+export const KING   = 3;
+export const PAWN   = 4;
+export const QUEEN  = 5;
+export const BISHOP = 6;
 export const Q_PROM = 14;
 export const B_PROM = 15;
 export const K_PROM = 16;
@@ -29,13 +29,13 @@ class Move {
     this.SPECIAL = special;
   }
 }
-export class chess_state {
+export class Game {
   constructor(board) {
-    [this.board, this.king_positions, this.turn, this.castles, this.enpeasant] = chess_state.convert(board);
+    [this.board, this.king_positions, this.turn, this.castles, this.enpeasant] = Game.convert(board);
   }
   check_diag(x, y, color, checked, booli, offset) {
-    if (booli[offset] && chess_state.inBound(x, y)) {
-      let pos = chess_state.linear(x, y);
+    if (booli[offset] && Game.inBound(x, y)) {
+      let pos = Game.linear(x, y);
       if (this.board[pos].TYPE!==EMPTY) booli[offset] = false;
       if (this.board[pos].COLOR!==color && this.board[pos].TYPE>PAWN) {
         checked = true;
@@ -44,14 +44,14 @@ export class chess_state {
     return checked;
   }
   underAttack(color, pos) {
-    let [x,y] = chess_state.nonlinear(pos);
+    let [x,y] = Game.nonlinear(pos);
     let checked = false;
     // pawn checks
     let temp_x,temp_y, temp_val;
     let offset = (color===WHITE) ? 1 : -1;
     for (let val of [x-1,x+1]) {
-      if (chess_state.inBound(val, y-offset)) {
-        temp_val = chess_state.linear(val, y-offset);
+      if (Game.inBound(val, y-offset)) {
+        temp_val = Game.linear(val, y-offset);
         if (this.board[temp_val].TYPE>KNIGHT && this.board[temp_val].COLOR!==color) {
           return true;
         }
@@ -62,8 +62,8 @@ export class chess_state {
       for (let j = -1; j <= 1; j++) {
         temp_x = x+i;
         temp_y = y+j;
-        temp_val = chess_state.linear(temp_x,temp_y);
-        if (!(i===0&&j===0) && chess_state.inBound(temp_x,temp_y) && this.board[temp_val].TYPE===KING 
+        temp_val = Game.linear(temp_x,temp_y);
+        if (!(i===0&&j===0) && Game.inBound(temp_x,temp_y) && this.board[temp_val].TYPE===KING 
             && this.board[temp_val].COLOR!==color) {
           return true;
         }
@@ -124,8 +124,8 @@ export class chess_state {
         if (i===0 || j===0 || Math.abs(i)===Math.abs(j))
           continue;
         [temp_x,temp_y] = [x+i, y+j];
-        temp_val = chess_state.linear(temp_x,temp_y);
-        if (chess_state.inBound(temp_x,temp_y) && this.board[temp_val].TYPE===KNIGHT && this.board[temp_val].COLOR!==color)
+        temp_val = Game.linear(temp_x,temp_y);
+        if (Game.inBound(temp_x,temp_y) && this.board[temp_val].TYPE===KNIGHT && this.board[temp_val].COLOR!==color)
           return true;
       }
     }
@@ -135,11 +135,11 @@ export class chess_state {
     let color = (this.turn % 2===0) ? WHITE : BLACK;
     let moves = [];
     let pos;
-    let [x, y] = chess_state.nonlinear(from);
+    let [x, y] = Game.nonlinear(from);
     for (let i = -1; i <= 1; i++) {
       for (let j = -1; j <= 1; j++) {
-        if (!(i===0&&j===0) && chess_state.inBound(x+i,y+j)) {
-          pos = chess_state.linear(x+i,y+j);
+        if (!(i===0&&j===0) && Game.inBound(x+i,y+j)) {
+          pos = Game.linear(x+i,y+j);
           if (this.board[pos].COLOR !== color) {
             moves.push(new Move(from, pos, 0));
           }
@@ -175,7 +175,7 @@ export class chess_state {
   pawnMoves(from) {
     let color = (this.turn % 2===0) ? WHITE : BLACK;
     let moves = [];
-    let [x, y] = chess_state.nonlinear(from);
+    let [x, y] = Game.nonlinear(from);
     let going_up = (color===WHITE);
     let inc = w_squares - ((w_squares * 2) * going_up);
     let proms = ((going_up && y===1) || (!going_up && y===6)) ? [K_PROM,B_PROM, R_PROM, Q_PROM] : [0];
@@ -187,7 +187,7 @@ export class chess_state {
     }
     let y_move = (going_up) ? y-1 : y+1;
     function calculate(x_offset, state) {
-      let lin_pos = chess_state.linear(x_offset, y_move);
+      let lin_pos = Game.linear(x_offset, y_move);
       if ((state.board[lin_pos].TYPE!==EMPTY && state.board[lin_pos].COLOR!==color)) {
         proms.forEach(x => moves.push(new Move(from,lin_pos,x)));
       }
@@ -205,8 +205,8 @@ export class chess_state {
   }
   diag_calc(x, y, moves, from, booli) {
     let color = (this.turn % 2===0) ? WHITE : BLACK;
-    if (booli && chess_state.inBound(x, y)) {
-        let pos = chess_state.linear(x, y);
+    if (booli && Game.inBound(x, y)) {
+        let pos = Game.linear(x, y);
         if (this.board[pos].COLOR !== color) moves.push(new Move(from,pos,0));
         if (this.board[pos].TYPE !== EMPTY) {
           return false;
@@ -216,7 +216,7 @@ export class chess_state {
   }
   bishopMoves(from) {
     let moves = [];
-    let [x, y] = chess_state.nonlinear(from);
+    let [x, y] = Game.nonlinear(from);
     let direction = [true, true, true, true];
     for (let i = 1; i < w_squares; i++) {
       direction[0] = this.diag_calc(x+i,y+i,moves,from,direction[0]);
@@ -229,7 +229,7 @@ export class chess_state {
   queenMoves(from) {
     let color = (this.turn % 2===0) ? WHITE : BLACK;
     let moves = [];
-    let [x, y] = chess_state.nonlinear(from);
+    let [x, y] = Game.nonlinear(from);
     let direction = [true, true, true, true];
     for (let i = 1; i < w_squares; i++) {
       direction[0] = this.diag_calc(x+i,y+i,moves,from,direction[0]);
@@ -287,15 +287,15 @@ export class chess_state {
   knightMoves(from) {
     let color = (this.turn % 2===0) ? WHITE : BLACK;
     let moves = [];
-    let [x,y] = chess_state.nonlinear(from);
+    let [x,y] = Game.nonlinear(from);
     let x_mov, y_mov, lin_pos;
     for (let i=-2;i<3;i++) {
       for (let j=-2;j<3;j++) {
         if (i===0 || j===0 || Math.abs(i)===Math.abs(j))
           continue;
         [x_mov,y_mov] = [x+i, y+j];
-        lin_pos = chess_state.linear(x_mov,y_mov);
-        if (chess_state.inBound(x_mov,y_mov) && (this.board[lin_pos].TYPE === EMPTY || this.board[lin_pos].COLOR  !== color))
+        lin_pos = Game.linear(x_mov,y_mov);
+        if (Game.inBound(x_mov,y_mov) && (this.board[lin_pos].TYPE === EMPTY || this.board[lin_pos].COLOR  !== color))
           moves.push(new Move(from,lin_pos,0));
       }
     }
@@ -304,7 +304,7 @@ export class chess_state {
   rookMoves(from) {
     let color = (this.turn % 2===0) ? WHITE : BLACK;
     let moves = [];
-    let [x, y] = chess_state.nonlinear(from);
+    let [x, y] = Game.nonlinear(from);
     // row check
     for (let i=from-1; i>=from-x; i--) {
       if (this.board[i].TYPE===EMPTY) {
@@ -404,7 +404,7 @@ export class chess_state {
     else if (mov.TO===0)  { this.castles[BCL] = 0; }
     this.enpeasant = -1;
     if (this.board[mov.FROM].TYPE===PAWN) {
-      let [x_to, y_to] = chess_state.nonlinear(mov.TO);
+      let [x_to, y_to] = Game.nonlinear(mov.TO);
       if (Math.abs(mov.TO-mov.FROM) === 16) {
         this.enpeasant = (this.board[mov.FROM].COLOR===WHITE) ? mov.TO + 8 : mov.TO - 8;;
       }
@@ -509,7 +509,7 @@ export class chess_state {
     let enpeas = -1;
     if (str_split[3]!=="-") {
       const x = { a: 0, b: 1, c: 2, d: 3, e: 4, f: 5, g: 6, h: 7, };
-      enpeas = chess_state.linear(x[str_split[3].charAt(0)], 7-(parseInt(str_split[3].charAt(1)-1)))
+      enpeas = Game.linear(x[str_split[3].charAt(0)], 7-(parseInt(str_split[3].charAt(1)-1)))
     }
     let arr = [];
     let curr_char, type, color, upper, wk_pos, bk_pos;
@@ -542,7 +542,7 @@ export class chess_state {
     return [arr, [wk_pos,bk_pos], turn, castles, enpeas];
   }
   copy() {
-    let ret = new chess_state("");
+    let ret = new Game("");
     ret.board = structuredClone(this.board);
     ret.enpeasant = this.enpeasant;
     ret.turn = this.turn;
