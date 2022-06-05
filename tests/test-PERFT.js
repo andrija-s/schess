@@ -5,10 +5,8 @@ function PERFT(state, depth) {
   if (depth===1) {
     return legal_moves.length;
   }
-  let temp_state;
   let sum=0;
   for (let mov of legal_moves) {
-    //temp_state = state.copy();
     state.move(mov);
     sum += PERFT(state, depth-1);
     state.unmove();

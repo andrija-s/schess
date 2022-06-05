@@ -22,6 +22,8 @@ const selected_color = "yellow";
 const sq_lcolor = "#ff7a39";
 const sq_dcolor = "green";
 const highlight_color = "red";
+const sq_from ="teal";
+const sq_to ="aqua";
 const piece_set = "anarcandy";
 const images = {"11" : loadImage(`./assets/pieces/${piece_set}/bR.svg`),
                 "12" : loadImage(`./assets/pieces/${piece_set}/bN.svg`),
@@ -79,6 +81,8 @@ function render_board() {
       ctx.fillRect(i*width,j*height,width,height);
       ctx.fillStyle = ((pos===WK_POS && white_checked) || (pos===BK_POS && black_checked)) ? checkb_color : ((j % 2 === i % 2) ? sq_lcolor : sq_dcolor);
       if (selected === pos) ctx.fillStyle = selected_color;
+      else if (pos === recent_from) ctx.fillStyle = sq_from;
+      else if (pos === recent_to) ctx.fillStyle = sq_to;
       else if (findSelected(moves_highlight, pos) !== null) ctx.fillStyle = highlight_color;
       ctx.fillRect(i*width,j*height,width-1,height-1);
     }
@@ -157,7 +161,15 @@ function bind_click() {
         let ai_move = ai(12, main_state, ai_color);
         time = ((Date.now() - time) / 1000).toFixed(2);
         console.log(time, ai_move);
-        if (ai_move[1] !== null) main_state.move(ai_move[1]);
+        if (ai_move[1] !== null) {
+          main_state.move(ai_move[1]);
+          recent_from = ai_move[1].FROM;
+          recent_to = ai_move[1].TO;
+        }
+        else {
+          recent_from = -1;
+          recent_to = -1;
+        }
         if (player===WHITE) {
           black_checked = false;
           white_checked = main_state.underAttack(WHITE, main_state.king_positions[WHITE]);
