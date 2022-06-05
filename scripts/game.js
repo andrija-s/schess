@@ -204,7 +204,7 @@ export class Game {
           arr.forEach(x => moves.push(new Move(from,lin_pos,x)));
         }
         else {
-          moves.push(new Move(from,lin_pos,state.board[lin_pos].TYPE;));
+          moves.push(new Move(from,lin_pos,state.board[lin_pos].TYPE));
         }
       }
       else if (lin_pos===state.enpeasant) {
