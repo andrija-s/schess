@@ -39,7 +39,7 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,beta=Num
   if (max_player) {
     for (let mov of possibleMoves) {
       state.move(mov);
-      let num = (mov.SPECIAL > 0) ? depth -2 : depth - 4;
+      let num = (mov.SPECIAL > 0) ? depth -3 : depth - 4;
       value = ai(num, state, player, alpha, beta, !max_player)[0];
       state.unmove()
       if (value > bestMoveValue) {
@@ -53,7 +53,7 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,beta=Num
   else {
     for (let mov of possibleMoves) {
       state.move(mov);
-      let num = (mov.SPECIAL > 0) ? depth -2 : depth - 4;
+      let num = (mov.SPECIAL > 0) ? depth -3 : depth - 4;
       value = ai(num, state, player, alpha, beta, !max_player)[0];
       state.unmove();
       if (value < bestMoveValue) {

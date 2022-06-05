@@ -81,9 +81,9 @@ function render_board() {
       ctx.fillRect(i*width,j*height,width,height);
       ctx.fillStyle = ((pos===WK_POS && white_checked) || (pos===BK_POS && black_checked)) ? checkb_color : ((j % 2 === i % 2) ? sq_lcolor : sq_dcolor);
       if (selected === pos) ctx.fillStyle = selected_color;
+      else if (findSelected(moves_highlight, pos) !== null) ctx.fillStyle = highlight_color;
       else if (pos === recent_from) ctx.fillStyle = sq_from;
       else if (pos === recent_to) ctx.fillStyle = sq_to;
-      else if (findSelected(moves_highlight, pos) !== null) ctx.fillStyle = highlight_color;
       ctx.fillRect(i*width,j*height,width-1,height-1);
     }
   }
