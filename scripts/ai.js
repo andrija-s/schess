@@ -2,7 +2,7 @@ import {EMPTY, BISHOP, QUEEN, PAWN, KNIGHT, ROOK} from "./game.js";
 function evaluateBoard (board, player) {
   let value = 0;
   for (let piece of board) {
-    if (piece.COLOR===EMPTY) continue;
+    if (piece.TYPE===EMPTY) continue;
     let c = (piece.COLOR===player) ? 1 : -1;
     switch (piece.TYPE) {
       case BISHOP:
@@ -27,21 +27,21 @@ export function ai(depth, state, player,
                             beta=Number.POSITIVE_INFINITY,
                             max_player=true) {
   let value;
-  if (depth === 0) {
+  if (depth < 1) {
     value = evaluateBoard(state.board, player);
     return [value, null]
   }
   let possibleMoves = state.allMoves();
   let bestMove = (possibleMoves.length > 0) ? possibleMoves[0] : null;
-  possibleMoves.sort(function(a, b){return 0.5 - Math.random()});
   let bestMoveValue = max_player ? Number.NEGATIVE_INFINITY
                                          : Number.POSITIVE_INFINITY;
   let temp_state;
   if (max_player) {
     for (let mov of possibleMoves) {
-      temp_state = state.copy();
-      temp_state.move(mov);
-      value = ai(depth-1, temp_state, player, alpha, beta, !max_player)[0];
+      state.move(mov);
+      let num = (mov.SPECIAL > 0) ? depth -2 : depth - 4;
+      value = ai(num, state, player, alpha, beta, !max_player)[0];
+      state.unmove()
       if (value > bestMoveValue) {
         bestMoveValue = value;
         bestMove = mov;
@@ -52,9 +52,10 @@ export function ai(depth, state, player,
   }
   else {
     for (let mov of possibleMoves) {
-      temp_state = state.copy();
-      temp_state.move(mov);
-      value = ai(depth-1, temp_state, player, alpha, beta, !max_player)[0];
+      state.move(mov);
+      let num = (mov.SPECIAL > 0) ? depth -2 : depth - 4;
+      value = ai(num, state, player, alpha, beta, !max_player)[0];
+      state.unmove();
       if (value < bestMoveValue) {
         bestMoveValue = value;
         bestMove = mov;

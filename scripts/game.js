@@ -2,24 +2,26 @@ const WCS = 0;
 const WCL = 1;
 const BCS = 2;
 const BCL = 3;
-const WCS_MOV = 9;
-const WCL_MOV = 10;
-const BCS_MOV = 11;
-const BCL_MOV = 12;
-export const ONPEASANT = 13;
+
 export const ROOK   = 1;
 export const KNIGHT = 2;
 export const KING   = 3;
 export const PAWN   = 4;
 export const QUEEN  = 5;
 export const BISHOP = 6;
-export const Q_PROM = 14;
-export const B_PROM = 15;
-export const K_PROM = 16;
-export const R_PROM = 17;
+export const ONPEASANT = 7;
+const WCS_MOV = 11;
+const WCL_MOV = 13;
+const BCS_MOV = 15;
+const BCL_MOV = 17;
+export const Q_PROM = 18;
+export const B_PROM = 25;
+export const K_PROM = 32;
+export const R_PROM = 39;
 export const WHITE = 0;
 export const BLACK = 1;
-export const EMPTY = -1;
+const NONE = -1;
+export const EMPTY = 0;
 export const w_squares = 8;
 export const h_squares = 8;
 class Move {
@@ -32,6 +34,7 @@ class Move {
 export class Game {
   constructor(board) {
     [this.board, this.king_positions, this.turn, this.castles, this.enpeasant] = Game.convert(board);
+    this.history = [];
   }
   check_diag(x, y, color, checked, booli, offset) {
     if (booli[offset] && Game.inBound(x, y)) {
@@ -132,16 +135,17 @@ export class Game {
     return checked;
   }
   kingMoves(from) {
-    let color = (this.turn % 2===0) ? WHITE : BLACK;
+    let color = this.board[from].COLOR;
     let moves = [];
     let pos;
     let [x, y] = Game.nonlinear(from);
+    let special=0;
     for (let i = -1; i <= 1; i++) {
       for (let j = -1; j <= 1; j++) {
         if (!(i===0&&j===0) && Game.inBound(x+i,y+j)) {
           pos = Game.linear(x+i,y+j);
           if (this.board[pos].COLOR !== color) {
-            moves.push(new Move(from, pos, 0));
+            moves.push(new Move(from, pos, special + this.board[pos].TYPE));
           }
         }
       }
@@ -173,23 +177,35 @@ export class Game {
     return moves;
   }
   pawnMoves(from) {
-    let color = (this.turn % 2===0) ? WHITE : BLACK;
+    let color = this.board[from].COLOR;
     let moves = [];
     let [x, y] = Game.nonlinear(from);
     let going_up = (color===WHITE);
     let inc = w_squares - ((w_squares * 2) * going_up);
-    let proms = ((going_up && y===1) || (!going_up && y===6)) ? [K_PROM,B_PROM, R_PROM, Q_PROM] : [0];
+    let proms = ((going_up && y===1) || (!going_up && y===6)) ? true : false;
+    let arr = [K_PROM,B_PROM,R_PROM,Q_PROM];
     if (this.board[from + inc].TYPE===EMPTY) {
-      proms.forEach(x => moves.push(new Move(from,from + inc,x)));
+      if (proms) {
+        arr.forEach(x => moves.push(new Move(from,from + inc,x)));
+      }
+      else {
+        moves.push(new Move(from,from + inc,0));
+      }
       if (((going_up && y===6) || (!going_up && y===1)) && (this.board[from + inc + inc].TYPE===EMPTY)) {
-        moves.push(new Move(from,from + inc + inc,0));
+        let val = this.board[from + inc + inc].TYPE;
+        moves.push(new Move(from,from + inc + inc,val));
       }
     }
     let y_move = (going_up) ? y-1 : y+1;
     function calculate(x_offset, state) {
       let lin_pos = Game.linear(x_offset, y_move);
       if ((state.board[lin_pos].TYPE!==EMPTY && state.board[lin_pos].COLOR!==color)) {
-        proms.forEach(x => moves.push(new Move(from,lin_pos,x)));
+        if (proms) {
+          arr.forEach(x => moves.push(new Move(from,lin_pos,x)));
+        }
+        else {
+          moves.push(new Move(from,lin_pos,state.board[lin_pos].TYPE;));
+        }
       }
       else if (lin_pos===state.enpeasant) {
         moves.push(new Move(from,lin_pos,ONPEASANT));
@@ -207,7 +223,9 @@ export class Game {
     let color = (this.turn % 2===0) ? WHITE : BLACK;
     if (booli && Game.inBound(x, y)) {
         let pos = Game.linear(x, y);
-        if (this.board[pos].COLOR !== color) moves.push(new Move(from,pos,0));
+        if (this.board[pos].COLOR !== color) {
+          moves.push(new Move(from,pos,this.board[pos].TYPE));
+        }
         if (this.board[pos].TYPE !== EMPTY) {
           return false;
         }
@@ -239,22 +257,22 @@ export class Game {
     }
     for (let i=from-1; i>=from-x; i--) {
       if (this.board[i].TYPE === EMPTY) {
-        moves.push(new Move(from,i,0));
+        moves.push(new Move(from,i,this.board[i].TYPE));
       }
       else {
         if (this.board[i].COLOR !== color) {
-          moves.push(new Move(from,i,0));
+          moves.push(new Move(from,i,this.board[i].TYPE));
         }
         break;
       }
     }
     for (let i=from+1; i<(y*w_squares)+8; i++) {
       if (this.board[i].TYPE === EMPTY) {
-        moves.push(new Move(from,i,0));
+        moves.push(new Move(from,i,this.board[i].TYPE));
       }
       else {
         if (this.board[i].COLOR !== color) {
-          moves.push(new Move(from,i,0));
+          moves.push(new Move(from,i,this.board[i].TYPE));
         }
         break;
       }
@@ -262,22 +280,22 @@ export class Game {
     // column check
     for (let i=from-w_squares; i>=x; i-=w_squares) {
       if (this.board[i].TYPE === EMPTY) {
-        moves.push(new Move(from,i,0));
+        moves.push(new Move(from,i,this.board[i].TYPE));
       }
       else {
         if (this.board[i].COLOR !== color) {
-          moves.push(new Move(from,i,0));
+          moves.push(new Move(from,i,this.board[i].TYPE));
         }
         break;
       }
     }
     for (let i=from+w_squares; i<(w_squares*h_squares); i+=w_squares) {
       if (this.board[i].TYPE === EMPTY) {
-        moves.push(new Move(from,i,0));
+        moves.push(new Move(from,i,this.board[i].TYPE));
       }
       else {
         if (this.board[i].COLOR !== color) {
-          moves.push(new Move(from,i,0));
+          moves.push(new Move(from,i,this.board[i].TYPE));
         }
         break;
       }
@@ -296,34 +314,39 @@ export class Game {
         [x_mov,y_mov] = [x+i, y+j];
         lin_pos = Game.linear(x_mov,y_mov);
         if (Game.inBound(x_mov,y_mov) && (this.board[lin_pos].TYPE === EMPTY || this.board[lin_pos].COLOR  !== color))
-          moves.push(new Move(from,lin_pos,0));
+          moves.push(new Move(from,lin_pos,this.board[lin_pos].TYPE));
       }
     }
     return moves;
   }
   rookMoves(from) {
-    let color = (this.turn % 2===0) ? WHITE : BLACK;
+    let color = this.board[from].COLOR;
     let moves = [];
     let [x, y] = Game.nonlinear(from);
+    let special = 0;
     // row check
     for (let i=from-1; i>=from-x; i--) {
       if (this.board[i].TYPE===EMPTY) {
-        moves.push(new Move(from,i,0));
+        special = (special===0) ? this.board[i].TYPE : special;
+        moves.push(new Move(from,i,special));
       }
       else {
         if (this.board[i].COLOR!==color) {
-          moves.push(new Move(from,i,0));
+          special = (special===0) ? this.board[i].TYPE : special;
+          moves.push(new Move(from,i,special));
         }
         break;
       }
     }
     for (let i = from+1; i<(y*w_squares)+8; i++) {
       if (this.board[i].TYPE===EMPTY) {
-        moves.push(new Move(from,i,0));
+        special = (special===0) ? this.board[i].TYPE : special;
+        moves.push(new Move(from,i,special));
       }
       else {
         if (this.board[i].COLOR!==color) {
-          moves.push(new Move(from,i,0));
+          special = (special===0) ? this.board[i].TYPE : special;
+          moves.push(new Move(from,i,special));
         }
         break;
       }
@@ -331,22 +354,26 @@ export class Game {
     // column check
     for (let i=from-w_squares; i>=x; i-=w_squares) {
       if (this.board[i].TYPE===EMPTY) {
-        moves.push(new Move(from,i,0));
+        special = (special===0) ? this.board[i].TYPE : special;
+        moves.push(new Move(from,i,special));
       }
       else {
         if (this.board[i].COLOR!==color) {
-          moves.push(new Move(from,i,0));
+          special = (special===0) ? this.board[i].TYPE : special;
+          moves.push(new Move(from,i,special));
         }
         break;
       }
     }
     for (let i=from+w_squares; i<(w_squares*h_squares); i+=w_squares) {
       if (this.board[i].TYPE===EMPTY) {
-        moves.push(new Move(from,i,0));
+        special = (special===0) ? this.board[i].TYPE : special;
+        moves.push(new Move(from,i,special));
       }
       else {
         if (this.board[i].COLOR!==color) {
-          moves.push(new Move(from,i,0));
+          special = (special===0) ? this.board[i].TYPE : special;
+          moves.push(new Move(from,i,special));
         }
         break;
       }
@@ -354,14 +381,13 @@ export class Game {
     return moves;
   }
   filter_moves(color, moves) {
-    let temp_state;
     let good_moves = [];
-    for (let val of moves) {
-      temp_state = this.copy();
-      temp_state.move(val);
-      if (!temp_state.underAttack(color, temp_state.king_positions[color])) {
-        good_moves.push(val);
+    for (let mov of moves) {
+      this.move(mov);
+      if (!this.underAttack(color, this.king_positions[color])) {
+        good_moves.push(mov);
       }
+      this.unmove();
     }
     return good_moves;
   }
@@ -370,16 +396,16 @@ export class Game {
     let color = (this.turn % 2===0) ? WHITE : BLACK;
     for (let pos=0; pos<this.board.length;pos++) {
       if (this.board[pos].COLOR===color) {
-      if (this.board[pos].TYPE===ROOK) { 
+      if (this.board[pos].TYPE===KING) { 
+        moves.push(...this.kingMoves(pos)); }
+      else if (this.board[pos].TYPE===QUEEN) { 
+        moves.push(...this.queenMoves(pos)); }
+      else if (this.board[pos].TYPE===ROOK) { 
         moves.push(...this.rookMoves(pos)); }
       else if (this.board[pos].TYPE===KNIGHT) {
         moves.push(...this.knightMoves(pos)); }
       else if (this.board[pos].TYPE===BISHOP) { 
         moves.push(...this.bishopMoves(pos)); }
-      else if (this.board[pos].TYPE===KING) { 
-        moves.push(...this.kingMoves(pos)); }
-      else if (this.board[pos].TYPE===QUEEN) { 
-        moves.push(...this.queenMoves(pos)); }
       else if (this.board[pos].TYPE===PAWN) { 
         moves.push(...this.pawnMoves(pos)); }
       }
@@ -397,11 +423,8 @@ export class Game {
     else if (this.board[from].TYPE===PAWN)   { moves = this.pawnMoves(from); }
     return this.filter_moves(color, moves);
   }
-  move(mov) {
-    if (mov.TO===63)      { this.castles[WCS] = 0; }
-    else if (mov.TO===56) { this.castles[WCL] = 0; }
-    else if (mov.TO===7)  { this.castles[BCS] = 0; }
-    else if (mov.TO===0)  { this.castles[BCL] = 0; }
+  move(mov, main=true) {
+    if (main) this.history.push(this.duplicate());
     this.enpeasant = -1;
     if (this.board[mov.FROM].TYPE===PAWN) {
       let [x_to, y_to] = Game.nonlinear(mov.TO);
@@ -410,32 +433,35 @@ export class Game {
       }
       else if (y_to===0 || y_to===7) {
         switch(mov.SPECIAL) {
-          case B_PROM:
-            this.board[mov.FROM].TYPE = BISHOP;
-            break;
           case Q_PROM:
             this.board[mov.FROM].TYPE = QUEEN;
             break;
-          case R_PROM:
-            this.board[mov.FROM].TYPE = ROOK;
+          case B_PROM:
+            this.board[mov.FROM].TYPE = BISHOP;
             break;
           case K_PROM:
             this.board[mov.FROM].TYPE = KNIGHT;
             break;
-          default:
-            this.board[mov.FROM].TYPE = promote_piece
+          case R_PROM:
+            this.board[mov.FROM].TYPE = ROOK;
+            break;
+        }
+        if ((mov.TO===63 && this.castles[WCS]===1)
+         || (mov.TO===56 && this.castles[WCL]===1) 
+         || (mov.TO===7  && this.castles[BCS]===1) 
+         || (mov.TO===0  && this.castles[BCL]===1)) {
         }
       }
       else {
         if (mov.SPECIAL===ONPEASANT) {
           let pos = (this.board[mov.FROM].COLOR===WHITE) ? mov.TO + 8 : mov.TO - 8;
           this.board[pos].TYPE = EMPTY;
-          this.board[pos].COLOR = EMPTY;
+          this.board[pos].COLOR = NONE;
         }
       }
     }
     else if (this.board[mov.FROM].TYPE===ROOK) {
-      if (mov.FROM===63)      { this.castles[WCS] = 0; }
+      if      (mov.FROM===63) { this.castles[WCS] = 0; }
       else if (mov.FROM===56) { this.castles[WCL] = 0; }
       else if (mov.FROM===7)  { this.castles[BCS] = 0; }
       else if (mov.FROM===0)  { this.castles[BCL] = 0; }
@@ -452,10 +478,8 @@ export class Game {
         this.king_positions[BLACK] = mov.TO;
       }
     }
-    this.board[mov.TO].TYPE = this.board[mov.FROM].TYPE;
-    this.board[mov.TO].COLOR = this.board[mov.FROM].COLOR;
-    this.board[mov.FROM].TYPE = EMPTY;
-    this.board[mov.FROM].COLOR = EMPTY;
+    this.board[mov.TO] = this.board[mov.FROM];
+    this.board[mov.FROM] = {TYPE:EMPTY,COLOR:NONE};
     // castling
     if (mov.SPECIAL>=WCS_MOV && mov.SPECIAL<=BCL_MOV) {
       let rook_pos, r_mov;
@@ -478,12 +502,27 @@ export class Game {
           break;
       }
       this.board[rook_pos].TYPE = EMPTY;
-      this.board[rook_pos].COLOR = EMPTY;
+      this.board[rook_pos].COLOR = NONE;
       this.board[r_mov].TYPE = ROOK;
       this.board[r_mov].COLOR = this.board[mov.TO].COLOR;
     }
+    if      (mov.TO===63) { this.castles[WCS] = 0; }
+    else if (mov.TO===56) { this.castles[WCL] = 0; }
+    else if (mov.TO===7)  { this.castles[BCS] = 0; }
+    else if (mov.TO===0)  { this.castles[BCL] = 0; }
     this.turn += 1;
   }
+  
+  unmove() {
+    let temp = this.history.pop();
+    this.board = temp.board;
+    this.enpeasant = temp.enpeasant;
+    this.turn = temp.turn;
+    this.castles = temp.castles;
+    this.king_positions = temp.king_positions;
+    this.history = temp.history;
+  }
+  
   static inBound(x, y) {
     return (x >= 0 && x < w_squares && y >= 0 && y < h_squares);
   }
@@ -519,7 +558,7 @@ export class Game {
       if (curr_char==="/") continue;
       if (!isNaN(parseInt(curr_char))) {
         for (let j = 0; j < parseInt(curr_char); j++) {
-          arr.push({TYPE:EMPTY, COLOR:EMPTY});
+          arr.push({TYPE:EMPTY, COLOR:NONE});
           count += 1;
         }
         continue;
@@ -541,13 +580,14 @@ export class Game {
     }
     return [arr, [wk_pos,bk_pos], turn, castles, enpeas];
   }
-  copy() {
+  duplicate() {
     let ret = new Game("");
     ret.board = structuredClone(this.board);
     ret.enpeasant = this.enpeasant;
     ret.turn = this.turn;
     ret.castles = structuredClone(this.castles);
     ret.king_positions = [...this.king_positions];
+    ret.history = [...this.history];
     return ret;
   }
 }
