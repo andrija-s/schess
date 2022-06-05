@@ -154,7 +154,7 @@ function bind_click() {
         main_state.move(mov);
         let ai_color = (player === WHITE) ? BLACK : WHITE;
         let time = Date.now();
-        let ai_move = ai(4, main_state, ai_color);
+        let ai_move = ai(3, main_state, ai_color);
         time = ((Date.now() - time) / 1000).toFixed(2);
         console.log(time, ai_move);
         if (ai_move[1] !== null) main_state.move(ai_move[1]);
