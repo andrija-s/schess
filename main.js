@@ -41,7 +41,8 @@ const audio = {"move": new Audio("./assets/sound/move.wav")};
 
 
 // default: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
-let main_state = new Game("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
+let main_state = null;
+let player = WHITE;
 let moves_highlight = [];
 let recent_from = -1;
 let recent_to = -1;
@@ -49,7 +50,7 @@ let selected = -1;
 let black_checked = false;
 let white_checked = false;
 let flipped = false;
-let promote_piece = 2;
+let promote_piece = Q_PROM;
 
 function promote(input) {
   promote_piece = input;
@@ -127,6 +128,51 @@ function bind_buttons() {
       e.target.style["background-color"] = "#aaff80";
     })
   }
+  buttons = document.getElementById("resetbtn");
+  buttons.addEventListener("click", () => {
+    reset();
+  });
+  buttons = document.getElementById("changebtn");
+  buttons.addEventListener("click", () => {
+    change_color();
+  });
+}
+function move_ai(color) {
+  let time = Date.now();
+  let ai_move = ai(12, main_state, color);
+  time = ((Date.now() - time) / 1000).toFixed(2);
+  console.log(time, ai_move);
+  if (ai_move[1] !== null) {
+    main_state.move(ai_move[1]);
+    recent_from = ai_move[1].FROM;
+    recent_to = ai_move[1].TO;
+    if (ai_move[0]==Number.POSITIVE_INFINITY && main_state.allMoves(true).length===0) {
+      alert("YOU LOSE!");
+    }
+  }
+  else {
+    recent_from = -1;
+    recent_to = -1;
+    if (ai_move[0]===0) alert("DRAW!");
+    else if (ai_move[0]<0) alert("YOU WIN!");
+  }
+}
+function reset() {
+  main_state = new Game("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
+  moves_highlight = [];
+  recent_from = -1;
+  recent_to = -1;
+  selected = -1;
+  black_checked = false;
+  white_checked = false;
+  if (player===BLACK) {
+    move_ai(WHITE);
+  }
+  render_state();
+}
+function change_color() {
+  player = (player===WHITE) ? BLACK : WHITE;
+  reset();
 }
 function bind_click() {
   c.addEventListener("mousedown", function(e) {
@@ -134,7 +180,6 @@ function bind_click() {
     let x = ((e.clientX - rect.left) / width) | 0;
     let y = ((e.clientY - rect.top) / height) | 0;
     if (x > 7 || y > 7) return;
-    let player = (main_state.turn % 2 === 0) ? WHITE : BLACK;
     [x, y] = (flipped) ? [7-x,7-y] : [x,y];
     let position = Game.linear(x, y);
     if (selected===-1 && main_state.board[position].TYPE!==EMPTY
@@ -157,24 +202,7 @@ function bind_click() {
         }
         main_state.move(mov);
         let ai_color = (player === WHITE) ? BLACK : WHITE;
-        let time = Date.now();
-        let ai_move = ai(12, main_state, ai_color);
-        time = ((Date.now() - time) / 1000).toFixed(2);
-        console.log(time, ai_move);
-        if (ai_move[1] !== null) {
-          main_state.move(ai_move[1]);
-          recent_from = ai_move[1].FROM;
-          recent_to = ai_move[1].TO;
-          if (ai_move[0]==Number.POSITIVE_INFINITY && main_state.allMoves(true).length===0) {
-            alert("YOU LOSE!");
-          }
-        }
-        else {
-          recent_from = -1;
-          recent_to = -1;
-          if (ai_move[0]===0) alert("DRAW!");
-          else if (ai_move[0]<0) alert("YOU WIN!");
-        }
+        move_ai(ai_color);
         if (player===WHITE) {
           black_checked = false;
           white_checked = main_state.underAttack(WHITE, main_state.king_positions[WHITE]);
@@ -192,8 +220,8 @@ function bind_click() {
 }
 
 function init() {
+  reset();
   bind_buttons();
-  render_state();
   bind_click();
 }
 window.addEventListener("DOMContentLoaded", init());
