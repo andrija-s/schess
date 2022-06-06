@@ -165,10 +165,15 @@ function bind_click() {
           main_state.move(ai_move[1]);
           recent_from = ai_move[1].FROM;
           recent_to = ai_move[1].TO;
+          if (ai_move[0]==Number.POSITIVE_INFINITY && main_state.allMoves(true).length===0) {
+            alert("YOU LOSE!");
+          }
         }
         else {
           recent_from = -1;
           recent_to = -1;
+          if (ai_move[0]===0) alert("DRAW!");
+          else if (ai_move[0]<0) alert("YOU WIN!");
         }
         if (player===WHITE) {
           black_checked = false;

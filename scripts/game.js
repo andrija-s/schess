@@ -134,7 +134,7 @@ export class Game {
     }
     return checked;
   }
-  kingMoves(from) {
+  kingMoves(from,test=false) {
     let color = this.board[from].COLOR;
     let moves = [];
     let pos;
@@ -176,14 +176,17 @@ export class Game {
     }
     return moves;
   }
-  pawnMoves(from) {
+  pawnMoves(from, test=false) {
     let color = this.board[from].COLOR;
     let moves = [];
     let [x, y] = Game.nonlinear(from);
     let going_up = (color===WHITE);
     let inc = w_squares - ((w_squares * 2) * going_up);
     let proms = ((going_up && y===1) || (!going_up && y===6)) ? true : false;
-    let arr = [K_PROM,B_PROM,R_PROM,Q_PROM];
+    let arr = [K_PROM,Q_PROM];
+    if (test) {
+      arr = [K_PROM,B_PROM,R_PROM,Q_PROM];
+    }
     if (this.board[from + inc].TYPE===EMPTY) {
       if (proms) {
         arr.forEach(x => moves.push(new Move(from,from + inc,x)));
@@ -232,7 +235,7 @@ export class Game {
       }
     return booli;
   }
-  bishopMoves(from) {
+  bishopMoves(from, test=false) {
     let moves = [];
     let [x, y] = Game.nonlinear(from);
     let direction = [true, true, true, true];
@@ -244,7 +247,7 @@ export class Game {
     }
     return moves;
   }
-  queenMoves(from) {
+  queenMoves(from, test=false) {
     let color = (this.turn % 2===0) ? WHITE : BLACK;
     let moves = [];
     let [x, y] = Game.nonlinear(from);
@@ -302,7 +305,7 @@ export class Game {
     }
     return moves;
   }
-  knightMoves(from) {
+  knightMoves(from, test=false) {
     let color = (this.turn % 2===0) ? WHITE : BLACK;
     let moves = [];
     let [x,y] = Game.nonlinear(from);
@@ -319,7 +322,7 @@ export class Game {
     }
     return moves;
   }
-  rookMoves(from) {
+  rookMoves(from, test=false) {
     let color = this.board[from].COLOR;
     let moves = [];
     let [x, y] = Game.nonlinear(from);
@@ -391,23 +394,23 @@ export class Game {
     }
     return good_moves;
   }
-  allMoves() {
+  allMoves(test=false) {
     let moves = [];
     let color = (this.turn % 2===0) ? WHITE : BLACK;
     for (let pos=0; pos<this.board.length;pos++) {
       if (this.board[pos].COLOR===color) {
       if (this.board[pos].TYPE===KING) { 
-        moves.push(...this.kingMoves(pos)); }
+        moves.push(...this.kingMoves(pos,test)); }
       else if (this.board[pos].TYPE===QUEEN) { 
-        moves.push(...this.queenMoves(pos)); }
+        moves.push(...this.queenMoves(pos,test)); }
       else if (this.board[pos].TYPE===ROOK) { 
-        moves.push(...this.rookMoves(pos)); }
+        moves.push(...this.rookMoves(pos,test)); }
       else if (this.board[pos].TYPE===KNIGHT) {
-        moves.push(...this.knightMoves(pos)); }
+        moves.push(...this.knightMoves(pos,test)); }
       else if (this.board[pos].TYPE===BISHOP) { 
-        moves.push(...this.bishopMoves(pos)); }
+        moves.push(...this.bishopMoves(pos,test)); }
       else if (this.board[pos].TYPE===PAWN) { 
-        moves.push(...this.pawnMoves(pos)); }
+        moves.push(...this.pawnMoves(pos,test)); }
       }
     }
     return this.filter_moves(color, moves);
@@ -415,12 +418,12 @@ export class Game {
   movesFrom(from) {
     let moves = [];
     let color = this.board[from].COLOR;
-    if (this.board[from].TYPE===ROOK)        { moves = this.rookMoves(from); }
-    else if (this.board[from].TYPE===KNIGHT) { moves = this.knightMoves(from); }
-    else if (this.board[from].TYPE===BISHOP) { moves = this.bishopMoves(from); }
-    else if (this.board[from].TYPE===KING)   { moves = this.kingMoves(from); }
-    else if (this.board[from].TYPE===QUEEN)  { moves = this.queenMoves(from); }
-    else if (this.board[from].TYPE===PAWN)   { moves = this.pawnMoves(from); }
+    if (this.board[from].TYPE===ROOK)        { moves = this.rookMoves(from,true); }
+    else if (this.board[from].TYPE===KNIGHT) { moves = this.knightMoves(from,true); }
+    else if (this.board[from].TYPE===BISHOP) { moves = this.bishopMoves(from, true); }
+    else if (this.board[from].TYPE===KING)   { moves = this.kingMoves(from,true); }
+    else if (this.board[from].TYPE===QUEEN)  { moves = this.queenMoves(from, true); }
+    else if (this.board[from].TYPE===PAWN)   { moves = this.pawnMoves(from, true); }
     return this.filter_moves(color, moves);
   }
   move(mov, main=true) {

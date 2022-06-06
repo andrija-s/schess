@@ -1,7 +1,7 @@
 import {Game} from "../scripts/game.js";
 
 function PERFT(state, depth) {
-  let legal_moves = state.allMoves();
+  let legal_moves = state.allMoves(true);
   if (depth===1) {
     return legal_moves.length;
   }
