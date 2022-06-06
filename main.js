@@ -25,20 +25,8 @@ const highlight_color = "red";
 const sq_from ="teal";
 const sq_to ="aqua";
 const piece_set = "anarcandy";
-const images = {"11" : loadImage(`./assets/pieces/${piece_set}/bR.svg`),
-                "12" : loadImage(`./assets/pieces/${piece_set}/bN.svg`),
-                "13" : loadImage(`./assets/pieces/${piece_set}/bK.svg`),
-                "14" : loadImage(`./assets/pieces/${piece_set}/bP.svg`),
-                "15" : loadImage(`./assets/pieces/${piece_set}/bQ.svg`),
-                "16" : loadImage(`./assets/pieces/${piece_set}/bB.svg`),
-                "01" : loadImage(`./assets/pieces/${piece_set}/wR.svg`),
-                "02" : loadImage(`./assets/pieces/${piece_set}/wN.svg`),
-                "03" : loadImage(`./assets/pieces/${piece_set}/wK.svg`),
-                "04" : loadImage(`./assets/pieces/${piece_set}/wP.svg`),
-                "05" : loadImage(`./assets/pieces/${piece_set}/wQ.svg`),
-                "06" : loadImage(`./assets/pieces/${piece_set}/wB.svg`),};
+const images = {};
 const audio = {"move": new Audio("./assets/sound/move.wav")};
-
 
 // default: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
 const DEFAULT = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
@@ -53,6 +41,21 @@ let white_checked = false;
 let flipped = false;
 let promote_piece = Q_PROM;
 
+async function init_images(dict) {
+  dict["11"] = await load_image(`./assets/pieces/${piece_set}/bR.svg`);
+  dict["12"] = await load_image(`./assets/pieces/${piece_set}/bN.svg`);
+  dict["13"] = await load_image(`./assets/pieces/${piece_set}/bK.svg`);
+  dict["14"] = await load_image(`./assets/pieces/${piece_set}/bP.svg`);
+  dict["15"] = await load_image(`./assets/pieces/${piece_set}/bQ.svg`);
+  dict["16"] = await load_image(`./assets/pieces/${piece_set}/bB.svg`);
+  dict["01"] = await load_image(`./assets/pieces/${piece_set}/wR.svg`);
+  dict["02"] = await load_image(`./assets/pieces/${piece_set}/wN.svg`);
+  dict["03"] = await load_image(`./assets/pieces/${piece_set}/wK.svg`);
+  dict["04"] = await load_image(`./assets/pieces/${piece_set}/wP.svg`);
+  dict["05"] = await load_image(`./assets/pieces/${piece_set}/wQ.svg`);
+  dict["06"] = await load_image(`./assets/pieces/${piece_set}/wB.svg`);
+}
+
 function promote(input) {
   promote_piece = input;
 }
@@ -65,7 +68,7 @@ function flip() {
   moves_highlight = [];
   render_state();
 }
-function loadImage(url) {
+function load_image(url) {
   return new Promise(r => { let i = new Image(); i.onload = (() => r(i)); i.src = url; });
 }
 
@@ -90,7 +93,7 @@ function render_board() {
     }
   }
 }
-async function render_state() {
+function render_state() {
   render_board();
   for (let i in main_state.board) {
     if (main_state.board[i].TYPE===EMPTY) {
@@ -99,7 +102,7 @@ async function render_state() {
     let [x, y] = Game.nonlinear(i);
     [x, y] = (flipped) ? [7-x,7-y] : [x,y];
     let str = main_state.board[i].COLOR + "" + main_state.board[i].TYPE;
-    let img = await images[str];
+    let img = images[str];
     ctx.drawImage(img, (x*width)+(width/16), (y*height)+(width/16), c.width/9, c.height/9);
   }
 }
@@ -224,10 +227,25 @@ function bind_click() {
     }, 0);
   });
 }
-
-function init() {
+async function init() {
+  await init_images(images);
   reset();
   bind_buttons();
   bind_click();
+
 }
 window.addEventListener("DOMContentLoaded", init());
+
+
+/* {"11" : load_image(`./assets/pieces/${piece_set}/bR.svg`),
+    "12" : load_image(`./assets/pieces/${piece_set}/bN.svg`),
+    "13" : load_image(`./assets/pieces/${piece_set}/bK.svg`),
+    "14" : load_image(`./assets/pieces/${piece_set}/bP.svg`),
+    "15" : load_image(`./assets/pieces/${piece_set}/bQ.svg`),
+    "16" : load_image(`./assets/pieces/${piece_set}/bB.svg`),
+    "01" : load_image(`./assets/pieces/${piece_set}/wR.svg`),
+    "02" : load_image(`./assets/pieces/${piece_set}/wN.svg`),
+    "03" : load_image(`./assets/pieces/${piece_set}/wK.svg`),
+    "04" : load_image(`./assets/pieces/${piece_set}/wP.svg`),
+    "05" : load_image(`./assets/pieces/${piece_set}/wQ.svg`),
+    "06" : load_image(`./assets/pieces/${piece_set}/wB.svg`),} */
