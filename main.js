@@ -174,6 +174,10 @@ function change_color() {
   player = (player===WHITE) ? BLACK : WHITE;
   reset();
 }
+function set_check() {
+  white_checked = main_state.underAttack(WHITE, main_state.king_positions[WHITE]);
+  black_checked = main_state.underAttack(BLACK, main_state.king_positions[BLACK]);
+}
 function bind_click() {
   c.addEventListener("mousedown", function(e) {
     let rect = c.getBoundingClientRect();
@@ -191,6 +195,7 @@ function bind_click() {
     else if (selected!==-1) {
       let mov = findSelected(moves_highlight, position);
       if (mov !== null) {
+        let ai_color = (player === WHITE) ? BLACK : WHITE;
         if (mov.SPECIAL >= Q_PROM && mov.SPECIAL <= R_PROM) {
           mov.SPECIAL = promote_piece;
         }
@@ -201,21 +206,21 @@ function bind_click() {
           audio["move"].play();
         }
         main_state.move(mov);
-        let ai_color = (player === WHITE) ? BLACK : WHITE;
-        move_ai(ai_color);
-        if (player===WHITE) {
-          black_checked = false;
-          white_checked = main_state.underAttack(WHITE, main_state.king_positions[WHITE]);
-        }
-        else {
-          white_checked = false;
-          black_checked = main_state.underAttack(BLACK, main_state.king_positions[BLACK]);
-        }
+        moves_highlight = [];
+        selected = -1
+        set_check();
+        render_state();
+        setTimeout(() => {
+          move_ai(ai_color);
+          set_check();
+        }, 0);
       }
       selected = -1;
       moves_highlight = [];
     }
-    render_state();
+    setTimeout(() => {
+          render_state();
+    }, 0);
   });
 }
 
