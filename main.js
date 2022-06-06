@@ -41,6 +41,7 @@ const audio = {"move": new Audio("./assets/sound/move.wav")};
 
 
 // default: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
+const DEFAULT = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
 let main_state = null;
 let player = WHITE;
 let moves_highlight = [];
@@ -115,14 +116,14 @@ function bind_buttons() {
   buttons.addEventListener("click", () => {
     flip();
   });
-  buttons = document.querySelectorAll(".dropdown-content > a");
-  for (let btn of buttons) {
+  let iter = document.querySelectorAll(".dropdown-content > a");
+  for (let btn of iter) {
     btn.addEventListener("click", (e) => {
       if (btn.innerHTML==="Queen") { promote_piece=Q_PROM; }
       else if (btn.innerHTML==="Bishop")  { promote_piece=B_PROM; }
       else if (btn.innerHTML==="Knight") { promote_piece=K_PROM; }
       else if (btn.innerHTML==="Rook") { promote_piece=R_PROM; }
-      for (let opt of buttons) {
+      for (let opt of iter) {
         opt.style["background-color"] = "";
       }
       e.target.style["background-color"] = "#aaff80";
@@ -158,7 +159,7 @@ function move_ai(color) {
   }
 }
 function reset() {
-  main_state = new Game("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
+  main_state = new Game(DEFAULT);
   moves_highlight = [];
   recent_from = -1;
   recent_to = -1;
