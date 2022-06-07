@@ -56,7 +56,6 @@ async function init() {
   reset();
   bind_buttons();
   bind_click();
-
 }
 
 window.addEventListener("DOMContentLoaded", init());
@@ -160,7 +159,7 @@ function bind_buttons() {
       else if (btn.innerHTML==="Bishop")  { promote_piece=B_PROM; }
       else if (btn.innerHTML==="Knight") { promote_piece=K_PROM; }
       else if (btn.innerHTML==="Rook") { promote_piece=R_PROM; }
-      for (let opt of iter) {
+      for (let opt of prom_iter) {
         opt.style["background-color"] = "";
       }
       e.target.style["background-color"] = "#aaff80";
