@@ -35,7 +35,7 @@ let white_checked = false;
 let flipped = false;
 let promote_piece = Q_PROM;
 let c = null; // canvas element
-let ctx = null;
+let ctx = null; // canvas context
 ////////////////////////////////////////////////////////////////////
 async function init() {
   c = document.createElement("canvas");
@@ -102,6 +102,7 @@ async function init_audio(dict) {
 }
 
 function render_board() {
+
   let WK_POS = main_state.king_positions[WHITE];
   let BK_POS = main_state.king_positions[BLACK];
   for (let i = 0; i < w_squares; i++) {
@@ -121,6 +122,7 @@ function render_board() {
 }
 
 function render_state() {
+
   render_board();
   for (let i in main_state.board) {
     if (main_state.board[i].TYPE===EMPTY) {
@@ -135,6 +137,7 @@ function render_state() {
 }
 
 function findSelected(moves, pos) {
+
   for (let mov of moves) {
     if (mov.TO === pos) {
       return mov;
@@ -144,12 +147,14 @@ function findSelected(moves, pos) {
 }
 
 function bind_buttons() {
-  let buttons = document.getElementById("flipbtn");
-  buttons.addEventListener("click", () => {
+
+  let flip_btn = document.getElementById("flipbtn");
+  flip_btn.addEventListener("click", () => {
     flip();
   });
-  let iter = document.querySelectorAll(".dropdown-content > a");
-  for (let btn of iter) {
+
+  let prom_iter = document.querySelectorAll(".dropdown-content > a");
+  for (let btn of prom_iter) {
     btn.addEventListener("click", (e) => {
       if (btn.innerHTML==="Queen") { promote_piece=Q_PROM; }
       else if (btn.innerHTML==="Bishop")  { promote_piece=B_PROM; }
@@ -161,21 +166,25 @@ function bind_buttons() {
       e.target.style["background-color"] = "#aaff80";
     })
   }
-  buttons = document.getElementById("resetbtn");
-  buttons.addEventListener("click", () => {
+
+  let reset_btn = document.getElementById("resetbtn");
+  reset_btn.addEventListener("click", () => {
     reset();
   });
-  buttons = document.getElementById("changebtn");
-  buttons.addEventListener("click", () => {
+
+  let change_btn = document.getElementById("changebtn");
+  change_btn.addEventListener("click", () => {
     change_color();
   });
 }
 
 function move_ai(color) {
+
   let time = Date.now();
   let ai_move = ai(12, main_state, color);
   time = ((Date.now() - time) / 1000).toFixed(2);
   console.log(time, ai_move);
+
   if (ai_move[1] !== null) {
     main_state.move(ai_move[1]);
     recent_from = ai_move[1].FROM;
@@ -193,6 +202,7 @@ function move_ai(color) {
 }
 
 function reset() {
+
   main_state = new Game(DEFAULT);
   moves_highlight = [];
   recent_from = -1;
@@ -207,23 +217,28 @@ function reset() {
 }
 
 function change_color() {
+
   player = (player===WHITE) ? BLACK : WHITE;
   reset();
 }
 
 function set_check() {
+
   white_checked = main_state.underAttack(WHITE, main_state.king_positions[WHITE]);
   black_checked = main_state.underAttack(BLACK, main_state.king_positions[BLACK]);
 }
 
 function bind_click() {
+
   c.addEventListener("mousedown", function(e) {
+
     let rect = c.getBoundingClientRect();
     let x = ((e.clientX - rect.left) / width) | 0;
     let y = ((e.clientY - rect.top) / height) | 0;
     if (x > 7 || y > 7) return;
     [x, y] = (flipped) ? [7-x,7-y] : [x,y];
     let position = Game.linear(x, y);
+
     if (selected===-1 && main_state.board[position].TYPE!==EMPTY
         && main_state.board[position].COLOR===player) {
       selected = position;
