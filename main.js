@@ -1,21 +1,12 @@
 import {Game,Q_PROM,R_PROM,B_PROM,K_PROM, ONPEASANT,
         WHITE,BLACK,EMPTY,w_squares,h_squares} from "./scripts/game.js";
 import {ai} from "./scripts/ai.js";
-const c = document.createElement("canvas");
-let attrs = { 
-              id: "chessBoard", 
-              width: "700", 
-              height: "700", 
-              style: "border:2px solid #913c3c; position:absolute; top:60px; left:250px;"
-            };
-for(let key in attrs) {
-  c.setAttribute(key, attrs[key]);
-};
-document.body.appendChild(c);
-c.onselectstart = function () { return false; }
-const width = c.width/w_squares;
-const height = c.height/h_squares;
-const ctx = c.getContext("2d");
+
+
+const c_width = 700;
+const c_height = 700;
+const width = c_width/w_squares;
+const height = c_height/h_squares;
 const checkb_color = "blue";
 const border_color = "black";
 const selected_color = "yellow";
@@ -27,9 +18,9 @@ const sq_to ="aqua";
 const piece_set = "anarcandy";
 const images = {};
 const audio = {"move": new Audio("./assets/sound/move.wav")};
-
 // default: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
 const DEFAULT = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
+
 let main_state = null;
 let player = WHITE;
 let moves_highlight = [];
@@ -40,6 +31,52 @@ let black_checked = false;
 let white_checked = false;
 let flipped = false;
 let promote_piece = Q_PROM;
+let c = null; // canvas element
+let ctx = null;
+////////////////////////////////////////////////////////////////////
+async function init() {
+  c = document.createElement("canvas");
+  let attrs = { 
+                id: "chessBoard", 
+                width: c_width, 
+                height: c_height, 
+                style: "border:2px solid #913c3c; position:absolute; top:60px; left:250px;"
+              };
+  for(let key in attrs) {
+    c.setAttribute(key, attrs[key]);
+  };
+  c.onselectstart = function () { return false; }
+  document.body.appendChild(c);
+  ctx = c.getContext("2d");
+  await init_images(images);
+  reset();
+  bind_buttons();
+  bind_click();
+
+}
+
+window.addEventListener("DOMContentLoaded", init());
+////////////////////////////////////////////////////////////////////
+
+// yet to be used
+function promote(input) {
+  promote_piece = input;
+}
+// yet to be used
+function pickColor(input) {
+  return;
+}
+
+function flip() {
+  flipped = !flipped;
+  selected = -1;
+  moves_highlight = [];
+  render_state();
+}
+
+function load_image(url) {
+  return new Promise(r => { let i = new Image(); i.onload = (() => r(i)); i.src = url; });
+}
 
 async function init_images(dict) {
   dict["11"] = await load_image(`./assets/pieces/${piece_set}/bR.svg`);
@@ -55,25 +92,6 @@ async function init_images(dict) {
   dict["05"] = await load_image(`./assets/pieces/${piece_set}/wQ.svg`);
   dict["06"] = await load_image(`./assets/pieces/${piece_set}/wB.svg`);
 }
-
-function promote(input) {
-  promote_piece = input;
-}
-function pickColor(input) {
-  return;
-}
-function flip() {
-  flipped = !flipped;
-  selected = -1;
-  moves_highlight = [];
-  render_state();
-}
-function load_image(url) {
-  return new Promise(r => { let i = new Image(); i.onload = (() => r(i)); i.src = url; });
-}
-
-
-////////////////////////////////////////////////////////////////////
 
 function render_board() {
   let WK_POS = main_state.king_positions[WHITE];
@@ -93,6 +111,7 @@ function render_board() {
     }
   }
 }
+
 function render_state() {
   render_board();
   for (let i in main_state.board) {
@@ -106,6 +125,7 @@ function render_state() {
     ctx.drawImage(img, (x*width)+(width/16), (y*height)+(width/16), c.width/9, c.height/9);
   }
 }
+
 function findSelected(moves, pos) {
   for (let mov of moves) {
     if (mov.TO === pos) {
@@ -114,6 +134,7 @@ function findSelected(moves, pos) {
   }
   return null;
 }
+
 function bind_buttons() {
   let buttons = document.getElementById("flipbtn");
   buttons.addEventListener("click", () => {
@@ -141,6 +162,7 @@ function bind_buttons() {
     change_color();
   });
 }
+
 function move_ai(color) {
   let time = Date.now();
   let ai_move = ai(12, main_state, color);
@@ -161,6 +183,7 @@ function move_ai(color) {
     else if (ai_move[0]<0) alert("YOU WIN!");
   }
 }
+
 function reset() {
   main_state = new Game(DEFAULT);
   moves_highlight = [];
@@ -174,14 +197,17 @@ function reset() {
   }
   render_state();
 }
+
 function change_color() {
   player = (player===WHITE) ? BLACK : WHITE;
   reset();
 }
+
 function set_check() {
   white_checked = main_state.underAttack(WHITE, main_state.king_positions[WHITE]);
   black_checked = main_state.underAttack(BLACK, main_state.king_positions[BLACK]);
 }
+
 function bind_click() {
   c.addEventListener("mousedown", function(e) {
     let rect = c.getBoundingClientRect();
@@ -227,14 +253,7 @@ function bind_click() {
     }, 0);
   });
 }
-async function init() {
-  await init_images(images);
-  reset();
-  bind_buttons();
-  bind_click();
 
-}
-window.addEventListener("DOMContentLoaded", init());
 
 
 /* {"11" : load_image(`./assets/pieces/${piece_set}/bR.svg`),
