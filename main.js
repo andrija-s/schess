@@ -1,23 +1,26 @@
-import {Game,Q_PROM,R_PROM,B_PROM,K_PROM, ONPEASANT,
-        WHITE,BLACK,EMPTY,w_squares,h_squares} from "./scripts/game.js";
-import {ai} from "./scripts/ai.js";
+import { Game,
+         Q_PROM,R_PROM,B_PROM,K_PROM,ONPEASANT,
+         WHITE,BLACK,EMPTY,
+         w_squares,h_squares } from "./scripts/game.js";
+
+import { ai } from "./scripts/ai.js";
 
 
-const c_width = 700;
-const c_height = 700;
-const width = c_width/w_squares;
-const height = c_height/h_squares;
-const checkb_color = "blue";
-const border_color = "black";
+const c_width = 700;  // canvas width
+const c_height = 700; // canvas height
+const width = c_width/w_squares;   // square width
+const height = c_height/h_squares; // square height
+const check_color = "blue";
+const border_color = "black"; // square border
 const selected_color = "yellow";
-const sq_lcolor = "#ff7a39";
-const sq_dcolor = "green";
-const highlight_color = "red";
+const sq_lcolor = "#ff7a39"; // square light
+const sq_dcolor = "green";   // square dark
+const highlight_color = "navajowhite"; // move highlight
 const sq_from ="teal";
 const sq_to ="aqua";
 const piece_set = "anarcandy";
-const images = {};
-const audio = {"move": new Audio("./assets/sound/move.wav")};
+const images = {}; // piece images
+const audio = {};
 // default: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
 const DEFAULT = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
 
@@ -49,6 +52,7 @@ async function init() {
   document.body.appendChild(c);
   ctx = c.getContext("2d");
   await init_images(images);
+  await init_audio(audio);
   reset();
   bind_buttons();
   bind_click();
@@ -93,6 +97,10 @@ async function init_images(dict) {
   dict["06"] = await load_image(`./assets/pieces/${piece_set}/wB.svg`);
 }
 
+async function init_audio(dict) {
+  dict["move"] = new Audio("./assets/sound/move.wav")
+}
+
 function render_board() {
   let WK_POS = main_state.king_positions[WHITE];
   let BK_POS = main_state.king_positions[BLACK];
@@ -102,7 +110,7 @@ function render_board() {
       let pos = Game.linear(x,y);
       ctx.fillStyle =  border_color;
       ctx.fillRect(i*width,j*height,width,height);
-      ctx.fillStyle = ((pos===WK_POS && white_checked) || (pos===BK_POS && black_checked)) ? checkb_color : ((j % 2 === i % 2) ? sq_lcolor : sq_dcolor);
+      ctx.fillStyle = ((pos===WK_POS && white_checked) || (pos===BK_POS && black_checked)) ? check_color : ((j % 2 === i % 2) ? sq_lcolor : sq_dcolor);
       if (selected === pos) ctx.fillStyle = selected_color;
       else if (findSelected(moves_highlight, pos) !== null) ctx.fillStyle = highlight_color;
       else if (pos === recent_from) ctx.fillStyle = sq_from;
@@ -253,18 +261,3 @@ function bind_click() {
     }, 0);
   });
 }
-
-
-
-/* {"11" : load_image(`./assets/pieces/${piece_set}/bR.svg`),
-    "12" : load_image(`./assets/pieces/${piece_set}/bN.svg`),
-    "13" : load_image(`./assets/pieces/${piece_set}/bK.svg`),
-    "14" : load_image(`./assets/pieces/${piece_set}/bP.svg`),
-    "15" : load_image(`./assets/pieces/${piece_set}/bQ.svg`),
-    "16" : load_image(`./assets/pieces/${piece_set}/bB.svg`),
-    "01" : load_image(`./assets/pieces/${piece_set}/wR.svg`),
-    "02" : load_image(`./assets/pieces/${piece_set}/wN.svg`),
-    "03" : load_image(`./assets/pieces/${piece_set}/wK.svg`),
-    "04" : load_image(`./assets/pieces/${piece_set}/wP.svg`),
-    "05" : load_image(`./assets/pieces/${piece_set}/wQ.svg`),
-    "06" : load_image(`./assets/pieces/${piece_set}/wB.svg`),} */
