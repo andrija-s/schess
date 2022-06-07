@@ -37,7 +37,7 @@ export class Game {
     this.history = [];
   }
   check_diag(x, y, color, checked, booli, offset) {
-    if (booli[offset] && Game.inBound(x, y)) {
+    if (booli[offset] && Game.in_bound(x, y)) {
       let pos = Game.linear(x, y);
       if (this.board[pos].TYPE!==EMPTY) booli[offset] = false;
       if (this.board[pos].COLOR!==color && this.board[pos].TYPE>PAWN) {
@@ -46,14 +46,14 @@ export class Game {
     }
     return checked;
   }
-  underAttack(color, pos) {
+  under_attack(color, pos) {
     let [x,y] = Game.nonlinear(pos);
     let checked = false;
     // pawn checks
     let temp_x,temp_y, temp_val;
     let offset = (color===WHITE) ? 1 : -1;
     for (let val of [x-1,x+1]) {
-      if (Game.inBound(val, y-offset)) {
+      if (Game.in_bound(val, y-offset)) {
         temp_val = Game.linear(val, y-offset);
         if (this.board[temp_val].TYPE>KNIGHT && this.board[temp_val].COLOR!==color) {
           return true;
@@ -66,7 +66,7 @@ export class Game {
         temp_x = x+i;
         temp_y = y+j;
         temp_val = Game.linear(temp_x,temp_y);
-        if (!(i===0&&j===0) && Game.inBound(temp_x,temp_y) && this.board[temp_val].TYPE===KING 
+        if (!(i===0&&j===0) && Game.in_bound(temp_x,temp_y) && this.board[temp_val].TYPE===KING 
             && this.board[temp_val].COLOR!==color) {
           return true;
         }
@@ -128,13 +128,13 @@ export class Game {
           continue;
         [temp_x,temp_y] = [x+i, y+j];
         temp_val = Game.linear(temp_x,temp_y);
-        if (Game.inBound(temp_x,temp_y) && this.board[temp_val].TYPE===KNIGHT && this.board[temp_val].COLOR!==color)
+        if (Game.in_bound(temp_x,temp_y) && this.board[temp_val].TYPE===KNIGHT && this.board[temp_val].COLOR!==color)
           return true;
       }
     }
     return checked;
   }
-  kingMoves(from,test=false) {
+  king_moves(from,test=false) {
     let color = this.board[from].COLOR;
     let moves = [];
     let pos;
@@ -142,7 +142,7 @@ export class Game {
     let special=0;
     for (let i = -1; i <= 1; i++) {
       for (let j = -1; j <= 1; j++) {
-        if (!(i===0&&j===0) && Game.inBound(x+i,y+j)) {
+        if (!(i===0&&j===0) && Game.in_bound(x+i,y+j)) {
           pos = Game.linear(x+i,y+j);
           if (this.board[pos].COLOR !== color) {
             moves.push(new Move(from, pos, special + this.board[pos].TYPE));
@@ -150,33 +150,33 @@ export class Game {
         }
       }
     }
-    if (!this.underAttack(color, from)){
+    if (!this.under_attack(color, from)){
       if (color===BLACK) {
         if (this.castles[BCS] && this.board[from+1].TYPE===EMPTY && this.board[from+2].TYPE===EMPTY
-            && !this.underAttack(color, from+1) && !this.underAttack(color, from+2)) {
+            && !this.under_attack(color, from+1) && !this.under_attack(color, from+2)) {
           moves.push(new Move(from, from+2, BCS_MOV));
         }
         if (this.castles[BCL] && this.board[from-1].TYPE===EMPTY && this.board[from-2].TYPE===EMPTY 
-            && this.board[from-3].TYPE===EMPTY && !this.underAttack(color, from-1) 
-            && !this.underAttack(color, from-2)) {
+            && this.board[from-3].TYPE===EMPTY && !this.under_attack(color, from-1) 
+            && !this.under_attack(color, from-2)) {
           moves.push(new Move(from, from-2, BCL_MOV));
         }
       }
       else {
         if (this.castles[WCS] && this.board[from+1].TYPE===EMPTY && this.board[from+2].TYPE===EMPTY 
-            && !this.underAttack(color, from+1) && !this.underAttack(color, from+2)) {
+            && !this.under_attack(color, from+1) && !this.under_attack(color, from+2)) {
           moves.push(new Move(from, from+2, WCS_MOV));
         }
         if (this.castles[WCL] && this.board[from-1].TYPE===EMPTY && this.board[from-2].TYPE===EMPTY
-            && this.board[from-3].TYPE===EMPTY && !this.underAttack(color, from-1) 
-            && !this.underAttack(color, from-2)) {
+            && this.board[from-3].TYPE===EMPTY && !this.under_attack(color, from-1) 
+            && !this.under_attack(color, from-2)) {
           moves.push(new Move(from, from-2, WCL_MOV));
         }
       }
     }
     return moves;
   }
-  pawnMoves(from, test=false) {
+  pawn_moves(from, test=false) {
     let color = this.board[from].COLOR;
     let moves = [];
     let [x, y] = Game.nonlinear(from);
@@ -224,7 +224,7 @@ export class Game {
   }
   diag_calc(x, y, moves, from, booli) {
     let color = (this.turn % 2===0) ? WHITE : BLACK;
-    if (booli && Game.inBound(x, y)) {
+    if (booli && Game.in_bound(x, y)) {
         let pos = Game.linear(x, y);
         if (this.board[pos].COLOR !== color) {
           moves.push(new Move(from,pos,this.board[pos].TYPE));
@@ -235,7 +235,7 @@ export class Game {
       }
     return booli;
   }
-  bishopMoves(from, test=false) {
+  bishop_moves(from, test=false) {
     let moves = [];
     let [x, y] = Game.nonlinear(from);
     let direction = [true, true, true, true];
@@ -247,7 +247,7 @@ export class Game {
     }
     return moves;
   }
-  queenMoves(from, test=false) {
+  queen_moves(from, test=false) {
     let color = (this.turn % 2===0) ? WHITE : BLACK;
     let moves = [];
     let [x, y] = Game.nonlinear(from);
@@ -305,7 +305,7 @@ export class Game {
     }
     return moves;
   }
-  knightMoves(from, test=false) {
+  knight_moves(from, test=false) {
     let color = (this.turn % 2===0) ? WHITE : BLACK;
     let moves = [];
     let [x,y] = Game.nonlinear(from);
@@ -316,13 +316,13 @@ export class Game {
           continue;
         [x_mov,y_mov] = [x+i, y+j];
         lin_pos = Game.linear(x_mov,y_mov);
-        if (Game.inBound(x_mov,y_mov) && (this.board[lin_pos].TYPE === EMPTY || this.board[lin_pos].COLOR  !== color))
+        if (Game.in_bound(x_mov,y_mov) && (this.board[lin_pos].TYPE === EMPTY || this.board[lin_pos].COLOR  !== color))
           moves.push(new Move(from,lin_pos,this.board[lin_pos].TYPE));
       }
     }
     return moves;
   }
-  rookMoves(from, test=false) {
+  rook_moves(from, test=false) {
     let color = this.board[from].COLOR;
     let moves = [];
     let [x, y] = Game.nonlinear(from);
@@ -387,43 +387,43 @@ export class Game {
     let good_moves = [];
     for (let mov of moves) {
       this.move(mov);
-      if (!this.underAttack(color, this.king_positions[color])) {
+      if (!this.under_attack(color, this.king_positions[color])) {
         good_moves.push(mov);
       }
       this.unmove();
     }
     return good_moves;
   }
-  allMoves(test=false) {
+  all_moves(test=false) {
     let moves = [];
     let color = (this.turn % 2===0) ? WHITE : BLACK;
     for (let pos=0; pos<this.board.length;pos++) {
       if (this.board[pos].COLOR===color) {
       if (this.board[pos].TYPE===KING) { 
-        moves.push(...this.kingMoves(pos,test)); }
+        moves.push(...this.king_moves(pos,test)); }
       else if (this.board[pos].TYPE===QUEEN) { 
-        moves.push(...this.queenMoves(pos,test)); }
+        moves.push(...this.queen_moves(pos,test)); }
       else if (this.board[pos].TYPE===ROOK) { 
-        moves.push(...this.rookMoves(pos,test)); }
+        moves.push(...this.rook_moves(pos,test)); }
       else if (this.board[pos].TYPE===KNIGHT) {
-        moves.push(...this.knightMoves(pos,test)); }
+        moves.push(...this.knight_moves(pos,test)); }
       else if (this.board[pos].TYPE===BISHOP) { 
-        moves.push(...this.bishopMoves(pos,test)); }
+        moves.push(...this.bishop_moves(pos,test)); }
       else if (this.board[pos].TYPE===PAWN) { 
-        moves.push(...this.pawnMoves(pos,test)); }
+        moves.push(...this.pawn_moves(pos,test)); }
       }
     }
     return this.filter_moves(color, moves);
   }
-  movesFrom(from) {
+  moves_from(from) {
     let moves = [];
     let color = this.board[from].COLOR;
-    if (this.board[from].TYPE===ROOK)        { moves = this.rookMoves(from,true); }
-    else if (this.board[from].TYPE===KNIGHT) { moves = this.knightMoves(from,true); }
-    else if (this.board[from].TYPE===BISHOP) { moves = this.bishopMoves(from, true); }
-    else if (this.board[from].TYPE===KING)   { moves = this.kingMoves(from,true); }
-    else if (this.board[from].TYPE===QUEEN)  { moves = this.queenMoves(from, true); }
-    else if (this.board[from].TYPE===PAWN)   { moves = this.pawnMoves(from, true); }
+    if (this.board[from].TYPE===ROOK)        { moves = this.rook_moves(from,true); }
+    else if (this.board[from].TYPE===KNIGHT) { moves = this.knight_moves(from,true); }
+    else if (this.board[from].TYPE===BISHOP) { moves = this.bishop_moves(from, true); }
+    else if (this.board[from].TYPE===KING)   { moves = this.king_moves(from,true); }
+    else if (this.board[from].TYPE===QUEEN)  { moves = this.queen_moves(from, true); }
+    else if (this.board[from].TYPE===PAWN)   { moves = this.pawn_moves(from, true); }
     return this.filter_moves(color, moves);
   }
   move(mov, main=true) {
@@ -526,7 +526,7 @@ export class Game {
     this.history = temp.history;
   }
   
-  static inBound(x, y) {
+  static in_bound(x, y) {
     return (x >= 0 && x < w_squares && y >= 0 && y < h_squares);
   }
   static linear(x, y) {

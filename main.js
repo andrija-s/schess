@@ -67,7 +67,7 @@ function promote(input) {
   promote_piece = input;
 }
 // yet to be used
-function pickColor(input) {
+function pick_color(input) {
   return;
 }
 
@@ -113,7 +113,7 @@ function render_board() {
       ctx.fillRect(i*width,j*height,width,height);
       ctx.fillStyle = ((pos===WK_POS && white_checked) || (pos===BK_POS && black_checked)) ? check_color : ((j % 2 === i % 2) ? sq_lcolor : sq_dcolor);
       if (selected === pos) ctx.fillStyle = selected_color;
-      else if (findSelected(moves_highlight, pos) !== null) ctx.fillStyle = highlight_color;
+      else if (selected_move(moves_highlight, pos) !== null) ctx.fillStyle = highlight_color;
       else if (pos === recent_from) ctx.fillStyle = sq_from;
       else if (pos === recent_to) ctx.fillStyle = sq_to;
       ctx.fillRect(i*width,j*height,width-1,height-1);
@@ -136,7 +136,7 @@ function render_state() {
   }
 }
 
-function findSelected(moves, pos) {
+function selected_move(moves, pos) {
 
   for (let mov of moves) {
     if (mov.TO === pos) {
@@ -189,7 +189,7 @@ function move_ai(color) {
     main_state.move(ai_move[1]);
     recent_from = ai_move[1].FROM;
     recent_to = ai_move[1].TO;
-    if (ai_move[0]==Number.POSITIVE_INFINITY && main_state.allMoves(true).length===0) {
+    if (ai_move[0]==Number.POSITIVE_INFINITY && main_state.all_moves(true).length===0) {
       alert("YOU LOSE!");
     }
   }
@@ -224,8 +224,8 @@ function change_color() {
 
 function set_check() {
 
-  white_checked = main_state.underAttack(WHITE, main_state.king_positions[WHITE]);
-  black_checked = main_state.underAttack(BLACK, main_state.king_positions[BLACK]);
+  white_checked = main_state.under_attack(WHITE, main_state.king_positions[WHITE]);
+  black_checked = main_state.under_attack(BLACK, main_state.king_positions[BLACK]);
 }
 
 function bind_click() {
@@ -242,11 +242,11 @@ function bind_click() {
     if (selected===-1 && main_state.board[position].TYPE!==EMPTY
         && main_state.board[position].COLOR===player) {
       selected = position;
-      moves_highlight = main_state.movesFrom(position);
+      moves_highlight = main_state.moves_from(position);
       if(moves_highlight.length<1) selected = -1;
     }
     else if (selected!==-1) {
-      let mov = findSelected(moves_highlight, position);
+      let mov = selected_move(moves_highlight, position);
       if (mov !== null) {
         let ai_color = (player === WHITE) ? BLACK : WHITE;
         if (mov.SPECIAL >= Q_PROM && mov.SPECIAL <= R_PROM) {

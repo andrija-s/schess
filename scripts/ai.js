@@ -48,7 +48,7 @@ const KING_POS  = [-0.3,-0.4,-0.4,-0.5,-0.5,-0.4,-0.4,-0.3,
                    -0.1,-0.2,-0.2,-0.2,-0.2,-0.2,-0.2,-0.1,
                     0.2, 0.2, 0.0, 0.0, 0.0, 0.0, 0.2, 0.2,
                     0.2, 0.3, 0.1, 0.0, 0.0, 0.1, 0.3, 0.2];
-function evaluateBoard (board, player) {
+function eval_board (board, player) {
   let value = 0;
   for (let pos in board) {
     if (board[pos].TYPE===EMPTY) continue;
@@ -83,10 +83,10 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,beta=Num
 
   let value;
   if (depth < 1) {
-    value = evaluateBoard(state.board, player);
+    value = eval_board(state.board, player);
     return [value, null]
   }
-  let possibleMoves = state.allMoves();
+  let possibleMoves = state.all_moves();
   let best_move = (possibleMoves.length > 0) ? possibleMoves[0] : null;
   let best_val = max_player ? Number.NEGATIVE_INFINITY
                                          : Number.POSITIVE_INFINITY;
@@ -120,7 +120,7 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,beta=Num
   }
   if (best_move===null) {
     let color = (state.turn % 2===0) ? WHITE : BLACK;
-    if (!state.underAttack(color, state.king_positions[color])) best_val=0;
+    if (!state.under_attack(color, state.king_positions[color])) best_val=0;
   }
   return [best_val, best_move];
 }
