@@ -21,8 +21,8 @@ const sq_to ="aqua";
 const piece_set = "anarcandy";
 const images = {}; // piece images
 const audio = {};
-const ai_depth = 12;
 
+let ai_depth = 12;
 let main_state = null;
 let player = WHITE;
 let moves_highlight = [];
@@ -142,22 +142,36 @@ function selected_move(moves, pos) {
   }
   return null;
 }
-
 function bind_buttons() {
+
+  let ai_iter = document.getElementById("drop-ai");
+  for (let btn of ai_iter.children) {
+    if (btn.innerHTML==="Level Two") btn.style["background-color"] = "#aaff80";
+    btn.addEventListener("click", (e) => {
+      if (btn.innerHTML==="Level One") { ai_depth=8; }
+      else if (btn.innerHTML==="Level Two")  { ai_depth=12; }
+      else if (btn.innerHTML==="Level Three") { ai_depth=16; }
+      for (let opt of ai_iter.children) {
+        opt.style["background-color"] = "";
+      }
+      e.target.style["background-color"] = "#aaff80";
+    })
+  }
 
   let flip_btn = document.getElementById("flipbtn");
   flip_btn.addEventListener("click", () => {
     flip();
   });
 
-  let prom_iter = document.querySelectorAll(".dropdown-content > a");
-  for (let btn of prom_iter) {
+  let prom_iter = document.getElementById("drop-prom");
+  for (let btn of prom_iter.children) {
+    if (btn.innerHTML==="Queen") btn.style["background-color"] = "#aaff80";
     btn.addEventListener("click", (e) => {
       if (btn.innerHTML==="Queen") { promote_piece=Q_PROM; }
       else if (btn.innerHTML==="Bishop")  { promote_piece=B_PROM; }
       else if (btn.innerHTML==="Knight") { promote_piece=K_PROM; }
       else if (btn.innerHTML==="Rook") { promote_piece=R_PROM; }
-      for (let opt of prom_iter) {
+      for (let opt of prom_iter.children) {
         opt.style["background-color"] = "";
       }
       e.target.style["background-color"] = "#aaff80";
@@ -181,8 +195,8 @@ function move_ai(color) {
   let ai_move = ai(ai_depth, main_state, color);
   time = ((Date.now() - time) / 1000).toFixed(2);
   evaluation = ai_move[0].toFixed(2) * ((player===WHITE) ? -1 : 1);
-  console.log("%f secs\neval: %f\nmove: %O\nleaf nodes:%i", 
-              time, evaluation, ai_move[1], ai_move[2]);
+  console.log("depth: %d\n%f secs\neval: %f\nmove: %O\nleaf nodes:%i", 
+              ai_depth, time, evaluation, ai_move[1], ai_move[2]);
 
   if (ai_move[1] !== null) {
     main_state.move(ai_move[1]);
