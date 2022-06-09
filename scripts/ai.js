@@ -85,7 +85,6 @@ function eval_board(state, player) {
         break;
     }
   }
-  console.log(value);
   return value;
 }
 export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,beta=Number.POSITIVE_INFINITY,max_player=true) {
