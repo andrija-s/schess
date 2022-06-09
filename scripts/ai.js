@@ -7,7 +7,7 @@ const PAWN_POS =
  .05, .05, 0.1, .25, .25, 0.1, .05, .05,
  0.0, 0.0, 0.0, 0.2, 0.2, 0.0, 0.0, 0.0,
  .05,-.05,-0.1, 0.0, 0.0,-0.1,-.05, .05,
- .05, 0.1, 0.1,-0.2,-0.2, 0.1, 0.1, .05,
+ .05, 0.1, 0.1,-0.25,-0.25, 0.1, 0.1, .05,
  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
 const KNIGHT_POS = 
 [-0.5,-0.4,-0.3,-0.3,-0.3,-0.3,-0.4,-0.5,
@@ -54,9 +54,9 @@ const KING_POS  =
  -0.1,-0.2,-0.2,-0.2,-0.2,-0.2,-0.2,-0.1,
   0.2, 0.2, 0.0, 0.0, 0.0, 0.0, 0.2, 0.2,
   0.2, 0.3, 0.1, 0.0, 0.0, 0.1, 0.3, 0.2];
-const BIG_DEC = 4;
-const SMALL_DEC = 2;
-function eval_board (state, player) {
+const BIG_DEC = 2;
+const SMALL_DEC = 1;
+function eval_board(state, player) {
   let value = 0;
   for (let i=0; i<SQUARES_H*SQUARES_W; i++) {
     if (state.get_type(i)===EMPTY) continue;
@@ -85,6 +85,7 @@ function eval_board (state, player) {
         break;
     }
   }
+  console.log(value);
   return value;
 }
 export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,beta=Number.POSITIVE_INFINITY,max_player=true) {

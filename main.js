@@ -21,7 +21,7 @@ const images = {}; // piece images
 const audio = {};
 const worker = new Worker("./scripts/ai.js", { type: "module" });
 
-let ai_depth = 12;
+let ai_depth = 6;
 let main_state = null;
 let player = WHITE;
 let moves_highlight = [];
@@ -150,9 +150,9 @@ function bind_buttons() {
   for (let btn of ai_iter.children) {
     if (btn.innerHTML==="Level Two") btn.style["background-color"] = "#aaff80";
     btn.addEventListener("click", (e) => {
-      if (btn.innerHTML==="Level One") { ai_depth=8; }
-      else if (btn.innerHTML==="Level Two")  { ai_depth=12; }
-      else if (btn.innerHTML==="Level Three") { ai_depth=16; }
+      if (btn.innerHTML==="Level One") { ai_depth=4; }
+      else if (btn.innerHTML==="Level Two")  { ai_depth=6; }
+      else if (btn.innerHTML==="Level Three") { ai_depth=8; }
       for (let opt of ai_iter.children) {
         opt.style["background-color"] = "";
       }
