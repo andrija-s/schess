@@ -138,3 +138,13 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,beta=Num
   }
   return [best_val, best_move, sum];
 }
+onmessage = function(event) {
+  let depth = event.data.depth;
+  let state = new Game('');
+  state.copy(event.data.state);
+  let color = event.data.color;
+ 
+  let move = ai(depth, state, color);
+  postMessage(move);
+
+};

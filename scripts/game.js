@@ -613,4 +613,14 @@ export class Game {
     ret.bk_pos = this.bk_pos;
     return ret;
   }
+  copy(other) {
+    this.board_type = [...other.board_type];
+    this.board_color = [...other.board_color];
+    this.enpeasant = other.enpeasant;
+    this.turn = other.turn;
+    this.game_over = other.game_over;
+    this.castles = [...other.castles];
+    this.wk_pos = other.wk_pos;
+    this.bk_pos = other.bk_pos;
+  }
 }

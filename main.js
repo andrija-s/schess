@@ -3,8 +3,6 @@ import { Game,
          WHITE,BLACK,EMPTY,
          SQUARES_W, SQUARES_H } from "./scripts/game.js";
 
-import { ai } from "./scripts/ai.js";
-
 
 const c_width = 700;  // canvas width
 const c_height = 700; // canvas height
@@ -21,6 +19,7 @@ const sq_to ="aqua";
 const piece_set = "anarcandy";
 const images = {}; // piece images
 const audio = {};
+const worker = new Worker("./scripts/ai.js", { type: "module" });
 
 let ai_depth = 12;
 let main_state = null;
@@ -35,9 +34,12 @@ let flipped = false;
 let promote_piece = Q_PROM;
 let c = null; // canvas element
 let ctx = null; // canvas context
-let evaluation = 0.0
+let evaluation = 0.0;
+let ai_time = 0.0;
+let can_move = true;
 ////////////////////////////////////////////////////////////////////
 async function init() {
+  worker.onmessage = ai_done;
   c = document.createElement("canvas");
   let attrs = { 
                 id: "chessBoard", 
@@ -188,13 +190,10 @@ function bind_buttons() {
     change_color();
   });
 }
-
-function move_ai(color) {
-
-  let time = Date.now();
-  let ai_move = ai(ai_depth, main_state, color);
-  time = ((Date.now() - time) / 1000).toFixed(2);
+function ai_done(event) {
+  let ai_move = event.data;
   evaluation = ai_move[0].toFixed(2) * ((player===WHITE) ? -1 : 1);
+  let time = ((Date.now() - ai_time) / 1000).toFixed(2);
   console.log("depth: %d\n%f secs\neval: %f\nmove: %O\nleaf nodes:%i", 
               ai_depth, time, evaluation, ai_move[1], ai_move[2]);
 
@@ -214,6 +213,20 @@ function move_ai(color) {
     else if (ai_move[0]<0) alert("YOU WIN!");
     main_state.game_over = true;
   }
+  if (!main_state.game_over) {
+    can_move = true;
+  }
+  set_check();
+  render_state();
+}
+function move_ai(color) {
+  can_move = false;
+  ai_time = Date.now();
+  worker.postMessage(
+   { depth: ai_depth,
+     state: main_state,
+     color: color }
+  );
 }
 
 function reset() {
@@ -246,7 +259,7 @@ function set_check() {
 function bind_click() {
 
   c.addEventListener("mousedown", function(e) {
-    if (main_state.game_over) return;
+    if (main_state.game_over || !can_move) return;
     let rect = c.getBoundingClientRect();
     let x = ((e.clientX - rect.left) / width) | 0;
     let y = ((e.clientY - rect.top) / height) | 0;
@@ -276,16 +289,11 @@ function bind_click() {
         selected = -1
         set_check();
         render_state();
-        setTimeout(() => {
-          move_ai(ai_color);
-          set_check();
-        }, 0);
+        move_ai(ai_color);
       }
       selected = -1;
       moves_highlight = [];
     }
-    setTimeout(() => {
-          render_state();
-    }, 0);
+    if (can_move) render_state();
   });
 }
