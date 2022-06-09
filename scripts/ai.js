@@ -48,6 +48,8 @@ const KING_POS  = [-0.3,-0.4,-0.4,-0.5,-0.5,-0.4,-0.4,-0.3,
                    -0.1,-0.2,-0.2,-0.2,-0.2,-0.2,-0.2,-0.1,
                     0.2, 0.2, 0.0, 0.0, 0.0, 0.0, 0.2, 0.2,
                     0.2, 0.3, 0.1, 0.0, 0.0, 0.1, 0.3, 0.2];
+const BIG_DEC = 4;
+const SMALL_DEC = 2;
 function eval_board (state, player) {
   let value = 0;
   for (let pos in state.board_type) {
@@ -95,7 +97,7 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,beta=Num
   if (max_player) {
     for (let mov of possibleMoves) {
       state.move(mov);
-      let num = (mov.SPECIAL>0) ? depth -3 : depth - 4;
+      let num = (mov.SPECIAL>0) ? depth - SMALL_DEC : depth - BIG_DEC;
       explore = ai(num, state, player, alpha, beta, !max_player);
       value = explore[0];
       sum += explore[2];
@@ -111,7 +113,7 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,beta=Num
   else {
     for (let mov of possibleMoves) {
       state.move(mov);
-      let num = (mov.SPECIAL>0) ? depth -3 : depth - 4;
+      let num = (mov.SPECIAL>0) ? depth - SMALL_DEC : depth - BIG_DEC;
       explore = ai(num, state, player, alpha, beta, !max_player);
       value = explore[0];
       sum += explore[2];

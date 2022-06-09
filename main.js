@@ -21,6 +21,7 @@ const sq_to ="aqua";
 const piece_set = "anarcandy";
 const images = {}; // piece images
 const audio = {};
+const AI_DEPTH = 12;
 
 let main_state = null;
 let player = WHITE;
@@ -177,7 +178,7 @@ function bind_buttons() {
 function move_ai(color) {
 
   let time = Date.now();
-  let ai_move = ai(12, main_state, color);
+  let ai_move = ai(AI_DEPTH, main_state, color);
   time = ((Date.now() - time) / 1000).toFixed(2);
   evaluation = ai_move[0].toFixed(2) * ((player===WHITE) ? -1 : 1);
   console.log("%f secs\neval: %f\nmove: %O\nleaf nodes:%i", 
