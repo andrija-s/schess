@@ -15,7 +15,7 @@ export const WHITE = 0; export const BLACK = 1;
 
 const NONE = -1; export const EMPTY = 0;
 
-export const w_squares = 8;export const h_squares = 8;
+export const SQUARES_W = 8;export const SQUARES_H = 8;
 
 class Move {
   constructor(from, to, special) {
@@ -73,7 +73,7 @@ export class Game {
 
     // diagonal check for queen/bishops
     let lines = [true, true, true, true];
-    for (let i=1; i<w_squares; i++) {
+    for (let i=1; i<SQUARES_W; i++) {
       if (checked=this.check_diag(x+i,y+i,color,checked,lines,0))
         return checked;
       if (checked=this.check_diag(x+i,y-i,color,checked,lines,1))
@@ -92,7 +92,7 @@ export class Game {
         break;
       }
     }
-    for (let i=pos+1; i<(y*w_squares)+8; i++) {
+    for (let i=pos+1; i<(y*SQUARES_W)+8; i++) {
       if (this.board[i].TYPE!==EMPTY) {
         if (this.board[i].COLOR!==color && (this.board[i].TYPE===ROOK || this.board[i].TYPE===QUEEN)) {
             return true;
@@ -103,7 +103,7 @@ export class Game {
 
     // column check
 
-    for (let i=pos-w_squares; i>=x; i-=w_squares) {
+    for (let i=pos-SQUARES_W; i>=x; i-=SQUARES_W) {
       if (this.board[i].TYPE!==EMPTY) {
         if (this.board[i].COLOR!==color && (this.board[i].TYPE===ROOK || this.board[i].TYPE===QUEEN)) {
             return true;
@@ -111,7 +111,7 @@ export class Game {
         break;
       }
     }
-    for (let i=pos+w_squares; i<(w_squares*h_squares); i+=w_squares) {
+    for (let i=pos+SQUARES_W; i<(SQUARES_W*SQUARES_H); i+=SQUARES_W) {
       if (this.board[i].TYPE!==EMPTY) {
         if (this.board[i].COLOR!==color && (this.board[i].TYPE===ROOK || this.board[i].TYPE===QUEEN)) {
             return true;
@@ -179,7 +179,7 @@ export class Game {
     let moves = [];
     let [x, y] = Game.nonlinear(from);
     let going_up = (color===WHITE);
-    let inc = w_squares - ((w_squares * 2) * going_up);
+    let inc = SQUARES_W - ((SQUARES_W * 2) * going_up);
     let proms = ((going_up && y===1) || (!going_up && y===6)) ? true : false;
     let arr = [K_PROM,Q_PROM];
     if (test) {
@@ -237,7 +237,7 @@ export class Game {
     let moves = [];
     let [x, y] = Game.nonlinear(from);
     let direction = [true, true, true, true];
-    for (let i = 1; i < w_squares; i++) {
+    for (let i = 1; i < SQUARES_W; i++) {
       direction[0] = this.diag_calc(x+i,y+i,moves,from,direction[0]);
       direction[1] = this.diag_calc(x+i,y-i,moves,from,direction[1]);
       direction[2] = this.diag_calc(x-i,y+i,moves,from,direction[2]);
@@ -250,7 +250,7 @@ export class Game {
     let moves = [];
     let [x, y] = Game.nonlinear(from);
     let direction = [true, true, true, true];
-    for (let i = 1; i < w_squares; i++) {
+    for (let i = 1; i < SQUARES_W; i++) {
       direction[0] = this.diag_calc(x+i,y+i,moves,from,direction[0]);
       direction[1] = this.diag_calc(x+i,y-i,moves,from,direction[1]);
       direction[2] = this.diag_calc(x-i,y+i,moves,from,direction[2]);
@@ -267,7 +267,7 @@ export class Game {
         break;
       }
     }
-    for (let i=from+1; i<(y*w_squares)+8; i++) {
+    for (let i=from+1; i<(y*SQUARES_W)+8; i++) {
       if (this.board[i].TYPE === EMPTY) {
         moves.push(new Move(from,i,this.board[i].TYPE));
       }
@@ -279,7 +279,7 @@ export class Game {
       }
     }
     // column check
-    for (let i=from-w_squares; i>=x; i-=w_squares) {
+    for (let i=from-SQUARES_W; i>=x; i-=SQUARES_W) {
       if (this.board[i].TYPE === EMPTY) {
         moves.push(new Move(from,i,this.board[i].TYPE));
       }
@@ -290,7 +290,7 @@ export class Game {
         break;
       }
     }
-    for (let i=from+w_squares; i<(w_squares*h_squares); i+=w_squares) {
+    for (let i=from+SQUARES_W; i<(SQUARES_W*SQUARES_H); i+=SQUARES_W) {
       if (this.board[i].TYPE === EMPTY) {
         moves.push(new Move(from,i,this.board[i].TYPE));
       }
@@ -339,7 +339,7 @@ export class Game {
         break;
       }
     }
-    for (let i = from+1; i<(y*w_squares)+8; i++) {
+    for (let i = from+1; i<(y*SQUARES_W)+8; i++) {
       if (this.board[i].TYPE===EMPTY) {
         special = (special===0) ? this.board[i].TYPE : special;
         moves.push(new Move(from,i,special));
@@ -353,7 +353,7 @@ export class Game {
       }
     }
     // column check
-    for (let i=from-w_squares; i>=x; i-=w_squares) {
+    for (let i=from-SQUARES_W; i>=x; i-=SQUARES_W) {
       if (this.board[i].TYPE===EMPTY) {
         special = (special===0) ? this.board[i].TYPE : special;
         moves.push(new Move(from,i,special));
@@ -366,7 +366,7 @@ export class Game {
         break;
       }
     }
-    for (let i=from+w_squares; i<(w_squares*h_squares); i+=w_squares) {
+    for (let i=from+SQUARES_W; i<(SQUARES_W*SQUARES_H); i+=SQUARES_W) {
       if (this.board[i].TYPE===EMPTY) {
         special = (special===0) ? this.board[i].TYPE : special;
         moves.push(new Move(from,i,special));
@@ -525,14 +525,14 @@ export class Game {
   }
   
   static in_bound(x, y) {
-    return (x >= 0 && x < w_squares && y >= 0 && y < h_squares);
+    return (x >= 0 && x < SQUARES_W && y >= 0 && y < SQUARES_H);
   }
   static linear(x, y) {
-    return ((h_squares*y)+x);
+    return ((SQUARES_H*y)+x);
   }
   static nonlinear(z) {
-    let x = z % w_squares;
-    let y = (z / h_squares) | 0;
+    let x = z % SQUARES_W;
+    let y = (z / SQUARES_H) | 0;
     return [x, y];
   }
   static convert(string) {

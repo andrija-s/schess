@@ -1,15 +1,15 @@
 import { Game,
          Q_PROM,R_PROM,B_PROM,K_PROM,ONPEASANT,
          WHITE,BLACK,EMPTY,
-         w_squares,h_squares } from "./scripts/game.js";
+         SQUARES_W, SQUARES_H } from "./scripts/game.js";
 
 import { ai } from "./scripts/ai.js";
 
 
 const c_width = 700;  // canvas width
 const c_height = 700; // canvas height
-const width = c_width/w_squares;   // square width
-const height = c_height/h_squares; // square height
+const width = c_width/SQUARES_W;   // square width
+const height = c_height/SQUARES_H; // square height
 const check_color = "blue";
 const border_color = "black"; // square border
 const selected_color = "yellow";
@@ -21,7 +21,7 @@ const sq_to ="aqua";
 const piece_set = "anarcandy";
 const images = {}; // piece images
 const audio = {};
-const AI_DEPTH = 12;
+const ai_depth = 12;
 
 let main_state = null;
 let player = WHITE;
@@ -102,8 +102,8 @@ async function init_audio(dict) {
 
 function render_board() {
 
-  for (let i = 0; i < w_squares; i++) {
-    for (let j = 0; j < h_squares; j++) {
+  for (let i = 0; i < SQUARES_W; i++) {
+    for (let j = 0; j < SQUARES_H; j++) {
       let [x,y] = (flipped) ? [7-i,7-j] : [i,j]; 
       let pos = Game.linear(x,y);
       ctx.fillStyle =  border_color;
@@ -121,13 +121,13 @@ function render_board() {
 function render_state() {
 
   render_board();
-  for (let i in main_state.board_type) {
-    if (main_state.board_type[i]===EMPTY) {
+  for (let i=0; i<SQUARES_H*SQUARES_W; i++) {
+    if (main_state.get_type(i)===EMPTY) {
       continue;
     };
     let [x, y] = Game.nonlinear(i);
     [x, y] = (flipped) ? [7-x,7-y] : [x,y];
-    let str = main_state.board_color[i] + "" + main_state.board_type[i];
+    let str = main_state.get_color(i) + "" + main_state.get_type(i);
     let img = images[str];
     ctx.drawImage(img, (x*width)+(width/16), (y*height)+(width/16), c.width/9, c.height/9);
   }
@@ -178,7 +178,7 @@ function bind_buttons() {
 function move_ai(color) {
 
   let time = Date.now();
-  let ai_move = ai(AI_DEPTH, main_state, color);
+  let ai_move = ai(ai_depth, main_state, color);
   time = ((Date.now() - time) / 1000).toFixed(2);
   evaluation = ai_move[0].toFixed(2) * ((player===WHITE) ? -1 : 1);
   console.log("%f secs\neval: %f\nmove: %O\nleaf nodes:%i", 
@@ -238,20 +238,20 @@ function bind_click() {
     let y = ((e.clientY - rect.top) / height) | 0;
     if (x > 7 || y > 7) return;
     [x, y] = (flipped) ? [7-x,7-y] : [x,y];
-    let position = Game.linear(x, y);
-    if (selected===-1 && main_state.board_type[position]!==EMPTY && main_state.board_color[position]===player) {
-      selected = position;
-      moves_highlight = main_state.moves_from(position);
+    let pos = Game.linear(x, y);
+    if (selected===-1 && main_state.get_type(pos)!==EMPTY && main_state.get_color(pos)===player) {
+      selected = pos;
+      moves_highlight = main_state.moves_from(pos);
       if(moves_highlight.length<1) selected = -1;
     }
     else if (selected!==-1) {
-      let mov = selected_move(moves_highlight, position);
+      let mov = selected_move(moves_highlight, pos);
       if (mov !== null) {
-        let ai_color = (player === WHITE) ? BLACK : WHITE;
-        if (mov.SPECIAL >= Q_PROM && mov.SPECIAL <= R_PROM) {
+        let ai_color = (player===WHITE) ? BLACK : WHITE;
+        if (mov.SPECIAL>=Q_PROM && mov.SPECIAL<=R_PROM) {
           mov.SPECIAL = promote_piece;
         }
-        if (main_state.board_type[mov.TO] !== EMPTY || mov.SPECIAL === ONPEASANT) {
+        if (main_state.get_type(mov.TO)!==EMPTY || mov.SPECIAL===ONPEASANT) {
           audio["move"].play();
         }
         else {
