@@ -21,8 +21,6 @@ const sq_to ="aqua";
 const piece_set = "anarcandy";
 const images = {}; // piece images
 const audio = {};
-// default: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
-const DEFAULT = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
 
 let main_state = null;
 let player = WHITE;
@@ -102,15 +100,13 @@ async function init_audio(dict) {
 
 function render_board() {
 
-  let WK_POS = main_state.king_positions[WHITE];
-  let BK_POS = main_state.king_positions[BLACK];
   for (let i = 0; i < w_squares; i++) {
     for (let j = 0; j < h_squares; j++) {
       let [x,y] = (flipped) ? [7-i,7-j] : [i,j]; 
       let pos = Game.linear(x,y);
       ctx.fillStyle =  border_color;
       ctx.fillRect(i*width,j*height,width,height);
-      ctx.fillStyle = ((pos===WK_POS && white_checked) || (pos===BK_POS && black_checked)) ? check_color : ((j % 2 === i % 2) ? sq_lcolor : sq_dcolor);
+      ctx.fillStyle = ((pos===main_state.wk_pos && white_checked) || (pos===main_state.bk_pos && black_checked)) ? check_color : ((j % 2 === i % 2) ? sq_lcolor : sq_dcolor);
       if (selected === pos) ctx.fillStyle = selected_color;
       else if (selected_move(moves_highlight, pos) !== null) ctx.fillStyle = highlight_color;
       else if (pos === recent_from) ctx.fillStyle = sq_from;
@@ -123,13 +119,13 @@ function render_board() {
 function render_state() {
 
   render_board();
-  for (let i in main_state.board) {
-    if (main_state.board[i].TYPE===EMPTY) {
+  for (let i in main_state.board_type) {
+    if (main_state.board_type[i]===EMPTY) {
       continue;
     };
     let [x, y] = Game.nonlinear(i);
     [x, y] = (flipped) ? [7-x,7-y] : [x,y];
-    let str = main_state.board[i].COLOR + "" + main_state.board[i].TYPE;
+    let str = main_state.board_color[i] + "" + main_state.board_type[i];
     let img = images[str];
     ctx.drawImage(img, (x*width)+(width/16), (y*height)+(width/16), c.width/9, c.height/9);
   }
@@ -204,7 +200,7 @@ function move_ai(color) {
 
 function reset() {
 
-  main_state = new Game(DEFAULT);
+  main_state = new Game();
   moves_highlight = [];
   recent_from = -1;
   recent_to = -1;
@@ -225,8 +221,8 @@ function change_color() {
 
 function set_check() {
 
-  white_checked = main_state.under_attack(WHITE, main_state.king_positions[WHITE]);
-  black_checked = main_state.under_attack(BLACK, main_state.king_positions[BLACK]);
+  white_checked = main_state.under_attack(WHITE, main_state.wk_pos);
+  black_checked = main_state.under_attack(BLACK, main_state.bk_pos);
 }
 
 function bind_click() {
@@ -239,9 +235,7 @@ function bind_click() {
     if (x > 7 || y > 7) return;
     [x, y] = (flipped) ? [7-x,7-y] : [x,y];
     let position = Game.linear(x, y);
-
-    if (selected===-1 && main_state.board[position].TYPE!==EMPTY
-        && main_state.board[position].COLOR===player) {
+    if (selected===-1 && main_state.board_type[position]!==EMPTY && main_state.board_color[position]===player) {
       selected = position;
       moves_highlight = main_state.moves_from(position);
       if(moves_highlight.length<1) selected = -1;
@@ -253,7 +247,7 @@ function bind_click() {
         if (mov.SPECIAL >= Q_PROM && mov.SPECIAL <= R_PROM) {
           mov.SPECIAL = promote_piece;
         }
-        if (main_state.board[mov.TO].TYPE !== EMPTY || mov.SPECIAL === ONPEASANT) {
+        if (main_state.board_type[mov.TO] !== EMPTY || mov.SPECIAL === ONPEASANT) {
           audio["move"].play();
         }
         else {

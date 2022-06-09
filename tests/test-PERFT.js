@@ -24,7 +24,7 @@ function test(board, expected, depth) {
   console.log("time: " + time + " sec\n" + "expected: " + expected + " result: " + nodes + " " +result +"\n");
   return( expected===nodes)
 }
-let DEPTH = 3;
+let DEPTH = 4;
 if (process.argv.length > 2 && Number.isInteger(Number(process.argv[2])) 
     && parseInt(process.argv[2]) < 5) {
   DEPTH = parseInt(process.argv[2]);

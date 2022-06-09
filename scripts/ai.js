@@ -48,15 +48,15 @@ const KING_POS  = [-0.3,-0.4,-0.4,-0.5,-0.5,-0.4,-0.4,-0.3,
                    -0.1,-0.2,-0.2,-0.2,-0.2,-0.2,-0.2,-0.1,
                     0.2, 0.2, 0.0, 0.0, 0.0, 0.0, 0.2, 0.2,
                     0.2, 0.3, 0.1, 0.0, 0.0, 0.1, 0.3, 0.2];
-function eval_board (board, player) {
+function eval_board (state, player) {
   let value = 0;
-  for (let pos in board) {
-    if (board[pos].TYPE===EMPTY) continue;
-    let c = (board[pos].COLOR===player) ? 1 : -1;
+  for (let pos in state.board_type) {
+    if (state.board_type[pos]===EMPTY) continue;
+    let c = (state.board_color[pos]===player) ? 1 : -1;
     let [x,y] = Game.nonlinear(pos);
-    [x, y] = (board[pos].COLOR===BLACK) ? [7-x,7-y] : [x,y];
+    [x, y] = (state.board_color[pos]===BLACK) ? [7-x,7-y] : [x,y];
     let pos_eval = Game.linear(x,y);
-    switch (board[pos].TYPE) {
+    switch (state.board_type[pos]) {
       case BISHOP:
         value += (3.0+BISHOP_POS[pos_eval]) * c;
         break;
@@ -83,7 +83,7 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,beta=Num
 
   let value;
   if (depth < 1) {
-    value = eval_board(state.board, player);
+    value = eval_board(state, player);
     return [value, null]
   }
   let possibleMoves = state.all_moves();
@@ -93,7 +93,7 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,beta=Num
   if (max_player) {
     for (let mov of possibleMoves) {
       state.move(mov);
-      let num = (mov.SPECIAL===QUEEN||mov.SPECIAL===ROOK) ? depth -3 : depth - 4;
+      let num = (mov.SPECIAL>0) ? depth -3 : depth - 4;
       value = ai(num, state, player, alpha, beta, !max_player)[0];
       state.unmove()
       if (value > best_val) {
@@ -107,7 +107,7 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,beta=Num
   else {
     for (let mov of possibleMoves) {
       state.move(mov);
-      let num = (mov.SPECIAL===QUEEN||mov.SPECIAL===ROOK) ? depth -3 : depth - 4;
+      let num = (mov.SPECIAL>0) ? depth -3 : depth - 4;
       value = ai(num, state, player, alpha, beta, !max_player)[0];
       state.unmove();
       if (value < best_val) {
@@ -120,7 +120,7 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,beta=Num
   }
   if (best_move===null) {
     let color = (state.turn % 2===0) ? WHITE : BLACK;
-    if (!state.under_attack(color, state.king_positions[color])) best_val=0;
+    if (!state.under_attack(color, state.king_pos(color))) best_val=0;
   }
   return [best_val, best_move];
 }
