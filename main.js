@@ -178,7 +178,9 @@ function move_ai(color) {
   let time = Date.now();
   let ai_move = ai(12, main_state, color);
   time = ((Date.now() - time) / 1000).toFixed(2);
-  console.log(time, ai_move);
+  
+  console.log("%f secs\neval: %f\nmove: %O\nleaf nodes:%i", 
+              time, ai_move[0].toFixed(2), ai_move[1], ai_move[2]);
 
   if (ai_move[1] !== null) {
     main_state.move(ai_move[1]);

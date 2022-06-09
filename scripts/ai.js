@@ -84,17 +84,21 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,beta=Num
   let value;
   if (depth < 1) {
     value = eval_board(state, player);
-    return [value, null]
+    return [value, null, 1]
   }
   let possibleMoves = state.all_moves();
   let best_move = (possibleMoves.length > 0) ? possibleMoves[0] : null;
   let best_val = max_player ? Number.NEGATIVE_INFINITY
                                          : Number.POSITIVE_INFINITY;
+  let sum = 0;
+  let explore;
   if (max_player) {
     for (let mov of possibleMoves) {
       state.move(mov);
       let num = (mov.SPECIAL>0) ? depth -3 : depth - 4;
-      value = ai(num, state, player, alpha, beta, !max_player)[0];
+      explore = ai(num, state, player, alpha, beta, !max_player);
+      value = explore[0];
+      sum += explore[2];
       state.unmove()
       if (value > best_val) {
         best_val = value;
@@ -108,7 +112,9 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,beta=Num
     for (let mov of possibleMoves) {
       state.move(mov);
       let num = (mov.SPECIAL>0) ? depth -3 : depth - 4;
-      value = ai(num, state, player, alpha, beta, !max_player)[0];
+      explore = ai(num, state, player, alpha, beta, !max_player);
+      value = explore[0];
+      sum += explore[2];
       state.unmove();
       if (value < best_val) {
         best_val = value;
@@ -122,5 +128,5 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,beta=Num
     let color = (state.turn % 2===0) ? WHITE : BLACK;
     if (!state.under_attack(color, state.king_pos(color))) best_val=0;
   }
-  return [best_val, best_move];
+  return [best_val, best_move, sum];
 }
