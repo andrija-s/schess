@@ -35,6 +35,7 @@ export class Game {
   constructor(board) {
     [this.board, this.king_positions, this.turn, this.castles, this.enpeasant] = Game.convert(board);
     this.history = [];
+    this.game_over = false;
   }
   check_diag(x, y, color, checked, booli, offset) {
     if (booli[offset] && Game.in_bound(x, y)) {

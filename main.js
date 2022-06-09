@@ -190,6 +190,7 @@ function move_ai(color) {
     recent_to = ai_move[1].TO;
     if (ai_move[0]==Number.POSITIVE_INFINITY && main_state.all_moves(true).length===0) {
       alert("YOU LOSE!");
+      main_state.game_over = true;
     }
   }
   else {
@@ -197,6 +198,7 @@ function move_ai(color) {
     recent_to = -1;
     if (ai_move[0]===0) alert("DRAW!");
     else if (ai_move[0]<0) alert("YOU WIN!");
+    main_state.game_over = true;
   }
 }
 
@@ -230,7 +232,7 @@ function set_check() {
 function bind_click() {
 
   c.addEventListener("mousedown", function(e) {
-
+    if (main_state.game_over) return;
     let rect = c.getBoundingClientRect();
     let x = ((e.clientX - rect.left) / width) | 0;
     let y = ((e.clientY - rect.top) / height) | 0;
