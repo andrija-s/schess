@@ -4,8 +4,8 @@ import { Game,
          SQUARES_W, SQUARES_H } from "./scripts/game.js";
 
 
-const c_width = 700;  // canvas width
-const c_height = 700; // canvas height
+const c_height = window.innerHeight / 1.1; // canvas height
+const c_width = c_height;  // canvas width
 const width = c_width/SQUARES_W;   // square width
 const height = c_height/SQUARES_H; // square height
 const btn_highl = "#d4d422";
