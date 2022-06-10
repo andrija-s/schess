@@ -17,11 +17,12 @@ const sq_dcolor = "green";   // square dark
 const highlight_color = "navajowhite"; // move highlight
 const sq_from ="teal";
 const sq_to ="aqua";
-const piece_set = "anarcandy";
+const piece_sets = ["alpha", "anarcandy", "cburnett", "chessnut", "kosal", "maestro", "merida"];
 const images = {}; // piece images
 const audio = {};
 const worker = new Worker("./scripts/ai.js", { type: "module" });
 
+let curr_set = "anarcandy";
 let main_state = null;
 let player = WHITE;
 let moves_highlight = [];
@@ -34,21 +35,24 @@ let is_flipped = false;
 let c = null; // canvas element
 let ctx = null; // canvas context
 let evaluation = 0.0;
-let ai_time = 0.0;
 let can_move = true;
 
 let ai_level = 2;
-let ai_vals = [ { string: "Level Zero",  value :  2 },
-                { string: "Level One",   value :  8 },
-                { string: "Level Two",   value : 10 },
-                { string: "Level Three", value : 12 } ];
+const ai_vals = [ 
+  { string: "Level Zero",  value :  2 },
+  { string: "Level One",   value :  8 },
+  { string: "Level Two",   value : 10 },
+  { string: "Level Three", value : 12 } 
+];
 let num_levels = ai_vals.length;
 
 let promote_piece = Q_PROM;
-let promotes =  { "Queen":  Q_PROM,
-                  "Rook":   R_PROM,
-                  "Knight": K_PROM,
-                  "Bishop": B_PROM };
+const promotes = { 
+  "Queen":  Q_PROM,
+  "Rook":   R_PROM,
+  "Knight": K_PROM,
+  "Bishop": B_PROM 
+};
 ////////////////////////////////////////////////////////////////////
 async function init() {
   worker.onmessage = ai_done;
@@ -57,7 +61,7 @@ async function init() {
                 id: "chessBoard", 
                 width: c_width, 
                 height: c_height, 
-                style: "border:2px solid #913c3c; position:absolute; top:60px; left:250px;"
+                style: "border:2px solid #913c3c; position:fixed; top:60px; left:250px;"
               };
   for(let key in attrs) {
     c.setAttribute(key, attrs[key]);
@@ -65,8 +69,8 @@ async function init() {
   c.onselectstart = function () { return false; }
   document.body.appendChild(c);
   ctx = c.getContext("2d");
-  await init_images(images);
-  await init_audio(audio);
+  await init_images();
+  await init_audio();
   reset();
   bind_buttons();
   bind_click();
@@ -102,23 +106,23 @@ function load_image(url) {
   return new Promise(r => { let i = new Image(); i.onload = (() => r(i)); i.src = url; });
 }
 
-async function init_images(dict) {
-  dict["11"] = await load_image(`./assets/pieces/${piece_set}/bR.svg`);
-  dict["12"] = await load_image(`./assets/pieces/${piece_set}/bN.svg`);
-  dict["13"] = await load_image(`./assets/pieces/${piece_set}/bK.svg`);
-  dict["14"] = await load_image(`./assets/pieces/${piece_set}/bP.svg`);
-  dict["15"] = await load_image(`./assets/pieces/${piece_set}/bQ.svg`);
-  dict["16"] = await load_image(`./assets/pieces/${piece_set}/bB.svg`);
-  dict["01"] = await load_image(`./assets/pieces/${piece_set}/wR.svg`);
-  dict["02"] = await load_image(`./assets/pieces/${piece_set}/wN.svg`);
-  dict["03"] = await load_image(`./assets/pieces/${piece_set}/wK.svg`);
-  dict["04"] = await load_image(`./assets/pieces/${piece_set}/wP.svg`);
-  dict["05"] = await load_image(`./assets/pieces/${piece_set}/wQ.svg`);
-  dict["06"] = await load_image(`./assets/pieces/${piece_set}/wB.svg`);
+async function init_images() {
+  images["11"] = await load_image(`./assets/pieces/${curr_set}/bR.svg`);
+  images["12"] = await load_image(`./assets/pieces/${curr_set}/bN.svg`);
+  images["13"] = await load_image(`./assets/pieces/${curr_set}/bK.svg`);
+  images["14"] = await load_image(`./assets/pieces/${curr_set}/bP.svg`);
+  images["15"] = await load_image(`./assets/pieces/${curr_set}/bQ.svg`);
+  images["16"] = await load_image(`./assets/pieces/${curr_set}/bB.svg`);
+  images["01"] = await load_image(`./assets/pieces/${curr_set}/wR.svg`);
+  images["02"] = await load_image(`./assets/pieces/${curr_set}/wN.svg`);
+  images["03"] = await load_image(`./assets/pieces/${curr_set}/wK.svg`);
+  images["04"] = await load_image(`./assets/pieces/${curr_set}/wP.svg`);
+  images["05"] = await load_image(`./assets/pieces/${curr_set}/wQ.svg`);
+  images["06"] = await load_image(`./assets/pieces/${curr_set}/wB.svg`);
 }
 
-async function init_audio(dict) {
-  dict["move"] = new Audio("./assets/sound/move.wav")
+async function init_audio() {
+  audio["move"] = new Audio("./assets/sound/move.wav")
 }
 
 function render_board() {
@@ -153,7 +157,7 @@ function render_state() {
     [x, y] = (is_flipped) ? [7-x,7-y] : [x,y];
     let str = main_state.get_color(i) + "" + main_state.get_type(i);
     let img = images[str];
-    ctx.drawImage(img, (x*width)+(width/16), (y*height)+(width/16), c.width/9, c.height/9);
+    ctx.drawImage(img, (x*width)+(width/(SQUARES_W+SQUARES_W)), (y*height)+(height/(SQUARES_H+SQUARES_H)), c.width/(SQUARES_W+1), c.height/(SQUARES_H+1));
   }
 }
 
@@ -172,6 +176,22 @@ function reset_highlight(iter) {
   }
 }
 function bind_buttons() {
+  
+  let set_iter = document.getElementById("drop-sets");
+  for (const set of piece_sets) {
+    let tag = document.createElement("a");
+    tag.innerHTML = set;
+    if (tag.innerHTML===curr_set) tag.style["background-color"] = btn_highl;
+    tag.addEventListener("click", async function(e) {
+      if (tag.innerHTML===curr_set) { return; }
+      reset_highlight(set_iter);
+      e.target.style["background-color"] = btn_highl;
+      curr_set = tag.innerHTML;
+      await init_images();
+      render_state();
+    });
+    set_iter.appendChild(tag);
+  }
 
   let ai_iter = document.getElementById("drop-ai");
   for (let i=0; i<num_levels; i++) {
@@ -246,6 +266,7 @@ function ai_done(event) {
   set_check();
   render_state();
 }
+let ai_time = 0.0;
 function move_ai(color) {
   can_move = false;
   ai_time = Date.now();
