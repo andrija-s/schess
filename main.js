@@ -8,6 +8,7 @@ const c_width = 700;  // canvas width
 const c_height = 700; // canvas height
 const width = c_width/SQUARES_W;   // square width
 const height = c_height/SQUARES_H; // square height
+const btn_highl = "#aaff80";
 const check_color = "blue";
 const border_color = "black"; // square border
 const selected_color = "yellow";
@@ -21,22 +22,33 @@ const images = {}; // piece images
 const audio = {};
 const worker = new Worker("./scripts/ai.js", { type: "module" });
 
-let ai_depth = 8;
 let main_state = null;
 let player = WHITE;
 let moves_highlight = [];
 let recent_from = -1;
 let recent_to = -1;
 let selected = -1;
-let black_checked = false;
-let white_checked = false;
-let flipped = false;
-let promote_piece = Q_PROM;
+let is_black_checked = false;
+let is_white_checked = false;
+let is_flipped = false;
 let c = null; // canvas element
 let ctx = null; // canvas context
 let evaluation = 0.0;
 let ai_time = 0.0;
 let can_move = true;
+
+let ai_level = 2;
+let ai_vals = [ { string: "Level Zero",  value :  2 },
+                { string: "Level One",   value :  8 },
+                { string: "Level Two",   value : 10 },
+                { string: "Level Three", value : 12 } ];
+let num_levels = ai_vals.length;
+
+let promote_piece = Q_PROM;
+let promotes =  { "Queen":  Q_PROM,
+                  "Rook":   R_PROM,
+                  "Knight": K_PROM,
+                  "Bishop": B_PROM };
 ////////////////////////////////////////////////////////////////////
 async function init() {
   worker.onmessage = ai_done;
@@ -63,6 +75,12 @@ async function init() {
 window.addEventListener("DOMContentLoaded", init());
 ////////////////////////////////////////////////////////////////////
 
+function curr_depth() {
+  return ai_vals[ai_level].value;
+}
+function string_level(index=ai_level) {
+  return ai_vals[index].string;
+}
 // yet to be used
 function promote(input) {
   promote_piece = input;
@@ -72,8 +90,9 @@ function pick_color(input) {
   return;
 }
 
-function flip() {
-  flipped = !flipped;
+function flip(change=false) {
+  if (change && ((is_flipped && player===BLACK) || (!is_flipped && player===WHITE))) return;
+  is_flipped = !is_flipped;
   selected = -1;
   moves_highlight = [];
   render_state();
@@ -106,12 +125,12 @@ function render_board() {
 
   for (let i = 0; i < SQUARES_W; i++) {
     for (let j = 0; j < SQUARES_H; j++) {
-      let [x,y] = (flipped) ? [7-i,7-j] : [i,j]; 
+      let [x,y] = (is_flipped) ? [7-i,7-j] : [i,j]; 
       let pos = Game.linear(x,y);
       ctx.fillStyle =  border_color;
       ctx.fillRect(i*width,j*height,width,height);
-      ctx.fillStyle = ((pos===main_state.wk_pos && white_checked) 
-                      || (pos===main_state.bk_pos && black_checked)) 
+      ctx.fillStyle = ((pos===main_state.wk_pos && is_white_checked) 
+                      || (pos===main_state.bk_pos && is_black_checked)) 
                       ? check_color : 
                         ((j % 2 === i % 2) ? sq_lcolor : sq_dcolor);
       if (selected === pos) ctx.fillStyle = selected_color;
@@ -131,7 +150,7 @@ function render_state() {
       continue;
     };
     let [x, y] = Game.nonlinear(i);
-    [x, y] = (flipped) ? [7-x,7-y] : [x,y];
+    [x, y] = (is_flipped) ? [7-x,7-y] : [x,y];
     let str = main_state.get_color(i) + "" + main_state.get_type(i);
     let img = images[str];
     ctx.drawImage(img, (x*width)+(width/16), (y*height)+(width/16), c.width/9, c.height/9);
@@ -147,20 +166,25 @@ function selected_move(moves, pos) {
   }
   return null;
 }
+function reset_highlight(iter) {
+  for (let opt of iter.children) {
+        opt.style["background-color"] = "";
+  }
+}
 function bind_buttons() {
 
   let ai_iter = document.getElementById("drop-ai");
-  for (let btn of ai_iter.children) {
-    if (btn.innerHTML==="Level Two") btn.style["background-color"] = "#aaff80";
-    btn.addEventListener("click", (e) => {
-      if (btn.innerHTML==="Level One") { ai_depth=6; }
-      else if (btn.innerHTML==="Level Two")  { ai_depth=8; }
-      else if (btn.innerHTML==="Level Three") { ai_depth=10; }
-      for (let opt of ai_iter.children) {
-        opt.style["background-color"] = "";
-      }
-      e.target.style["background-color"] = "#aaff80";
-    })
+  for (let i=0; i<num_levels; i++) {
+    let tag = document.createElement("a");
+    tag.innerHTML = string_level(i);
+    if (tag.innerHTML===string_level()) tag.style["background-color"] = btn_highl;
+    tag.addEventListener("click", (e) => {
+      if (tag.innerHTML===string_level()) { return; }
+      reset_highlight(ai_iter);
+      e.target.style["background-color"] = btn_highl;
+      ai_level = i;
+    });
+    ai_iter.appendChild(tag);
   }
 
   let flip_btn = document.getElementById("flipbtn");
@@ -169,18 +193,17 @@ function bind_buttons() {
   });
 
   let prom_iter = document.getElementById("drop-prom");
-  for (let btn of prom_iter.children) {
-    if (btn.innerHTML==="Queen") btn.style["background-color"] = "#aaff80";
-    btn.addEventListener("click", (e) => {
-      if (btn.innerHTML==="Queen") { promote_piece=Q_PROM; }
-      else if (btn.innerHTML==="Bishop")  { promote_piece=B_PROM; }
-      else if (btn.innerHTML==="Knight") { promote_piece=K_PROM; }
-      else if (btn.innerHTML==="Rook") { promote_piece=R_PROM; }
-      for (let opt of prom_iter.children) {
-        opt.style["background-color"] = "";
-      }
-      e.target.style["background-color"] = "#aaff80";
-    })
+  for (const piece in promotes) {
+    let tag = document.createElement("a");
+    tag.innerHTML = piece;
+    if (promotes[piece]==promote_piece) tag.style["background-color"] = btn_highl;
+    tag.addEventListener("click", (e) => {
+      if (promotes[tag.innerHTML]==promote_piece) { return; }
+      reset_highlight(prom_iter);
+      e.target.style["background-color"] = btn_highl;
+      promote_piece = promotes[tag.innerHTML];
+    });
+    prom_iter.appendChild(tag);
   }
 
   let reset_btn = document.getElementById("resetbtn");
@@ -191,6 +214,7 @@ function bind_buttons() {
   let change_btn = document.getElementById("changebtn");
   change_btn.addEventListener("click", () => {
     change_color();
+    flip(true);
   });
 }
 function ai_done(event) {
@@ -198,7 +222,7 @@ function ai_done(event) {
   evaluation = ai_move[0].toFixed(2) * ((player===WHITE) ? -1 : 1);
   let time = ((Date.now() - ai_time) / 1000).toFixed(2);
   console.log("depth: %d\n%f secs\neval: %f\nmove: %O\nleaf nodes:%i", 
-              ai_depth/2, time, evaluation, ai_move[1], ai_move[2]);
+              curr_depth(), time, evaluation, ai_move[1], ai_move[2]);
 
   if (ai_move[1] !== null) {
     main_state.move(ai_move[1]);
@@ -226,9 +250,10 @@ function move_ai(color) {
   can_move = false;
   ai_time = Date.now();
   worker.postMessage(
-   { depth: ai_depth,
-     state: main_state,
-     color: color }
+   { 
+    depth: curr_depth(),
+    state: main_state,
+    color: color }
   );
 }
 
@@ -239,8 +264,8 @@ function reset() {
   recent_from = -1;
   recent_to = -1;
   selected = -1;
-  black_checked = false;
-  white_checked = false;
+  is_black_checked = false;
+  is_white_checked = false;
   if (player===BLACK) {
     move_ai(WHITE);
   }
@@ -255,8 +280,8 @@ function change_color() {
 
 function set_check() {
 
-  white_checked = main_state.under_attack(WHITE, main_state.wk_pos);
-  black_checked = main_state.under_attack(BLACK, main_state.bk_pos);
+  is_white_checked = main_state.under_attack(WHITE, main_state.wk_pos);
+  is_black_checked = main_state.under_attack(BLACK, main_state.bk_pos);
 }
 
 function bind_click() {
@@ -267,7 +292,7 @@ function bind_click() {
     let x = ((e.clientX - rect.left) / width) | 0;
     let y = ((e.clientY - rect.top) / height) | 0;
     if (x > 7 || y > 7) return;
-    [x, y] = (flipped) ? [7-x,7-y] : [x,y];
+    [x, y] = (is_flipped) ? [7-x,7-y] : [x,y];
     let pos = Game.linear(x, y);
     if (selected===-1 && main_state.get_type(pos)!==EMPTY && main_state.get_color(pos)===player) {
       selected = pos;
