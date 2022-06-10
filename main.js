@@ -122,7 +122,12 @@ function flip(change=false) {
 }
 
 function load_image(url) {
-  return new Promise(r => { let i = new Image(); i.onload = (() => r(i)); i.src = url; });
+  return new Promise((resolve, reject) => { 
+                        let i = new Image(); 
+                        i.addEventListener('load', () => resolve(i));
+                        i.addEventListener('error', (err) => reject(err));
+                        i.src = url; 
+                      });
 }
 
 async function init_images() {
@@ -141,7 +146,7 @@ async function init_images() {
 }
 
 async function init_audio() {
-  audio["move"] = new Audio("./assets/sound/move.wav")
+  audio["move"] = new Audio("./assets/sound/move.wav");
 }
 
 function reset_highlight(iter) {
@@ -255,6 +260,7 @@ function ai_done(event) {
 
   if (ai_move[1] !== null) {
     main_state.move(ai_move[1]);
+    play_audio(ai_move[1]);
     recent_from = ai_move[1].FROM;
     recent_to = ai_move[1].TO;
     if (ai_move[0]==Number.POSITIVE_INFINITY && main_state.all_moves(true).length===0) {
@@ -287,7 +293,14 @@ function move_ai(color) {
     color: color }
   );
 }
-
+function play_audio(move) {
+  if (main_state.get_type(move.TO)!==EMPTY || move.SPECIAL===ONPEASANT) {
+    audio["move"].play();
+  }
+  else {
+    audio["move"].play();
+  }
+}
 function bind_click() {
   c.addEventListener("mousedown", function(e) {
     if (main_state.game_over || !can_move) return;
@@ -309,12 +322,7 @@ function bind_click() {
         if (mov.SPECIAL>=Q_PROM && mov.SPECIAL<=R_PROM) {
           mov.SPECIAL = promote_piece;
         }
-        if (main_state.get_type(mov.TO)!==EMPTY || mov.SPECIAL===ONPEASANT) {
-          audio["move"].play();
-        }
-        else {
-          audio["move"].play();
-        }
+        play_audio(mov);
         main_state.move(mov);
         moves_highlight = [];
         selected = -1
