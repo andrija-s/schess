@@ -37,7 +37,7 @@ let ctx = null; // canvas context
 let evaluation = 0.0;
 let can_move = true;
 
-let ai_level = 2;
+let ai_level = 1;
 const ai_vals = [ 
   { string: "Level Zero",  value :  8 },
   { string: "Level One",   value : 12 },
