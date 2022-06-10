@@ -343,7 +343,7 @@ async function init() {
     id: "chessBoard", 
     width: c_width, 
     height: c_height, 
-    style: "border:.25em solid #913c3c; position:fixed; top:2em; left:15em;"
+    style: "border:.25em solid #913c3c; position:fixed; top:2rem; left:15rem;"
   };
   for(let key in attrs) {
     c.setAttribute(key, attrs[key]);
