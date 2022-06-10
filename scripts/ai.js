@@ -1,4 +1,4 @@
-import {Game, WHITE, BLACK, KING, EMPTY, BISHOP, QUEEN, PAWN, KNIGHT, ROOK, SQUARES_H, SQUARES_W} from "./game.js";
+import {Game, WHITE, BLACK, EMPTY, BISHOP, QUEEN, PAWN, KNIGHT, ROOK, SQUARES_H, SQUARES_W} from "./game.js";
 
 const PAWN_POS = 
 [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -7,7 +7,7 @@ const PAWN_POS =
  .05, .05, 0.1, .25, .25, 0.1, .05, .05,
  0.0, 0.0, 0.0, 0.2, 0.2, 0.0, 0.0, 0.0,
  .05,-.05,-0.1, 0.0, 0.0,-0.1,-.05, .05,
- .05, 0.1, 0.1,-0.25,-0.25, 0.1, 0.1, .05,
+ .05, 0.1, 0.1,-.25,-.25, 0.1, 0.1, .05,
  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
 const KNIGHT_POS = 
 [-0.5,-0.4,-0.3,-0.3,-0.3,-0.3,-0.4,-0.5,
@@ -108,19 +108,21 @@ function eval_board(state, player) {
   let [x,y] = Game.nonlinear(state.bk_pos);
   [x, y] = [7-x,7-y];
   let bkpos = Game.linear(x,y);
-  if (w_queen_alive && w_knights+w_bishops+w_rooks<4) {
+  if (w_queen_alive || w_knights+w_bishops+w_rooks>3) {
     value += KINGMID_POS[bkpos] * ((BLACK===player) ? 1 : -1);
   } else {
     value += KINGEND_POS[bkpos] * ((BLACK===player) ? 1 : -1);
   }
-  if (b_queen_alive && b_knights+b_bishops+b_rooks<4) {
+  if (b_queen_alive || b_knights+b_bishops+b_rooks>3) {
     value += KINGMID_POS[state.wk_pos] * ((WHITE===player) ? 1 : -1);
   } else {
     value += KINGEND_POS[state.wk_pos] * ((WHITE===player) ? 1 : -1);
   }
   return value;
 }
-export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,beta=Number.POSITIVE_INFINITY,max_player=true) {
+export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,
+                                         beta=Number.POSITIVE_INFINITY,
+                                         max_player=true) {
 
   let value;
   if (depth < 1) {
@@ -172,12 +174,12 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,beta=Num
   return [best_val, best_move, sum];
 }
 onmessage = function(event) {
-  let depth = event.data.depth;
+
   let state = new Game('');
   state.copy(event.data.state);
-  let color = event.data.color;
+
  
-  let move = ai(depth, state, color);
+  let move = ai(event.data.depth, state, event.data.color);
   postMessage(move);
 
 };
