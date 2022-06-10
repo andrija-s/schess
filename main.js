@@ -1,6 +1,6 @@
 import { Game,
-         Q_PROM,R_PROM,B_PROM,K_PROM,ONPEASANT,
-         WHITE,BLACK,EMPTY,
+         Q_PROM, R_PROM, B_PROM, K_PROM, ONPEASANT,
+         WHITE, BLACK, EMPTY,
          SQUARES_W, SQUARES_H } from "./scripts/game.js";
 
 
@@ -340,11 +340,11 @@ function bind_click() {
 async function init() {
   c = document.createElement("canvas");
   let attrs = { 
-                id: "chessBoard", 
-                width: c_width, 
-                height: c_height, 
-                style: "border:2px solid #913c3c; position:fixed; top:60px; left:250px;"
-              };
+    id: "chessBoard", 
+    width: c_width, 
+    height: c_height, 
+    style: "border:2px solid #913c3c; position:fixed; top:60px; left:250px;"
+  };
   for(let key in attrs) {
     c.setAttribute(key, attrs[key]);
   };
