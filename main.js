@@ -180,7 +180,6 @@ function change_color() {
 function bind_buttons() {
 
   let set_iter = document.getElementById("drop-sets");
-  console.log(piece_sets);
   for (const set of piece_sets) {
     let tag = document.createElement("a");
     tag.innerHTML = set;
