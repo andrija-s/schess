@@ -21,7 +21,7 @@ const images = {}; // piece images
 const audio = {};
 const worker = new Worker("./scripts/ai.js", { type: "module" });
 
-let ai_depth = 6;
+let ai_depth = 8;
 let main_state = null;
 let player = WHITE;
 let moves_highlight = [];
@@ -110,7 +110,10 @@ function render_board() {
       let pos = Game.linear(x,y);
       ctx.fillStyle =  border_color;
       ctx.fillRect(i*width,j*height,width,height);
-      ctx.fillStyle = ((pos===main_state.wk_pos && white_checked) || (pos===main_state.bk_pos && black_checked)) ? check_color : ((j % 2 === i % 2) ? sq_lcolor : sq_dcolor);
+      ctx.fillStyle = ((pos===main_state.wk_pos && white_checked) 
+                      || (pos===main_state.bk_pos && black_checked)) 
+                      ? check_color : 
+                        ((j % 2 === i % 2) ? sq_lcolor : sq_dcolor);
       if (selected === pos) ctx.fillStyle = selected_color;
       else if (selected_move(moves_highlight, pos) !== null) ctx.fillStyle = highlight_color;
       else if (pos === recent_from) ctx.fillStyle = sq_from;
@@ -150,9 +153,9 @@ function bind_buttons() {
   for (let btn of ai_iter.children) {
     if (btn.innerHTML==="Level Two") btn.style["background-color"] = "#aaff80";
     btn.addEventListener("click", (e) => {
-      if (btn.innerHTML==="Level One") { ai_depth=4; }
-      else if (btn.innerHTML==="Level Two")  { ai_depth=6; }
-      else if (btn.innerHTML==="Level Three") { ai_depth=8; }
+      if (btn.innerHTML==="Level One") { ai_depth=6; }
+      else if (btn.innerHTML==="Level Two")  { ai_depth=8; }
+      else if (btn.innerHTML==="Level Three") { ai_depth=10; }
       for (let opt of ai_iter.children) {
         opt.style["background-color"] = "";
       }

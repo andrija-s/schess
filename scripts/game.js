@@ -603,23 +603,23 @@ export class Game {
   }
   duplicate() {
     let ret = new Game("");
-    ret.board_type = [...this.board_type];
-    ret.board_color = [...this.board_color];
+    ret.board_type = this.board_type.slice(0);
+    ret.board_color = this.board_color.slice(0);
     ret.enpeasant = this.enpeasant;
     ret.turn = this.turn;
     ret.game_over = this.game_over;
-    ret.castles = [...this.castles];
+    ret.castles = this.castles.slice(0);
     ret.wk_pos = this.wk_pos;
     ret.bk_pos = this.bk_pos;
     return ret;
   }
   copy(other) {
-    this.board_type = [...other.board_type];
-    this.board_color = [...other.board_color];
+    this.board_type = other.board_type.slice(0);
+    this.board_color = other.board_color.slice(0);
     this.enpeasant = other.enpeasant;
     this.turn = other.turn;
     this.game_over = other.game_over;
-    this.castles = [...other.castles];
+    this.castles = other.castles.slice(0);
     this.wk_pos = other.wk_pos;
     this.bk_pos = other.bk_pos;
   }

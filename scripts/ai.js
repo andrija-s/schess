@@ -27,7 +27,7 @@ const BISHOP_POS =
  -0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,-0.1,
  -0.1, .05, 0.0, 0.0, 0.0, 0.0, .05,-0.1,
  -0.2,-0.1,-0.1,-0.1,-0.1,-0.1,-0.1,-0.2];
-const ROOK_POS   =
+const ROOK_POS =
 [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
  .05, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, .05,
 -.05, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,-.05,
@@ -45,7 +45,7 @@ const QUEEN_POS =
  -0.1, .05, .05, .05, .05, .05, 0.0,-0.1,
  -0.1, 0.0, .05, 0.0, 0.0, 0.0, 0.0,-0.1,
  -0.2,-0.1,-0.1,-.05,-.05,-0.1,-0.1,-0.2];
-const KINGMID_POS  =
+const KINGMID_POS =
 [-0.3,-0.4,-0.4,-0.5,-0.5,-0.4,-0.4,-0.3,
  -0.3,-0.4,-0.4,-0.5,-0.5,-0.4,-0.4,-0.3,
  -0.3,-0.4,-0.4,-0.5,-0.5,-0.4,-0.4,-0.3,
@@ -54,36 +54,69 @@ const KINGMID_POS  =
  -0.1,-0.2,-0.2,-0.2,-0.2,-0.2,-0.2,-0.1,
   0.2, 0.2, 0.0, 0.0, 0.0, 0.0, 0.2, 0.2,
   0.2, 0.3, 0.1, 0.0, 0.0, 0.1, 0.3, 0.2];
+const KINGEND_POS =
+[-0.5,-0.4,-0.3,-0.2,-0.2,-0.3,-0.4,-0.5,
+ -0.3,-0.2,-0.1, 0.0, 0.0,-0.1,-0.2,-0.3,
+ -0.3,-0.1, 0.2, 0.3, 0.3, 0.2,-0.1,-0.3,
+ -0.3,-0.1, 0.3, 0.4, 0.4, 0.3,-0.1,-0.3,
+ -0.3,-0.1, 0.3, 0.4, 0.4, 0.3,-0.1,-0.3,
+ -0.3,-0.1, 0.2, 0.3, 0.3, 0.2,-0.1,-0.3,
+ -0.3,-0.3, 0.0, 0.0, 0.0, 0. ,-0.3,-0.3,
+ -0.5,-0.3,-0.3,-0.3,-0.3,-0.3,-0.3,-0.5];
 const BIG_DEC = 2;
 const SMALL_DEC = 1;
 function eval_board(state, player) {
   let value = 0;
+  let w_queen_alive = false, b_queen_alive = false;
+  let w_bishops = 0, b_bishops = 0, w_knights = 0, b_knights = 0, w_rooks = 0, b_rooks = 0;
   for (let i=0; i<SQUARES_H*SQUARES_W; i++) {
     if (state.get_type(i)===EMPTY) continue;
-    let c = (state.get_color(i)===player) ? 1 : -1;
-    let [x,y] = Game.nonlinear(i);
-    [x, y] = (state.get_color(i)===BLACK) ? [7-x,7-y] : [x,y];
-    let pos_eval = Game.linear(x,y);
+    let color = state.get_color(i);
+    let c = (color===player) ? 1 : -1;
+    let pos_eval = i;
+    if (state.get_color(i)===BLACK) {
+      let [x,y] = Game.nonlinear(i);
+      [x, y] = [7-x,7-y];
+      pos_eval = Game.linear(x,y);
+    }
     switch (state.get_type(i)) {
       case BISHOP:
         value += (3.0+BISHOP_POS[pos_eval]) * c;
+        if (color===WHITE) w_bishops += 1;
+        else b_bishops += 1;
         break;
       case KNIGHT:
         value += (3.0+KNIGHT_POS[pos_eval]) * c;
+        if (color===WHITE) w_knights += 1;
+        else b_knights += 1;
         break;
       case QUEEN:
         value += (9.0+QUEEN_POS[pos_eval]) * c;
+        if (color===WHITE) w_queen_alive = true;
+        else b_queen_alive = true;
         break;
       case ROOK:
         value += (5.0+ROOK_POS[pos_eval]) * c;
+        if (color===WHITE) w_rooks += 1;
+        else b_rooks += 1;
         break;
       case PAWN:
         value += (1.0+PAWN_POS[pos_eval]) * c;
         break;
-      case KING:
-        value += (KINGMID_POS[pos_eval]) * c;
-        break;
     }
+  }
+  let [x,y] = Game.nonlinear(state.bk_pos);
+  [x, y] = [7-x,7-y];
+  let bkpos = Game.linear(x,y);
+  if (w_queen_alive && w_knights+w_bishops+w_rooks<4) {
+    value += KINGMID_POS[bkpos] * ((BLACK===player) ? 1 : -1);
+  } else {
+    value += KINGEND_POS[bkpos] * ((BLACK===player) ? 1 : -1);
+  }
+  if (b_queen_alive && b_knights+b_bishops+b_rooks<4) {
+    value += KINGMID_POS[state.wk_pos] * ((WHITE===player) ? 1 : -1);
+  } else {
+    value += KINGEND_POS[state.wk_pos] * ((WHITE===player) ? 1 : -1);
   }
   return value;
 }
