@@ -21,9 +21,8 @@ const piece_sets = ["alpha", "anarcandy", "cburnett", "chessnut", "kosal", "maes
 const images = {}; // piece images
 const audio = {};
 
-
-let worker = null
 let curr_set = "anarcandy";
+let worker = null
 let main_state = null;
 let player = WHITE;
 let moves_highlight = [];
@@ -130,19 +129,19 @@ function load_image(url) {
                       });
 }
 
-async function init_images() {
-  images["11"] = await load_image(`./assets/pieces/${curr_set}/bR.svg`);
-  images["12"] = await load_image(`./assets/pieces/${curr_set}/bN.svg`);
-  images["13"] = await load_image(`./assets/pieces/${curr_set}/bK.svg`);
-  images["14"] = await load_image(`./assets/pieces/${curr_set}/bP.svg`);
-  images["15"] = await load_image(`./assets/pieces/${curr_set}/bQ.svg`);
-  images["16"] = await load_image(`./assets/pieces/${curr_set}/bB.svg`);
-  images["01"] = await load_image(`./assets/pieces/${curr_set}/wR.svg`);
-  images["02"] = await load_image(`./assets/pieces/${curr_set}/wN.svg`);
-  images["03"] = await load_image(`./assets/pieces/${curr_set}/wK.svg`);
-  images["04"] = await load_image(`./assets/pieces/${curr_set}/wP.svg`);
-  images["05"] = await load_image(`./assets/pieces/${curr_set}/wQ.svg`);
-  images["06"] = await load_image(`./assets/pieces/${curr_set}/wB.svg`);
+async function init_images(set) {
+  images["11"] = await load_image(`./assets/pieces/${set}/bR.svg`);
+  images["12"] = await load_image(`./assets/pieces/${set}/bN.svg`);
+  images["13"] = await load_image(`./assets/pieces/${set}/bK.svg`);
+  images["14"] = await load_image(`./assets/pieces/${set}/bP.svg`);
+  images["15"] = await load_image(`./assets/pieces/${set}/bQ.svg`);
+  images["16"] = await load_image(`./assets/pieces/${set}/bB.svg`);
+  images["01"] = await load_image(`./assets/pieces/${set}/wR.svg`);
+  images["02"] = await load_image(`./assets/pieces/${set}/wN.svg`);
+  images["03"] = await load_image(`./assets/pieces/${set}/wK.svg`);
+  images["04"] = await load_image(`./assets/pieces/${set}/wP.svg`);
+  images["05"] = await load_image(`./assets/pieces/${set}/wQ.svg`);
+  images["06"] = await load_image(`./assets/pieces/${set}/wB.svg`);
 }
 
 async function init_audio() {
@@ -191,10 +190,11 @@ function bind_buttons() {
     if (tag.innerHTML===curr_set) tag.style["background-color"] = btn_highl;
     tag.addEventListener("click", async function(e) {
       if (tag.innerHTML===curr_set) { return; }
+      try { await init_images(tag.innerHTML); }
+      catch(e) { return; }
+      curr_set = tag.innerHTML;
       reset_highlight(set_iter);
       e.target.style["background-color"] = btn_highl;
-      curr_set = tag.innerHTML;
-      await init_images();
       render_state();
     });
     set_iter.appendChild(tag);
@@ -352,7 +352,7 @@ async function init() {
   document.body.appendChild(c);
   ctx = c.getContext("2d");
   set_worker();
-  await init_images();
+  await init_images(curr_set);
   await init_audio();
   reset();
   bind_buttons();
