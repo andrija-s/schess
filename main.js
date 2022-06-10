@@ -60,11 +60,11 @@ function curr_depth() {
 function string_level(index=ai_level) {
   return ai_vals[index].string;
 }
-// yet to be used
+// TODO
 function promote(input) {
   promote_piece = input;
 }
-// yet to be used
+// TODO
 function pick_color(input) {
   return;
 }
@@ -343,7 +343,7 @@ async function init() {
     id: "chessBoard", 
     width: c_width, 
     height: c_height, 
-    style: "border:2px solid #913c3c; position:fixed; top:60px; left:250px;"
+    style: "border:.25em solid #913c3c; position:fixed; top:2em; left:15em;"
   };
   for(let key in attrs) {
     c.setAttribute(key, attrs[key]);
