@@ -20,8 +20,9 @@ const sq_to ="aqua";
 const piece_sets = ["alpha", "anarcandy", "cburnett", "chessnut", "kosal", "maestro", "merida"];
 const images = {}; // piece images
 const audio = {};
-const worker = new Worker("./scripts/ai.js", { type: "module" });
 
+
+let worker = null
 let curr_set = "anarcandy";
 let main_state = null;
 let player = WHITE;
@@ -53,31 +54,6 @@ const promotes = {
   "Knight": K_PROM,
   "Bishop": B_PROM 
 };
-////////////////////////////////////////////////////////////////////
-async function init() {
-  worker.onmessage = ai_done;
-  c = document.createElement("canvas");
-  let attrs = { 
-                id: "chessBoard", 
-                width: c_width, 
-                height: c_height, 
-                style: "border:2px solid #913c3c; position:fixed; top:60px; left:250px;"
-              };
-  for(let key in attrs) {
-    c.setAttribute(key, attrs[key]);
-  };
-  c.onselectstart = function () { return false; }
-  document.body.appendChild(c);
-  ctx = c.getContext("2d");
-  await init_images();
-  await init_audio();
-  reset();
-  bind_buttons();
-  bind_click();
-}
-
-window.addEventListener("DOMContentLoaded", init());
-////////////////////////////////////////////////////////////////////
 
 function curr_depth() {
   return ai_vals[ai_level].value;
@@ -92,6 +68,49 @@ function promote(input) {
 // yet to be used
 function pick_color(input) {
   return;
+}
+
+function selected_move(moves, pos) {
+  for (let mov of moves) {
+    if (mov.TO === pos) {
+      return mov;
+    }
+  }
+  return null;
+}
+
+function render_board() {
+  for (let i = 0; i < SQUARES_W; i++) {
+    for (let j = 0; j < SQUARES_H; j++) {
+      let [x,y] = (is_flipped) ? [7-i,7-j] : [i,j]; 
+      let pos = Game.linear(x,y);
+      ctx.fillStyle =  border_color;
+      ctx.fillRect(i*width,j*height,width,height);
+      ctx.fillStyle = ((pos===main_state.wk_pos && is_white_checked) 
+                      || (pos===main_state.bk_pos && is_black_checked)) 
+                      ? check_color : 
+                        ((j % 2 === i % 2) ? sq_lcolor : sq_dcolor);
+      if (selected === pos) ctx.fillStyle = selected_color;
+      else if (selected_move(moves_highlight, pos) !== null) ctx.fillStyle = highlight_color;
+      else if (pos === recent_from) ctx.fillStyle = sq_from;
+      else if (pos === recent_to) ctx.fillStyle = sq_to;
+      ctx.fillRect(i*width,j*height,width-1,height-1);
+    }
+  }
+}
+
+function render_state() {
+  render_board();
+  for (let i=0; i<SQUARES_H*SQUARES_W; i++) {
+    if (main_state.get_type(i)===EMPTY) {
+      continue;
+    };
+    let [x, y] = Game.nonlinear(i);
+    [x, y] = (is_flipped) ? [7-x,7-y] : [x,y];
+    let str = main_state.get_color(i) + "" + main_state.get_type(i);
+    let img = images[str];
+    ctx.drawImage(img, (x*width)+(width/(SQUARES_W+SQUARES_W)), (y*height)+(height/(SQUARES_H+SQUARES_H)), c.width/(SQUARES_W+1), c.height/(SQUARES_H+1));
+  }
 }
 
 function flip(change=false) {
@@ -125,58 +144,41 @@ async function init_audio() {
   audio["move"] = new Audio("./assets/sound/move.wav")
 }
 
-function render_board() {
-
-  for (let i = 0; i < SQUARES_W; i++) {
-    for (let j = 0; j < SQUARES_H; j++) {
-      let [x,y] = (is_flipped) ? [7-i,7-j] : [i,j]; 
-      let pos = Game.linear(x,y);
-      ctx.fillStyle =  border_color;
-      ctx.fillRect(i*width,j*height,width,height);
-      ctx.fillStyle = ((pos===main_state.wk_pos && is_white_checked) 
-                      || (pos===main_state.bk_pos && is_black_checked)) 
-                      ? check_color : 
-                        ((j % 2 === i % 2) ? sq_lcolor : sq_dcolor);
-      if (selected === pos) ctx.fillStyle = selected_color;
-      else if (selected_move(moves_highlight, pos) !== null) ctx.fillStyle = highlight_color;
-      else if (pos === recent_from) ctx.fillStyle = sq_from;
-      else if (pos === recent_to) ctx.fillStyle = sq_to;
-      ctx.fillRect(i*width,j*height,width-1,height-1);
-    }
-  }
-}
-
-function render_state() {
-
-  render_board();
-  for (let i=0; i<SQUARES_H*SQUARES_W; i++) {
-    if (main_state.get_type(i)===EMPTY) {
-      continue;
-    };
-    let [x, y] = Game.nonlinear(i);
-    [x, y] = (is_flipped) ? [7-x,7-y] : [x,y];
-    let str = main_state.get_color(i) + "" + main_state.get_type(i);
-    let img = images[str];
-    ctx.drawImage(img, (x*width)+(width/(SQUARES_W+SQUARES_W)), (y*height)+(height/(SQUARES_H+SQUARES_H)), c.width/(SQUARES_W+1), c.height/(SQUARES_H+1));
-  }
-}
-
-function selected_move(moves, pos) {
-
-  for (let mov of moves) {
-    if (mov.TO === pos) {
-      return mov;
-    }
-  }
-  return null;
-}
 function reset_highlight(iter) {
   for (let opt of iter.children) {
         opt.style["background-color"] = "";
   }
 }
+function set_worker() {
+  worker = new Worker("./scripts/ai.js", { type: "module" });
+  worker.onmessage = ai_done;
+}
+function reset() {
+  if (!can_move) {
+    worker.terminate();
+    set_worker();
+  }
+  main_state = new Game();
+  moves_highlight = [];
+  recent_from = -1;
+  recent_to = -1;
+  selected = -1;
+  is_black_checked = false;
+  is_white_checked = false;
+  can_move = true;
+  if (player===BLACK) {
+    move_ai(WHITE);
+  }
+  render_state();
+}
+
+function change_color() {
+  player = (player===WHITE) ? BLACK : WHITE;
+  reset();
+}
+
 function bind_buttons() {
-  
+
   let set_iter = document.getElementById("drop-sets");
   console.log(piece_sets);
   for (const set of piece_sets) {
@@ -238,6 +240,13 @@ function bind_buttons() {
     flip(true);
   });
 }
+
+
+function set_check() {
+  is_white_checked = main_state.under_attack(WHITE, main_state.wk_pos);
+  is_black_checked = main_state.under_attack(BLACK, main_state.bk_pos);
+}
+
 function ai_done(event) {
   let ai_move = event.data;
   evaluation = ai_move[0].toFixed(2) * ((player===WHITE) ? -1 : 1);
@@ -267,6 +276,7 @@ function ai_done(event) {
   set_check();
   render_state();
 }
+
 let ai_time = 0.0;
 function move_ai(color) {
   can_move = false;
@@ -279,35 +289,7 @@ function move_ai(color) {
   );
 }
 
-function reset() {
-
-  main_state = new Game();
-  moves_highlight = [];
-  recent_from = -1;
-  recent_to = -1;
-  selected = -1;
-  is_black_checked = false;
-  is_white_checked = false;
-  if (player===BLACK) {
-    move_ai(WHITE);
-  }
-  render_state();
-}
-
-function change_color() {
-
-  player = (player===WHITE) ? BLACK : WHITE;
-  reset();
-}
-
-function set_check() {
-
-  is_white_checked = main_state.under_attack(WHITE, main_state.wk_pos);
-  is_black_checked = main_state.under_attack(BLACK, main_state.bk_pos);
-}
-
 function bind_click() {
-
   c.addEventListener("mousedown", function(e) {
     if (main_state.game_over || !can_move) return;
     let rect = c.getBoundingClientRect();
@@ -347,3 +329,28 @@ function bind_click() {
     if (can_move) render_state();
   });
 }
+////////////////////////////////////////////////////////////////////
+async function init() {
+  c = document.createElement("canvas");
+  let attrs = { 
+                id: "chessBoard", 
+                width: c_width, 
+                height: c_height, 
+                style: "border:2px solid #913c3c; position:fixed; top:60px; left:250px;"
+              };
+  for(let key in attrs) {
+    c.setAttribute(key, attrs[key]);
+  };
+  c.onselectstart = function () { return false; }
+  document.body.appendChild(c);
+  ctx = c.getContext("2d");
+  set_worker();
+  await init_images();
+  await init_audio();
+  reset();
+  bind_buttons();
+  bind_click();
+}
+
+window.addEventListener("DOMContentLoaded", init());
+////////////////////////////////////////////////////////////////////

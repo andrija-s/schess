@@ -174,7 +174,6 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,
   return [best_val, best_move, sum];
 }
 onmessage = function(event) {
-
   let state = new Game('');
   state.copy(event.data.state);
 
