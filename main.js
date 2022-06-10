@@ -39,10 +39,10 @@ let can_move = true;
 
 let ai_level = 2;
 const ai_vals = [ 
-  { string: "Level Zero",  value :  2 },
-  { string: "Level One",   value :  8 },
-  { string: "Level Two",   value : 10 },
-  { string: "Level Three", value : 12 } 
+  { string: "Level Zero",  value :  8 },
+  { string: "Level One",   value : 12 },
+  { string: "Level Two",   value : 16 },
+  { string: "Level Three", value : 20 } 
 ];
 let num_levels = ai_vals.length;
 
@@ -256,7 +256,7 @@ function ai_done(event) {
   evaluation = ai_move[0].toFixed(2) * ((player===WHITE) ? -1 : 1);
   let time = ((Date.now() - ai_time) / 1000).toFixed(2);
   console.log("depth base: %d\n%f secs\neval: %f\nmove: %O\nleaf nodes:%i", 
-              curr_depth()/2, time, evaluation, ai_move[1], ai_move[2]);
+              curr_depth()/4, time, evaluation, ai_move[1], ai_move[2]);
 
   if (ai_move[1] !== null) {
     main_state.move(ai_move[1]);

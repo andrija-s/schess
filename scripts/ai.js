@@ -63,8 +63,8 @@ const KINGEND_POS =
  -0.3,-0.1, 0.2, 0.3, 0.3, 0.2,-0.1,-0.3,
  -0.3,-0.3, 0.0, 0.0, 0.0, 0. ,-0.3,-0.3,
  -0.5,-0.3,-0.3,-0.3,-0.3,-0.3,-0.3,-0.5];
-const BIG_DEC = 2;
-const SMALL_DEC = 1;
+const BIG_DEC = 4;
+const SMALL_DEC = 3;
 function eval_board(state, player) {
   let value = 0;
   let w_queen_alive = false, b_queen_alive = false;
