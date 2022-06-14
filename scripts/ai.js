@@ -1,5 +1,6 @@
 import {Game, WHITE, BLACK, EMPTY, BISHOP, QUEEN, PAWN, KNIGHT, ROOK, SQUARES_H, SQUARES_W} from "./game.js";
 
+const transpositions = {};
 const PAWN_POS = 
 [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
@@ -63,8 +64,18 @@ const KINGEND_POS =
  -0.3,-0.1, 0.2, 0.3, 0.3, 0.2,-0.1,-0.3,
  -0.3,-0.3, 0.0, 0.0, 0.0, 0. ,-0.3,-0.3,
  -0.5,-0.3,-0.3,-0.3,-0.3,-0.3,-0.3,-0.5];
-const BIG_DEC = 4;
-const SMALL_DEC = 3;
+function hasher(state) {
+  let val = "";
+  for (let i=0; i<state.board_color.length; i++) {
+    val += state.board_color[i];
+    val += state.board_type[i];
+  }
+  for (let i=0; i<state.castles.length; i++) {
+    val += state.castles[i];
+  }
+  val += state.turn % 2;
+  return val;
+}
 function eval_board(state, player) {
   let value = 0;
   let w_queen_alive = false, b_queen_alive = false;
@@ -120,10 +131,14 @@ function eval_board(state, player) {
   }
   return value;
 }
-export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,
+function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,
                                          beta=Number.POSITIVE_INFINITY,
                                          max_player=true) {
-
+  
+  let hash = hasher(state);
+  if (transpositions.hasOwnProperty(hash)) {
+    if (transpositions[hash].DEPTH >= depth) return [transpositions[hash].VALUE, transpositions[hash].MOVE, 1];
+  }
   let value;
   if (depth < 1) {
     value = eval_board(state, player);
@@ -138,8 +153,7 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,
   if (max_player) {
     for (let mov of possible_moves) {
       state.move(mov);
-      let num = (mov.SPECIAL===ROOK || mov.SPECIAL===QUEEN) ? depth - SMALL_DEC : depth - BIG_DEC;
-      explore = ai(num, state, player, alpha, beta, !max_player);
+      explore = ai(depth-1, state, player, alpha, beta, !max_player);
       value = explore[0];
       sum += explore[2];
       state.unmove()
@@ -154,8 +168,7 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,
   else {
     for (let mov of possible_moves) {
       state.move(mov);
-      let num = (mov.SPECIAL===ROOK || mov.SPECIAL===QUEEN) ? depth - SMALL_DEC : depth - BIG_DEC;
-      explore = ai(num, state, player, alpha, beta, !max_player);
+      explore = ai(depth-1, state, player, alpha, beta, !max_player);
       value = explore[0];
       sum += explore[2];
       state.unmove();
@@ -171,6 +184,7 @@ export function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,
     let color = (state.turn % 2===0) ? WHITE : BLACK;
     if (!state.under_attack(color, state.king_pos(color))) best_val=0;
   }
+  transpositions[hash] = {DEPTH: depth, VALUE: best_val, MOVE: best_move};
   return [best_val, best_move, sum];
 }
 onmessage = function(event) {

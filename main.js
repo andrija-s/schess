@@ -39,10 +39,10 @@ let can_move = true;
 
 let ai_level = 1;
 const ai_vals = [ 
-  { string: "Level Zero",  value :  8 },
-  { string: "Level One",   value : 12 },
-  { string: "Level Two",   value : 16 },
-  { string: "Level Three", value : 20 } 
+  { string: "Level Zero",  value : 2 },
+  { string: "Level One",   value : 3 },
+  { string: "Level Two",   value : 4 },
+  { string: "Level Three", value : 5 } 
 ];
 let num_levels = ai_vals.length;
 
@@ -158,10 +158,8 @@ function set_worker() {
   worker.onmessage = ai_done;
 }
 function reset() {
-  if (!can_move) {
-    worker.terminate();
-    set_worker();
-  }
+  if (worker !== null)  worker.terminate();
+  set_worker();
   main_state = new Game();
   moves_highlight = [];
   recent_from = -1;
@@ -256,7 +254,7 @@ function ai_done(event) {
   evaluation = ai_move[0].toFixed(2) * ((player===WHITE) ? -1 : 1);
   let time = ((Date.now() - ai_time) / 1000).toFixed(2);
   console.log("depth base: %d\n%f secs\neval: %f\nmove: %O\nleaf nodes:%i", 
-              curr_depth()/4, time, evaluation, ai_move[1], ai_move[2]);
+              curr_depth(), time, evaluation, ai_move[1], ai_move[2]);
 
   if (ai_move[1] !== null) {
     main_state.move(ai_move[1]);
@@ -351,7 +349,6 @@ async function init() {
   c.onselectstart = function () { return false; }
   document.body.appendChild(c);
   ctx = c.getContext("2d");
-  set_worker();
   await init_images(curr_set);
   await init_audio();
   reset();
