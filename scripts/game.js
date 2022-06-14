@@ -414,14 +414,14 @@ export class Game {
         moves.push(...this.king_moves(pos,test)); }
       else if (this.get_type(pos)===QUEEN) { 
         moves.push(...this.queen_moves(pos,test)); }
+      else if (this.get_type(pos)===PAWN) { 
+        moves.push(...this.pawn_moves(pos,test)); }
       else if (this.get_type(pos)===ROOK) { 
         moves.push(...this.rook_moves(pos,test)); }
       else if (this.get_type(pos)===KNIGHT) {
         moves.push(...this.knight_moves(pos,test)); }
       else if (this.get_type(pos)===BISHOP) { 
         moves.push(...this.bishop_moves(pos,test)); }
-      else if (this.get_type(pos)===PAWN) { 
-        moves.push(...this.pawn_moves(pos,test)); }
       }
     }
     return this.filter_moves(color, moves);
