@@ -21,7 +21,7 @@ const piece_sets = ["alpha", "anarcandy", "cburnett", "chessnut", "kosal", "maes
 const images = {}; // piece images
 const audio = {};
 
-let curr_set = "anarcandy";
+let curr_set = "kosal";
 let worker = null
 let main_state = null;
 let player = WHITE;
