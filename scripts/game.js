@@ -194,7 +194,7 @@ export class Game {
     let going_up = (color===WHITE);
     let inc = SQUARES_W - ((SQUARES_W * 2) * going_up);
     let proms = ((going_up && y===1) || (!going_up && y===6)) ? true : false;
-    let arr = [K_PROM,Q_PROM];
+    let arr = [Q_PROM];
     if (test) {
       arr = [K_PROM,B_PROM,R_PROM,Q_PROM];
     }

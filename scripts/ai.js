@@ -64,7 +64,7 @@ const KINGEND_POS =
  -30,-10, 20, 30, 30, 20,-10,-30,
  -30,-30, 0, 0, 0, 0. ,-30,-30,
  -50,-30,-30,-30,-30,-30,-30,-50];
-function hasher(state) {
+/* function hasher(state) {
   let val = "";
   for (let i=0; i<state.board_color.length; i++) {
     val += state.board_color[i];
@@ -75,7 +75,7 @@ function hasher(state) {
   }
   val += state.turn % 2;
   return val;
-}
+} */
 function eval_board(state, player) {
   let value = 0;
   let w_queen_alive = false, b_queen_alive = false;
@@ -135,10 +135,10 @@ function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,
                                          beta=Number.POSITIVE_INFINITY,
                                          max_player=true) {
   
-  let hash = hasher(state);
+  /* let hash = hasher(state);
   if (transpositions.hasOwnProperty(hash)) {
     if (transpositions[hash].DEPTH >= depth) return [transpositions[hash].VALUE, transpositions[hash].MOVE, 1];
-  }
+  } */
   let value;
   if (depth < 1) {
     value = eval_board(state, player);
@@ -185,7 +185,7 @@ function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,
     let color = (state.turn % 2===0) ? WHITE : BLACK;
     if (!state.under_attack(color, state.king_pos(color))) best_val=0;
   }
-  transpositions[hash] = {DEPTH: depth, VALUE: best_val, MOVE: best_move};
+  /* transpositions[hash] = {DEPTH: depth, VALUE: best_val, MOVE: best_move}; */
   return [best_val, best_move, sum];
 }
 onmessage = function(event) {
