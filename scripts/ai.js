@@ -180,6 +180,7 @@ function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,
       if (best_val <= alpha) break;
     }
   }
+  // tie
   if (best_move===null) {
     let color = (state.turn % 2===0) ? WHITE : BLACK;
     if (!state.under_attack(color, state.king_pos(color))) best_val=0;
