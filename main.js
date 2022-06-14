@@ -98,7 +98,7 @@ function render_board() {
   }
 }
 
-function render_state() {
+async function render_state() {
   render_board();
   for (let i=0; i<SQUARES_H*SQUARES_W; i++) {
     if (main_state.get_type(i)===EMPTY) {
@@ -112,12 +112,12 @@ function render_state() {
   }
 }
 
-function flip(change=false) {
+async function flip(change=false) {
   if (change && ((is_flipped && player===BLACK) || (!is_flipped && player===WHITE))) return;
   is_flipped = !is_flipped;
   selected = -1;
   moves_highlight = [];
-  render_state();
+  await render_state();
 }
 
 function load_image(url) {
@@ -157,7 +157,7 @@ function set_worker() {
   worker = new Worker("./scripts/ai.js", { type: "module" });
   worker.onmessage = ai_done;
 }
-function reset() {
+async function reset() {
   if (worker !== null)  worker.terminate();
   set_worker();
   main_state = new Game();
@@ -171,7 +171,7 @@ function reset() {
   if (player===BLACK) {
     move_ai(WHITE);
   }
-  render_state();
+  await render_state();
 }
 
 function change_color() {
@@ -193,7 +193,7 @@ function bind_buttons() {
       curr_set = tag.innerHTML;
       reset_highlight(set_iter);
       e.target.style["background-color"] = btn_highl;
-      render_state();
+      await render_state();
     });
     set_iter.appendChild(tag);
   }
@@ -249,7 +249,7 @@ function set_check() {
   is_black_checked = main_state.under_attack(BLACK, main_state.bk_pos);
 }
 
-function ai_done(event) {
+async function ai_done(event) {
   let ai_move = event.data;
   evaluation = ai_move[0].toFixed(2) * ((player===WHITE) ? -1 : 1);
   let time = ((Date.now() - ai_time) / 1000).toFixed(2);
@@ -277,7 +277,7 @@ function ai_done(event) {
     can_move = true;
   }
   set_check();
-  render_state();
+  await render_state();
 }
 
 let ai_time = 0.0;
@@ -300,7 +300,7 @@ function play_audio(move) {
   }
 }
 function bind_click() {
-  c.addEventListener("mousedown", function(e) {
+  c.addEventListener("mousedown", async function(e) {
     if (main_state.game_over || !can_move) return;
     let rect = c.getBoundingClientRect();
     let x = ((e.clientX - rect.left) / width) | 0;
@@ -325,13 +325,13 @@ function bind_click() {
         moves_highlight = [];
         selected = -1
         set_check();
-        render_state();
+        await render_state();
         move_ai(ai_color);
       }
       selected = -1;
       moves_highlight = [];
     }
-    if (can_move) render_state();
+    if (can_move) await render_state();
   });
 }
 ////////////////////////////////////////////////////////////////////

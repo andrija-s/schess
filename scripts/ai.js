@@ -161,8 +161,8 @@ function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,
         best_val = value;
         best_move = mov;
       }
-      alpha = Math.max(alpha, best_val);
       if (best_val >= beta) break;
+      alpha = Math.max(alpha, best_val);
     }
   }
   else {
@@ -176,8 +176,8 @@ function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,
         best_val = value;
         best_move = mov;
       }
-      beta = Math.min(beta, best_val);
       if (best_val <= alpha) break;
+      beta = Math.min(beta, best_val);
     }
   }
   // tie
