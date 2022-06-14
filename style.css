@@ -47,6 +47,12 @@ body {
 
 /* Links inside the dropdown */
 .dropdown-content a {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
   color: black;
   padding: 1rem 2rem;
   text-decoration: none;
