@@ -90,12 +90,7 @@ function eval_board(state, player) {
     if (state.get_type(i)===EMPTY) continue;
     let color = state.get_color(i);
     let c = (color===player) ? 1 : -1;
-    let pos_eval = i;
-    if (state.get_color(i)===BLACK) {
-      let [x,y] = Game.nonlinear(i);
-      [x, y] = [7-x,7-y];
-      pos_eval = Game.linear(x,y);
-    }
+    let pos_eval = (state.get_color(i)===BLACK) ? 63 - i : i;
     switch (state.get_type(i)) {
       case BISHOP:
         value += (330+BISHOP_POS[pos_eval]) * c;
@@ -122,13 +117,10 @@ function eval_board(state, player) {
         break;
     }
   }
-  let [x,y] = Game.nonlinear(state.bk_pos);
-  [x, y] = [7-x,7-y];
-  let bkpos = Game.linear(x,y);
   if (w_queen_alive || w_knights+w_bishops+w_rooks>3) {
-    value += KINGMID_POS[bkpos] * ((BLACK===player) ? 1 : -1);
+    value += KINGMID_POS[63 - state.bk_pos] * ((BLACK===player) ? 1 : -1);
   } else {
-    value += KINGEND_POS[bkpos] * ((BLACK===player) ? 1 : -1);
+    value += KINGEND_POS[63 - state.bk_pos] * ((BLACK===player) ? 1 : -1);
   }
   if (b_queen_alive || b_knights+b_bishops+b_rooks>3) {
     value += KINGMID_POS[state.wk_pos] * ((WHITE===player) ? 1 : -1);
