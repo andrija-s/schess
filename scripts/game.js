@@ -31,21 +31,51 @@ export class Game {
     this.history = [];
     this.game_over = false;
   }
+  /**
+   * @param {Number} pos 
+   * @param {Number} color 
+   */
   set_color(pos, color) {
     this.board_color[pos] = color;
   }
+  /**
+   * @param {Number} pos 
+   * @param {Number} type 
+   */
   set_type(pos, type) {
     this.board_type[pos] = type;
   }
+  /**
+   * @param {Number} pos 
+   * @returns Number
+   */
   get_type(pos) {
     return this.board_type[pos];
   }
+  /**
+   * @param {Number} pos 
+   * @returns Number
+   */
   get_color(pos) {
     return this.board_color[pos];
   }
+  /**
+   * @param {Number} color 
+   * @returns Number
+   */
   king_pos(color) {
     return ((color===WHITE) ? this.wk_pos : this.bk_pos); 
   }
+  /**
+   * Helper to under_attack
+   * @param {Number} x 
+   * @param {Number} y 
+   * @param {Number} color 
+   * @param {Boolean} checked 
+   * @param {Boolean} booli 
+   * @param {Number} offset 
+   * @returns Boolean
+   */
   check_diag(x, y, color, checked, booli, offset) {
     if (booli[offset] && Game.in_bound(x, y)) {
       let pos = Game.linear(x, y);
@@ -56,6 +86,11 @@ export class Game {
     }
     return checked;
   }
+  /**
+   * @param {Number} color 
+   * @param {Number} pos 
+   * @returns Boolean
+   */
   under_attack(color, pos) {
     let [x,y] = Game.nonlinear(pos);
     let checked = false;
@@ -145,6 +180,11 @@ export class Game {
     }
     return checked;
   }
+  /**
+   * @param {Number} from 
+   * @param {Boolean} test for PERFT testing
+   * @returns array of Move objects
+   */
   king_moves(from,test=false) {
     let color = this.get_color(from);
     let moves = [];
@@ -187,6 +227,11 @@ export class Game {
     }
     return moves;
   }
+  /**
+   * @param {Number} from 
+   * @param {Boolean} test for PERFT testing
+   * @returns array of Move objects
+   */
   pawn_moves(from, test=false) {
     let color = this.get_color(from);
     let moves = [];
@@ -233,6 +278,15 @@ export class Game {
     }
     return moves;
   }
+  /**
+   * helper to bishop_moves and queen_moves
+   * @param {Number} x 
+   * @param {Number} y 
+   * @param {Array} moves 
+   * @param {Number} from 
+   * @param {Boolean} booli 
+   * @returns Boolean
+   */
   diag_calc(x, y, moves, from, booli) {
     let color = (this.turn % 2===0) ? WHITE : BLACK;
     if (booli && Game.in_bound(x, y)) {
@@ -246,6 +300,11 @@ export class Game {
       }
     return booli;
   }
+  /**
+   * @param {Number} from 
+   * @param {Boolean} test for PERFT testing
+   * @returns array of Move objects
+   */
   bishop_moves(from, test=false) {
     let moves = [];
     let [x, y] = Game.nonlinear(from);
@@ -258,6 +317,11 @@ export class Game {
     }
     return moves;
   }
+  /**
+   * @param {Number} from 
+   * @param {Boolean} test for PERFT testing
+   * @returns array of Move objects
+   */
   queen_moves(from, test=false) {
     let color = (this.turn % 2===0) ? WHITE : BLACK;
     let moves = [];
@@ -316,6 +380,11 @@ export class Game {
     }
     return moves;
   }
+  /**
+   * @param {Number} from 
+   * @param {Boolean} test for PERFT testing
+   * @returns array of Move objects
+   */
   knight_moves(from, test=false) {
     let color = (this.turn % 2===0) ? WHITE : BLACK;
     let moves = [];
@@ -333,6 +402,11 @@ export class Game {
     }
     return moves;
   }
+  /**
+   * @param {Number} from 
+   * @param {Boolean} test for PERFT testing
+   * @returns array of Move objects
+   */
   rook_moves(from, test=false) {
     let color = this.get_color(from);
     let moves = [];
@@ -394,6 +468,12 @@ export class Game {
     }
     return moves;
   }
+  /**
+   * Filters out illegal moves from an array of Move objects
+   * @param {Number} color 
+   * @param {Array} moves 
+   * @returns Filtered Array of Move objects
+   */
   filter_moves(color, moves) {
     let good_moves = [];
     for (let mov of moves) {
@@ -405,6 +485,10 @@ export class Game {
     }
     return good_moves;
   }
+  /**
+   * @param {Boolean} test for PERFT testing
+   * @returns Array of Move objects
+   */
   all_moves(test=false) {
     let moves = [];
     let color = (this.turn % 2===0) ? WHITE : BLACK;
@@ -426,6 +510,10 @@ export class Game {
     }
     return this.filter_moves(color, moves);
   }
+  /**
+   * @param {Number} from 
+   * @returns Array of Move objects
+   */
   moves_from(from) {
     let moves = [];
     let color = this.get_color(from);
@@ -437,8 +525,11 @@ export class Game {
     else if (this.get_type(from)===PAWN)   { moves = this.pawn_moves(from, true); }
     return this.filter_moves(color, moves);
   }
-  move(mov, main=true) {
-    if (main) this.history.push(this.duplicate());
+  /**
+   * @param {Move} mov
+   */
+  move(mov) {
+    this.history.push(this.duplicate());
     this.enpeasant = -1;
     if (this.get_type(mov.FROM)===PAWN) {
       let [x_to, y_to] = Game.nonlinear(mov.TO);
@@ -528,7 +619,7 @@ export class Game {
     else if (mov.TO===0)  { this.castles[BCL] = 0; }
     this.turn += 1;
   }
-  
+
   unmove() {
     let temp = this.history.pop();
     this.board_type = temp.board_type;
@@ -540,18 +631,35 @@ export class Game {
     this.wk_pos = temp.wk_pos;
     this.bk_pos = temp.bk_pos;
   }
-  
+  /**
+   * @param {Number} x 
+   * @param {Number} y 
+   * @returns Boolean
+   */
   static in_bound(x, y) {
     return (x >= 0 && x < SQUARES_W && y >= 0 && y < SQUARES_H);
   }
+  /**
+   * @param {Number} x 
+   * @param {Number} y 
+   * @returns Number
+   */
   static linear(x, y) {
     return ((SQUARES_H*y)+x);
   }
+  /**
+   * @param {Number} z 
+   * @returns Array of Numbers
+   */
   static nonlinear(z) {
     let x = z % SQUARES_W;
     let y = (z / SQUARES_H) | 0;
     return [x, y];
   }
+  /**
+   * @param {String} string 
+   * @returns Array [Array of Numbers, Array of Numbers, Number, Number, Array of Numbers, Number]
+   */
   static convert(string) {
     if (string==="") return [null,null,null,null,null];
     let str_split = string.split(' ');
@@ -601,6 +709,9 @@ export class Game {
     }
     return [arr_type, arr_color, wk_pos, bk_pos, turn, castles, enpeas];
   }
+  /**
+   * @returns Game object
+   */
   duplicate() {
     let ret = new Game("");
     ret.board_type = this.board_type.slice(0);
@@ -613,6 +724,9 @@ export class Game {
     ret.bk_pos = this.bk_pos;
     return ret;
   }
+  /**
+   * @param {Game} other 
+   */
   copy(other) {
     this.board_type = other.board_type.slice(0);
     this.board_color = other.board_color.slice(0);

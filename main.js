@@ -53,10 +53,15 @@ const promotes = {
   "Knight": K_PROM,
   "Bishop": B_PROM 
 };
-
+/**
+ * @returns Number
+ */
 function curr_depth() {
   return ai_vals[ai_level].value;
 }
+/**
+ * @returns String
+ */
 function string_level(index=ai_level) {
   return ai_vals[index].string;
 }
@@ -68,7 +73,12 @@ function promote(input) {
 function pick_color(input) {
   return;
 }
-
+/**
+ * 
+ * @param {*} moves array of moves 
+ * @param {*} pos position of target move
+ * @returns Move
+ */
 function selected_move(moves, pos) {
   for (let mov of moves) {
     if (mov.TO === pos) {
