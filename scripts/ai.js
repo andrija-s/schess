@@ -1,6 +1,6 @@
 import {Game, WHITE, BLACK, EMPTY, BISHOP, QUEEN, PAWN, KNIGHT, ROOK, SQUARES_H, SQUARES_W} from "./game.js";
 
-const transpositions = {};
+// const transpositions = {};
 const PAWN_POS = 
 [0, 0, 0, 0, 0, 0, 0, 0,
  50, 50, 50, 50, 50, 50, 50, 50,
@@ -76,6 +76,12 @@ const KINGEND_POS =
   val += state.turn % 2;
   return val;
 } */
+/**
+ * 
+ * @param {Game} state 
+ * @param {Number} player 
+ * @returns 
+ */
 function eval_board(state, player) {
   let value = 0;
   let w_queen_alive = false, b_queen_alive = false;
