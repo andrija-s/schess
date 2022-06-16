@@ -255,8 +255,8 @@ function bind_buttons() {
 
 
 function set_check() {
-  is_white_checked = main_state.under_attack(WHITE, main_state.wk_pos);
-  is_black_checked = main_state.under_attack(BLACK, main_state.bk_pos);
+  is_white_checked = main_state.under_attack(WHITE, main_state.king_pos(WHITE));
+  is_black_checked = main_state.under_attack(BLACK, main_state.king_pos(BLACK));
 }
 
 async function ai_done(event) {

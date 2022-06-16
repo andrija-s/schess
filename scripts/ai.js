@@ -118,14 +118,14 @@ function eval_board(state, player) {
     }
   }
   if (w_queen_alive || w_knights+w_bishops+w_rooks>3) {
-    value += KINGMID_POS[63 - state.bk_pos] * ((BLACK===player) ? 1 : -1);
+    value += KINGMID_POS[63 - state.king_pos(BLACK)] * ((BLACK===player) ? 1 : -1);
   } else {
-    value += KINGEND_POS[63 - state.bk_pos] * ((BLACK===player) ? 1 : -1);
+    value += KINGEND_POS[63 - state.king_pos(BLACK)] * ((BLACK===player) ? 1 : -1);
   }
   if (b_queen_alive || b_knights+b_bishops+b_rooks>3) {
-    value += KINGMID_POS[state.wk_pos] * ((WHITE===player) ? 1 : -1);
+    value += KINGMID_POS[state.king_pos(WHITE)] * ((WHITE===player) ? 1 : -1);
   } else {
-    value += KINGEND_POS[state.wk_pos] * ((WHITE===player) ? 1 : -1);
+    value += KINGEND_POS[state.king_pos(WHITE)] * ((WHITE===player) ? 1 : -1);
   }
   return value;
 }

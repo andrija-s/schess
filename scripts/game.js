@@ -29,7 +29,7 @@ export class Game {
   constructor(board="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -") {
     [this.board_type, this.board_color, this.wk_pos, this.bk_pos, this.turn, this.castles, this.enpeasant] = Game.convert(board);
     this.history = [];
-    this.game_over = false;
+    this.game_over = false; // unused
   }
   /**
    * @param {Number} pos 
@@ -65,6 +65,10 @@ export class Game {
    */
   king_pos(color) {
     return ((color===WHITE) ? this.wk_pos : this.bk_pos); 
+  }
+  set_king(color, pos) {
+    if(color===WHITE) this.wk_pos = pos;
+    else this.bk_pos = pos; 
   }
   /**
    * Helper to under_attack
@@ -575,12 +579,12 @@ export class Game {
       if (this.get_color(mov.FROM)===WHITE) {
         this.castles[WCS] = 0;
         this.castles[WCL] = 0;
-        this.wk_pos = mov.TO;
+        this.set_king(WHITE, mov.TO);
       }
       else {
         this.castles[BCS] = 0;
         this.castles[BCL] = 0;
-        this.bk_pos = mov.TO;
+        this.set_king(BLACK, mov.TO);
       }
     }
     this.set_type(mov.TO, this.get_type(mov.FROM));
