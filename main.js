@@ -37,14 +37,8 @@ let ctx = null; // canvas context
 let evaluation = 0;
 let can_move = true;
 
-let ai_level = 1;
-const ai_vals = [ 
-  { string: "Level Zero",  value : 2 },
-  { string: "Level One",   value : 3 },
-  { string: "Level Two",   value : 4 },
-  { string: "Level Three", value : 5 } 
-];
-let num_levels = ai_vals.length;
+let curr_depth = 2;
+const ai_vals = [ 2, 3, 4, 5 ];
 
 let promote_piece = Q_PROM;
 const promotes = { 
@@ -53,18 +47,7 @@ const promotes = {
   "Knight": K_PROM,
   "Bishop": B_PROM 
 };
-/**
- * @returns Number
- */
-function curr_depth() {
-  return ai_vals[ai_level].value;
-}
-/**
- * @returns String
- */
-function string_level(index=ai_level) {
-  return ai_vals[index].string;
-}
+
 // TODO
 function promote(input) {
   promote_piece = input;
@@ -209,15 +192,15 @@ function bind_buttons() {
   }
 
   let ai_iter = document.getElementById("drop-ai");
-  for (let i=0; i<num_levels; i++) {
+  for (let i=0; i<ai_vals.length; i++) {
     let tag = document.createElement("a");
-    tag.innerHTML = string_level(i);
-    if (tag.innerHTML===string_level()) tag.style["background-color"] = btn_highl;
+    tag.innerHTML = "Depth " + ai_vals[i];
+    if (tag.innerHTML==="Depth " + curr_depth) tag.style["background-color"] = btn_highl;
     tag.addEventListener("click", (e) => {
-      if (tag.innerHTML===string_level()) { return; }
+      if (tag.innerHTML==="Depth " + curr_depth) { return; }
       reset_highlight(ai_iter);
       e.target.style["background-color"] = btn_highl;
-      ai_level = i;
+      curr_depth = ai_vals[i];
     });
     ai_iter.appendChild(tag);
   }
@@ -264,7 +247,7 @@ async function ai_done(event) {
   evaluation = ai_move[0].toFixed(2) * ((player===WHITE) ? -1 : 1);
   let time = ((Date.now() - ai_time) / 1000).toFixed(2);
   console.log("depth base: %d\n%f secs\neval: %f\nmove: %O\nleaf nodes:%i", 
-              curr_depth(), time, evaluation, ai_move[1], ai_move[2]);
+              curr_depth, time, evaluation, ai_move[1], ai_move[2]);
 
   if (ai_move[1] !== null) {
     main_state.move(ai_move[1]);
@@ -296,7 +279,7 @@ function move_ai(color) {
   ai_time = Date.now();
   worker.postMessage(
    { 
-    depth: curr_depth(),
+    depth: curr_depth,
     state: main_state,
     color: color }
   );
