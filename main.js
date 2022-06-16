@@ -1,7 +1,8 @@
 import { Game,
          Q_PROM, R_PROM, B_PROM, K_PROM, ONPEASANT,
          WHITE, BLACK, EMPTY,
-         SQUARES_W, SQUARES_H } from "./scripts/game.js";
+         SQUARES_W, SQUARES_H,
+         PAWN, BISHOP, ROOK, QUEEN, KING, KNIGHT } from "./scripts/game.js";
 
 
 const c_height = window.innerHeight / 1.1; // canvas height
@@ -20,6 +21,13 @@ const sq_to ="aqua";
 const piece_sets = ["alpha", "anarcandy", "cburnett", "chessnut", "kosal", "maestro", "merida"];
 const images = {}; // piece images
 const audio = {};
+const ai_vals = [ 1, 2, 3, 4, 5 ];
+const promotes = { 
+  "Queen":  Q_PROM,
+  "Rook":   R_PROM,
+  "Knight": K_PROM,
+  "Bishop": B_PROM 
+};
 
 let prom_move = null;
 let curr_set = "kosal";
@@ -37,16 +45,8 @@ let c = null; // canvas element
 let ctx = null; // canvas context
 let evaluation = 0;
 let can_move = true;
-
+let ai_time = 0.0;
 let curr_depth = 3;
-const ai_vals = [ 1, 2, 3, 4, 5 ];
-
-const promotes = { 
-  "Queen":  Q_PROM,
-  "Rook":   R_PROM,
-  "Knight": K_PROM,
-  "Bishop": B_PROM 
-};
 
 // TODO
 function promote(input) {
@@ -123,18 +123,18 @@ function load_image(url) {
 }
 
 async function init_images(set) {
-  images["11"] = await load_image(`./assets/pieces/${set}/bR.svg`);
-  images["12"] = await load_image(`./assets/pieces/${set}/bN.svg`);
-  images["13"] = await load_image(`./assets/pieces/${set}/bK.svg`);
-  images["14"] = await load_image(`./assets/pieces/${set}/bP.svg`);
-  images["15"] = await load_image(`./assets/pieces/${set}/bQ.svg`);
-  images["16"] = await load_image(`./assets/pieces/${set}/bB.svg`);
-  images["01"] = await load_image(`./assets/pieces/${set}/wR.svg`);
-  images["02"] = await load_image(`./assets/pieces/${set}/wN.svg`);
-  images["03"] = await load_image(`./assets/pieces/${set}/wK.svg`);
-  images["04"] = await load_image(`./assets/pieces/${set}/wP.svg`);
-  images["05"] = await load_image(`./assets/pieces/${set}/wQ.svg`);
-  images["06"] = await load_image(`./assets/pieces/${set}/wB.svg`);
+  images[""+BLACK+ROOK]   = await load_image(`./assets/pieces/${set}/bR.svg`);
+  images[""+BLACK+KNIGHT] = await load_image(`./assets/pieces/${set}/bN.svg`);
+  images[""+BLACK+KING]   = await load_image(`./assets/pieces/${set}/bK.svg`);
+  images[""+BLACK+PAWN]   = await load_image(`./assets/pieces/${set}/bP.svg`);
+  images[""+BLACK+QUEEN]  = await load_image(`./assets/pieces/${set}/bQ.svg`);
+  images[""+BLACK+BISHOP] = await load_image(`./assets/pieces/${set}/bB.svg`);
+  images[""+WHITE+ROOK]   = await load_image(`./assets/pieces/${set}/wR.svg`);
+  images[""+WHITE+KNIGHT] = await load_image(`./assets/pieces/${set}/wN.svg`);
+  images[""+WHITE+KING]   = await load_image(`./assets/pieces/${set}/wK.svg`);
+  images[""+WHITE+PAWN]   = await load_image(`./assets/pieces/${set}/wP.svg`);
+  images[""+WHITE+QUEEN]  = await load_image(`./assets/pieces/${set}/wQ.svg`);
+  images[""+WHITE+BISHOP] = await load_image(`./assets/pieces/${set}/wB.svg`);
 }
 
 async function init_audio() {
@@ -276,8 +276,9 @@ async function ai_done(event) {
   set_check();
   await render_state();
 }
-
-let ai_time = 0.0;
+/**
+ * @param {Number} color 
+ */
 function move_ai(color) {
   can_move = false;
   ai_time = Date.now();
@@ -288,6 +289,9 @@ function move_ai(color) {
     color: color }
   );
 }
+/**
+ * @param {Move} move 
+ */
 function play_audio(move) {
   if (main_state.get_type(move.TO)!==EMPTY || move.SPECIAL===ONPEASANT) {
     audio["move"].play();
@@ -296,10 +300,13 @@ function play_audio(move) {
     audio["move"].play();
   }
 }
-async function conclude_move(mov) {
+/**
+ * @param {Move} move 
+ */
+async function conclude_move(move) {
   let ai_color = (player===WHITE) ? BLACK : WHITE;
-  play_audio(mov);
-  main_state.move(mov);
+  play_audio(move);
+  main_state.move(move);
   moves_highlight = [];
   selected = -1
   set_check();
