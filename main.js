@@ -41,7 +41,6 @@ let can_move = true;
 let curr_depth = 3;
 const ai_vals = [ 1, 2, 3, 4, 5 ];
 
-let promote_piece = Q_PROM;
 const promotes = { 
   "Queen":  Q_PROM,
   "Rook":   R_PROM,
@@ -217,12 +216,8 @@ function bind_buttons() {
   for (const piece in promotes) {
     let tag = document.createElement("a");
     tag.innerHTML = piece;
-    if (promotes[piece]==promote_piece) tag.style["background-color"] = btn_highl;
     tag.addEventListener("click", (e) => {
-      if (promotes[tag.innerHTML]==promote_piece) { return; }
-      reset_highlight(prom_iter);
-      e.target.style["background-color"] = btn_highl;
-      promote_piece = promotes[tag.innerHTML];
+      prom_move.SPECIAL = promotes[tag.innerHTML];
       finalize_prom(prom_move);
       hide_prom();
     });
@@ -298,7 +293,6 @@ function play_audio(move) {
 }
 async function finalize_prom(mov) {
   let ai_color = (player===WHITE) ? BLACK : WHITE;
-  mov.SPECIAL = promote_piece;
   play_audio(mov);
   main_state.move(mov);
   moves_highlight = [];
