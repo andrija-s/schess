@@ -34,7 +34,7 @@ let is_white_checked = false;
 let is_flipped = false;
 let c = null; // canvas element
 let ctx = null; // canvas context
-let evaluation = 0.0;
+let evaluation = 0;
 let can_move = true;
 
 let ai_level = 1;

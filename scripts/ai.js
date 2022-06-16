@@ -80,7 +80,7 @@ const KINGEND_POS =
  * 
  * @param {Game} state state being evaluated
  * @param {Number} player player making the search
- * @returns evaluation value
+ * @returns Number evaluation value
  */
 function eval_board(state, player) {
   let value = 0;
@@ -131,13 +131,13 @@ function eval_board(state, player) {
 }
 /**
  * 
- * @param {*} depth 
- * @param {*} state 
- * @param {*} player 
- * @param {*} alpha default: -inf
- * @param {*} beta default: inf
- * @param {*} max_player default: true
- * @returns value of best move / best move / number of leaf nodes hit
+ * @param {Number} depth 
+ * @param {Game} state 
+ * @param {Number} player 
+ * @param {Number} alpha default: -inf
+ * @param {Number} beta default: inf
+ * @param {Boolean} max_player default: true
+ * @returns Array [Number, Move object, Number]
  */
 function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,
                                   beta=Number.POSITIVE_INFINITY,
