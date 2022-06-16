@@ -253,8 +253,13 @@ async function ai_done(event) {
     play_audio(ai_move[1]);
     recent_from = ai_move[1].FROM;
     recent_to = ai_move[1].TO;
-    if (ai_move[0]==Number.POSITIVE_INFINITY && main_state.all_moves(true).length===0) {
-      alert("YOU LOSE!");
+    if (main_state.all_moves(true).length===0) {
+      if (ai_move[0]==Number.POSITIVE_INFINITY) {
+        alert("YOU LOSE!");
+      }
+      else {
+        alert("DRAW!");
+      }
       main_state.game_over = true;
     }
   }

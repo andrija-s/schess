@@ -64,6 +64,8 @@ const KINGEND_POS =
  -30,-10, 20, 30, 30, 20,-10,-30,
  -30,-30, 0, 0, 0, 0. ,-30,-30,
  -50,-30,-30,-30,-30,-30,-30,-50];
+
+let core_depth = 0;
 /* function hasher(state) {
   let val = "";
   for (let i=0; i<state.board_color.length; i++) {
@@ -129,6 +131,12 @@ function eval_board(state, player) {
   }
   return value;
 }
+function is_mate(state, move) {
+  state.move(move);
+  let num = state.all_moves().length;
+  state.unmove();
+  return (num===0)
+}
 /**
  * 
  * @param {Number} depth 
@@ -165,11 +173,18 @@ function ai(depth, state, player, alpha=Number.NEGATIVE_INFINITY,
       value = explore[0];
       sum += explore[2];
       state.unmove()
+      if (depth===core_depth && value===Number.POSITIVE_INFINITY) {
+        if (is_mate(state, mov)) {
+          best_val = value;
+          best_move = mov;
+          break;
+        }
+      }
       if (value > best_val) {
         best_val = value;
         best_move = mov;
       }
-      if (best_val >= beta) break;
+      if (best_val>=beta && depth!==core_depth) break;
       alpha = Math.max(alpha, best_val);
     }
   }
@@ -200,7 +215,7 @@ onmessage = function(event) {
   let state = new Game('');
   state.copy(event.data.state);
 
- 
+  core_depth = event.data.depth;
   let move = ai(event.data.depth, state, event.data.color);
   postMessage(move);
 
