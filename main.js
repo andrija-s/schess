@@ -218,7 +218,7 @@ function bind_buttons() {
     tag.innerHTML = piece;
     tag.addEventListener("click", (e) => {
       prom_move.SPECIAL = promotes[tag.innerHTML];
-      finalize_prom(prom_move);
+      conclude_move(prom_move);
       hide_prom();
     });
     prom_iter.appendChild(tag);
@@ -296,7 +296,7 @@ function play_audio(move) {
     audio["move"].play();
   }
 }
-async function finalize_prom(mov) {
+async function conclude_move(mov) {
   let ai_color = (player===WHITE) ? BLACK : WHITE;
   play_audio(mov);
   main_state.move(mov);
@@ -305,9 +305,7 @@ async function finalize_prom(mov) {
   set_check();
   await render_state();
   move_ai(ai_color);
-  selected = -1;
-  moves_highlight = [];
-  if (can_move) await render_state();
+  await render_state();
 }
 function bind_click() {
   c.addEventListener("mousedown", async function(e) {
@@ -326,7 +324,6 @@ function bind_click() {
     else if (selected!==-1) {
       let mov = selected_move(moves_highlight, pos);
       if (mov !== null) {
-        let ai_color = (player===WHITE) ? BLACK : WHITE;
         if (mov.SPECIAL>=Q_PROM && mov.SPECIAL<=R_PROM) {
           prom_move = mov;
           can_move = false;
@@ -337,16 +334,15 @@ function bind_click() {
           proms.style.top = `${e.clientY}px`;
           return;
         }
-        play_audio(mov);
-        main_state.move(mov);
-        moves_highlight = [];
-        selected = -1
-        set_check();
-        await render_state();
-        move_ai(ai_color);
+        else {
+          conclude_move(mov);
+          return;
+        }
       }
-      selected = -1;
-      moves_highlight = [];
+      else {
+        selected = -1;
+        moves_highlight = [];
+      }
     }
     if (can_move) await render_state();
   });
