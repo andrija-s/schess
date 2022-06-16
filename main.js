@@ -75,8 +75,8 @@ function pick_color(input) {
 }
 /**
  * 
- * @param {*} moves array of moves 
- * @param {*} pos position of target move
+ * @param {Array} moves array of Move objects 
+ * @param {Number} pos position of target move
  * @returns Move
  */
 function selected_move(moves, pos) {
