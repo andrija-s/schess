@@ -9,6 +9,8 @@ const c_height = window.innerHeight / 1.1; // canvas height
 const c_width = c_height;  // canvas width
 const width = c_width/SQUARES_W;   // square width
 const height = c_height/SQUARES_H; // square height
+const PROM_IMG_W = SQUARES_W+3;
+const PROM_IMG_H = SQUARES_H+3;
 const btn_highl = "#d4d422";
 const check_color = "yellow";
 const border_color = "black"; // square border
@@ -146,10 +148,12 @@ function reset_highlight(iter) {
         opt.style["background-color"] = "";
   }
 }
+
 function set_worker() {
   worker = new Worker("./scripts/ai.js", { type: "module" });
   worker.onmessage = ai_done;
 }
+
 async function reset() {
   if (worker !== null)  worker.terminate();
   set_worker();
@@ -167,19 +171,22 @@ async function reset() {
   }
   await render_state();
 }
-
-function change_color() {
-  player = (player===WHITE) ? BLACK : WHITE;
+function prom_images() {
   let color = (player===WHITE) ? "w" : "b";
   for (let prom of document.getElementById("drop-prom").children) {
-    prom.innerHTML = `<img src="./assets/pieces/${curr_set}/${color}${prom.id}.svg" id="${color}${prom.id}" width="${c.width/(SQUARES_W+1)}" height="${c.height/(SQUARES_H+1)}"/>`;
-    console.log(prom);
+    prom.innerHTML = `<img src="./assets/pieces/${curr_set}/${color}${prom.id}.svg" width="${c.width/PROM_IMG_W}" height="${c.height/PROM_IMG_H}"/>`;
   }
+}
+function change_color() {
+  player = (player===WHITE) ? BLACK : WHITE;
+  prom_images();
   reset();
 }
+
 function hide_prom() {
   document.querySelector(".proms").style.display = "none";
 }
+
 function bind_buttons() {
 
   let ai_iter = document.getElementById("drop-ai");
@@ -204,8 +211,6 @@ function bind_buttons() {
   for (const piece in promotes) {
     let tag = document.createElement("a");
     tag.id = piece
-    let color = (player===WHITE) ? "w" : "b";
-    tag.innerHTML = `<img src="./assets/pieces/${curr_set}/${color}${piece}.svg" id="${color}${piece}" width="${c.width/(SQUARES_W+1)}" height="${c.height/(SQUARES_H+1)}"/>`;
     tag.addEventListener("click", () => {
       prom_move.SPECIAL = promotes[piece];
       conclude_move(prom_move);
@@ -213,7 +218,7 @@ function bind_buttons() {
     });
     prom_iter.appendChild(tag);
   }
-
+  prom_images();
   let set_iter = document.getElementById("drop-sets");
   for (const set of piece_sets) {
     let tag = document.createElement("a");
@@ -226,10 +231,7 @@ function bind_buttons() {
       curr_set = tag.innerHTML;
       reset_highlight(set_iter);
       e.target.style["background-color"] = btn_highl;
-      let color = (player===WHITE) ? "w" : "b";
-      for (let prom of document.getElementById("drop-prom").children) {
-        prom.innerHTML = `<img src="./assets/pieces/${curr_set}/${color}${prom.id}.svg" id="${color}${prom.id}" width="${c.width/(SQUARES_W+1)}" height="${c.height/(SQUARES_H+1)}"/>`;
-      }
+      prom_images();
       await render_state();
     });
     set_iter.appendChild(tag);
