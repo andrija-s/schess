@@ -2,7 +2,24 @@ body {
   background: beige;
   font-family: Alegreya Sans, sans-serif;
 }
-
+.proms {
+  display: none;
+  position: fixed;
+  z-index: 1;
+}
+.proms a {
+  background-color: beige;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  color: black;
+  padding: 1rem 2rem;
+  text-decoration: none;
+}
+.proms a:hover { background-color: #dddda6}
 /* Dropdown Button */
 .btn {
   background-color: #db7d1e;
@@ -44,7 +61,6 @@ body {
   box-shadow: 0rem 1rem 2rem 0rem rgba(0,0,0,0.2);
   z-index: 1;
 }
-
 /* Links inside the dropdown */
 .dropdown-content a {
   -webkit-touch-callout: none;

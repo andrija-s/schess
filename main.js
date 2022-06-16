@@ -21,6 +21,7 @@ const piece_sets = ["alpha", "anarcandy", "cburnett", "chessnut", "kosal", "maes
 const images = {}; // piece images
 const audio = {};
 
+let prom_move = null;
 let curr_set = "kosal";
 let worker = null
 let main_state = null;
@@ -108,7 +109,7 @@ async function render_state() {
 async function flip(change=false) {
   if (change && ((is_flipped && player===BLACK) || (!is_flipped && player===WHITE))) return;
   is_flipped = !is_flipped;
-  selected = -1;
+  if(can_move) selected = -1;
   moves_highlight = [];
   await render_state();
 }
@@ -153,6 +154,7 @@ function set_worker() {
 async function reset() {
   if (worker !== null)  worker.terminate();
   set_worker();
+  hide_prom();
   main_state = new Game();
   moves_highlight = [];
   recent_from = -1;
@@ -171,7 +173,9 @@ function change_color() {
   player = (player===WHITE) ? BLACK : WHITE;
   reset();
 }
-
+function hide_prom() {
+  document.querySelector(".proms").style.display = "none";
+}
 function bind_buttons() {
 
   let set_iter = document.getElementById("drop-sets");
@@ -204,7 +208,6 @@ function bind_buttons() {
     });
     ai_iter.appendChild(tag);
   }
-
   let flip_btn = document.getElementById("flipbtn");
   flip_btn.addEventListener("click", () => {
     flip();
@@ -220,10 +223,11 @@ function bind_buttons() {
       reset_highlight(prom_iter);
       e.target.style["background-color"] = btn_highl;
       promote_piece = promotes[tag.innerHTML];
+      finalize_prom(prom_move);
+      hide_prom();
     });
     prom_iter.appendChild(tag);
   }
-
   let reset_btn = document.getElementById("resetbtn");
   reset_btn.addEventListener("click", () => {
     reset();
@@ -292,6 +296,20 @@ function play_audio(move) {
     audio["move"].play();
   }
 }
+async function finalize_prom(mov) {
+  let ai_color = (player===WHITE) ? BLACK : WHITE;
+  mov.SPECIAL = promote_piece;
+  play_audio(mov);
+  main_state.move(mov);
+  moves_highlight = [];
+  selected = -1
+  set_check();
+  await render_state();
+  move_ai(ai_color);
+  selected = -1;
+  moves_highlight = [];
+  if (can_move) await render_state();
+}
 function bind_click() {
   c.addEventListener("mousedown", async function(e) {
     if (main_state.game_over || !can_move) return;
@@ -311,7 +329,14 @@ function bind_click() {
       if (mov !== null) {
         let ai_color = (player===WHITE) ? BLACK : WHITE;
         if (mov.SPECIAL>=Q_PROM && mov.SPECIAL<=R_PROM) {
-          mov.SPECIAL = promote_piece;
+          prom_move = mov;
+          can_move = false;
+          let proms = document.querySelector(".proms");
+          proms.style.display = "block";
+          proms.style.position = "absolute";
+          proms.style.left = `${e.clientX}px`;
+          proms.style.top = `${e.clientY}px`;
+          return;
         }
         play_audio(mov);
         main_state.move(mov);
