@@ -23,10 +23,10 @@ const images = {}; // piece images
 const audio = {};
 const ai_vals = [ 1, 2, 3, 4, 5 ];
 const promotes = { 
-  "Queen":  Q_PROM,
-  "Rook":   R_PROM,
-  "Knight": K_PROM,
-  "Bishop": B_PROM 
+  "Q":  Q_PROM,
+  "R":   R_PROM,
+  "N": K_PROM,
+  "B": B_PROM 
 };
 
 let prom_move = null;
@@ -170,29 +170,17 @@ async function reset() {
 
 function change_color() {
   player = (player===WHITE) ? BLACK : WHITE;
+  let color = (player===WHITE) ? "w" : "b";
+  for (let prom of document.getElementById("drop-prom").children) {
+    prom.innerHTML = `<img src="./assets/pieces/${curr_set}/${color}${prom.id}.svg" id="${color}${prom.id}" width="${c.width/(SQUARES_W+1)}" height="${c.height/(SQUARES_H+1)}"/>`;
+    console.log(prom);
+  }
   reset();
 }
 function hide_prom() {
   document.querySelector(".proms").style.display = "none";
 }
 function bind_buttons() {
-
-  let set_iter = document.getElementById("drop-sets");
-  for (const set of piece_sets) {
-    let tag = document.createElement("a");
-    tag.innerHTML = set;
-    if (tag.innerHTML===curr_set) tag.style["background-color"] = btn_highl;
-    tag.addEventListener("click", async function(e) {
-      if (tag.innerHTML===curr_set) { return; }
-      try { await init_images(tag.innerHTML); }
-      catch(e) { return; }
-      curr_set = tag.innerHTML;
-      reset_highlight(set_iter);
-      e.target.style["background-color"] = btn_highl;
-      await render_state();
-    });
-    set_iter.appendChild(tag);
-  }
 
   let ai_iter = document.getElementById("drop-ai");
   for (let i=0; i<ai_vals.length; i++) {
@@ -215,14 +203,38 @@ function bind_buttons() {
   let prom_iter = document.getElementById("drop-prom");
   for (const piece in promotes) {
     let tag = document.createElement("a");
-    tag.innerHTML = piece;
-    tag.addEventListener("click", (e) => {
-      prom_move.SPECIAL = promotes[tag.innerHTML];
+    tag.id = piece
+    let color = (player===WHITE) ? "w" : "b";
+    tag.innerHTML = `<img src="./assets/pieces/${curr_set}/${color}${piece}.svg" id="${color}${piece}" width="${c.width/(SQUARES_W+1)}" height="${c.height/(SQUARES_H+1)}"/>`;
+    tag.addEventListener("click", () => {
+      prom_move.SPECIAL = promotes[piece];
       conclude_move(prom_move);
       hide_prom();
     });
     prom_iter.appendChild(tag);
   }
+
+  let set_iter = document.getElementById("drop-sets");
+  for (const set of piece_sets) {
+    let tag = document.createElement("a");
+    tag.innerHTML = set;
+    if (tag.innerHTML===curr_set) tag.style["background-color"] = btn_highl;
+    tag.addEventListener("click", async function(e) {
+      if (tag.innerHTML===curr_set) { return; }
+      try { await init_images(tag.innerHTML); }
+      catch(e) { return; }
+      curr_set = tag.innerHTML;
+      reset_highlight(set_iter);
+      e.target.style["background-color"] = btn_highl;
+      let color = (player===WHITE) ? "w" : "b";
+      for (let prom of document.getElementById("drop-prom").children) {
+        prom.innerHTML = `<img src="./assets/pieces/${curr_set}/${color}${prom.id}.svg" id="${color}${prom.id}" width="${c.width/(SQUARES_W+1)}" height="${c.height/(SQUARES_H+1)}"/>`;
+      }
+      await render_state();
+    });
+    set_iter.appendChild(tag);
+  }
+
   let reset_btn = document.getElementById("resetbtn");
   reset_btn.addEventListener("click", () => {
     reset();
