@@ -38,8 +38,8 @@ let ctx = null; // canvas context
 let evaluation = 0;
 let can_move = true;
 
-let curr_depth = 2;
-const ai_vals = [ 2, 3, 4, 5 ];
+let curr_depth = 3;
+const ai_vals = [ 1, 2, 3, 4, 5 ];
 
 let promote_piece = Q_PROM;
 const promotes = { 
