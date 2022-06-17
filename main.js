@@ -48,7 +48,7 @@ let ctx = null; // canvas context
 let evaluation = 0;
 let can_move = true;
 let ai_time = 0.0;
-let curr_depth = 3;
+let curr_depth = 4;
 
 // TODO
 function promote(input) {
