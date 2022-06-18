@@ -25,8 +25,8 @@ const images = {}; // piece images
 const audio = {};
 const ai_vals = [ 1, 2, 3, 4, 5 ];
 const promotes = { 
-  "Q":  Q_PROM,
-  "R":   R_PROM,
+  "Q": Q_PROM,
+  "R": R_PROM,
   "N": K_PROM,
   "B": B_PROM 
 };
@@ -115,28 +115,30 @@ async function flip(change=false) {
   await render_state();
 }
 
-function load_image(url) {
+function load_image(key, url) {
   return new Promise((resolve, reject) => { 
-                        let i = new Image(); 
+                        let i = new Image();
+                        images[key] = i;
                         i.addEventListener('load', () => resolve(i));
                         i.addEventListener('error', (err) => reject(err));
                         i.src = url; 
                       });
 }
-
 async function init_images(set) {
-  images[""+BLACK+ROOK]   = await load_image(`./assets/pieces/${set}/bR.svg`);
-  images[""+BLACK+KNIGHT] = await load_image(`./assets/pieces/${set}/bN.svg`);
-  images[""+BLACK+KING]   = await load_image(`./assets/pieces/${set}/bK.svg`);
-  images[""+BLACK+PAWN]   = await load_image(`./assets/pieces/${set}/bP.svg`);
-  images[""+BLACK+QUEEN]  = await load_image(`./assets/pieces/${set}/bQ.svg`);
-  images[""+BLACK+BISHOP] = await load_image(`./assets/pieces/${set}/bB.svg`);
-  images[""+WHITE+ROOK]   = await load_image(`./assets/pieces/${set}/wR.svg`);
-  images[""+WHITE+KNIGHT] = await load_image(`./assets/pieces/${set}/wN.svg`);
-  images[""+WHITE+KING]   = await load_image(`./assets/pieces/${set}/wK.svg`);
-  images[""+WHITE+PAWN]   = await load_image(`./assets/pieces/${set}/wP.svg`);
-  images[""+WHITE+QUEEN]  = await load_image(`./assets/pieces/${set}/wQ.svg`);
-  images[""+WHITE+BISHOP] = await load_image(`./assets/pieces/${set}/wB.svg`);
+  let jar = [];
+  jar.push(load_image(""+BLACK+ROOK,   `./assets/pieces/${set}/bR.svg`));
+  jar.push(load_image(""+BLACK+KNIGHT, `./assets/pieces/${set}/bN.svg`));
+  jar.push(load_image(""+BLACK+KING,   `./assets/pieces/${set}/bK.svg`));
+  jar.push(load_image(""+BLACK+PAWN,   `./assets/pieces/${set}/bP.svg`));
+  jar.push(load_image(""+BLACK+QUEEN,  `./assets/pieces/${set}/bQ.svg`));
+  jar.push(load_image(""+BLACK+BISHOP, `./assets/pieces/${set}/bB.svg`));
+  jar.push(load_image(""+WHITE+ROOK,   `./assets/pieces/${set}/wR.svg`));
+  jar.push(load_image(""+WHITE+KNIGHT, `./assets/pieces/${set}/wN.svg`));
+  jar.push(load_image(""+WHITE+KING,   `./assets/pieces/${set}/wK.svg`));
+  jar.push(load_image(""+WHITE+PAWN,   `./assets/pieces/${set}/wP.svg`));
+  jar.push(load_image(""+WHITE+QUEEN,  `./assets/pieces/${set}/wQ.svg`));
+  jar.push(load_image(""+WHITE+BISHOP, `./assets/pieces/${set}/wB.svg`));
+  await Promise.all(jar);
 }
 
 async function init_audio() {

@@ -66,6 +66,10 @@ export class Game {
   king_pos(color) {
     return ((color===WHITE) ? this.wk_pos : this.bk_pos); 
   }
+  /** 
+   * @param {Number} color 
+   * @param {Number} pos 
+   */
   set_king(color, pos) {
     if(color===WHITE) this.wk_pos = pos;
     else this.bk_pos = pos; 
