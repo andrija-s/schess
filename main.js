@@ -371,6 +371,7 @@ function bind_click() {
   });
 }
 ////////////////////////////////////////////////////////////////////
+//let fen_state = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
 async function init() {
   c = document.createElement("canvas");
   let attrs = { 
@@ -390,14 +391,19 @@ async function init() {
   reset();
   bind_buttons();
   bind_click();
-  let time = null;
-  let adder = new Worker("./scripts/worker.js");
-  adder.onmessage = function(event) {
-    console.log(event.data);
-    console.log(((Date.now() - time) / 1000).toFixed(2));
+  let rust_worker = new Worker("./scripts/worker.js");
+  rust_worker.onmessage = function(event) {
+    if (event.data[0] === "PERFT") {
+      console.log(event.data[1])
+      console.log(((Date.now() - event.data[2]) / 1000).toFixed(2));
+    }
+    else if (event.data[0]==="AI") {
+      console.log(event.data);
+      console.log(((Date.now() - event.data[2]) / 1000).toFixed(2));
+      rust_worker.terminate();
+    }
   }
-  time = Date.now();
-  adder.postMessage({Move: 1});
+  rust_worker.postMessage({type: "AI", depth: 6, time: Date.now(), fen: "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8"});
 }
 
 window.addEventListener("DOMContentLoaded", init());
