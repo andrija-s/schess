@@ -390,6 +390,14 @@ async function init() {
   reset();
   bind_buttons();
   bind_click();
+  let time = null;
+  let adder = new Worker("./scripts/worker.js");
+  adder.onmessage = function(event) {
+    console.log(event.data);
+    console.log(((Date.now() - time) / 1000).toFixed(2));
+  }
+  time = Date.now();
+  adder.postMessage({Move: 1});
 }
 
 window.addEventListener("DOMContentLoaded", init());
