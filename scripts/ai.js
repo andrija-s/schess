@@ -1,5 +1,5 @@
 import {Game, WHITE, BLACK, EMPTY, BISHOP, QUEEN, PAWN, KNIGHT, ROOK, SQUARES_H, SQUARES_W} from "./game.js";
-
+console.log("ai.js loaded")
 // const transpositions = {};
 const PAWN_POS = 
 [ 0,  0,  0,  0,  0,  0,  0,  0,

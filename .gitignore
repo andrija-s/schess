@@ -1,3 +1,4 @@
 old/
 rust-chess/
+scripts/rust-worker.js
 *.log

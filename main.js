@@ -5,6 +5,7 @@ import { Game,
          PAWN, BISHOP, ROOK, QUEEN, KING, KNIGHT } from "./scripts/game.js";
 
 
+
 const c_height = window.innerHeight / 1.1; // canvas height
 const c_width = c_height;  // canvas width
 const width = c_width/SQUARES_W;   // square width
@@ -371,7 +372,7 @@ function bind_click() {
   });
 }
 ////////////////////////////////////////////////////////////////////
-async function init() {
+async function main() {
   c = document.createElement("canvas");
   let attrs = { 
     id: "chessBoard", 
@@ -390,7 +391,19 @@ async function init() {
   reset();
   bind_buttons();
   bind_click();
+  let worker2 = null;
+  function set_worker2() {
+    worker2 = new Worker("./scripts/rust-worker.js");
+    worker2.onmessage = function(event) {
+      console.log(event.data);
+    };
+  }
+  set_worker2();
+  worker2.postMessage(
+    { 
+     num: 9 }
+  );
 }
 
-window.addEventListener("DOMContentLoaded", init());
+window.addEventListener("DOMContentLoaded", main());
 ////////////////////////////////////////////////////////////////////
