@@ -1,35 +1,52 @@
 use wasm_bindgen::prelude::*;
-use chess::{Piece, Board, File, ChessMove, CastleRights, BoardStatus, Square, Color, MoveGen};
+use chess::{Piece, Board, File, ChessMove, Rank, CastleRights, BoardStatus, Square, Color, MoveGen, ALL_FILES, ALL_RANKS, ALL_SQUARES};
 use std::{mem, cmp, str::FromStr};
+#[wasm_bindgen]
+extern "C" {
+    // Use `js_namespace` here to bind `console.log(..)` instead of just
+    // `log(..)`
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
 
+    // The `console.log` is quite polymorphic, so we can bind it with multiple
+    // signatures. Note that we need to use `js_name` to ensure we always call
+    // `log` in JS.
+    #[wasm_bindgen(js_namespace = console, js_name = log)]
+    fn log_u32(a: u32);
+
+    // Multiple arguments too!
+    #[wasm_bindgen(js_namespace = console, js_name = log)]
+    fn log_many(a: &str, b: &str);
+}
 #[wasm_bindgen]
 pub fn init_moves(fen: &str) -> String {
   let board = Board::from_str(fen).expect("Valid FEN");
+  let board2 = Board::from_str("1nbqkbnr/1ppppppp/8/8/2PP4/B4N2/P3PPPP/RN1QKB1R b KQkq -").expect("Valid FEN");
+  log(&board2.is_sane().to_string());
+  MoveGen::movegen_perft_test(&board2, 4);
 
   let mut player_moves = Vec::new();
   let move_it = MoveGen::new_legal(&board);
   for m in move_it {
-    let mut bresult = mem::MaybeUninit::<Board>::uninit();
-    unsafe {
-      board.make_move(m, &mut *bresult.as_mut_ptr());
-      let from = m.get_source().to_int().to_string();
-      let to = m.get_dest().to_int().to_string();
-      let prom = match m.get_promotion() {
-        Some(Piece::Bishop) => String::from("B"),
-        Some(Piece::Queen)  => String::from("Q"),
-        Some(Piece::Knight) => String::from("N"),
-        Some(Piece::Rook)   => String::from("R"),
-        _                   => String::from("0"),
-      };
-      player_moves.push([from, to, prom, to_fen(&*bresult.as_ptr())].join("?"));
-    }
-  }
+    let copy = board.make_move_new(m);
+    let from = m.get_source().to_int().to_string();
+    let to = m.get_dest().to_int().to_string();
+    let prom = match m.get_promotion() {
+      Some(Piece::Bishop) => String::from("B"),
+      Some(Piece::Queen)  => String::from("Q"),
+      Some(Piece::Knight) => String::from("N"),
+      Some(Piece::Rook)   => String::from("R"),
+      _                   => String::from("0"),
+    };
 
+    player_moves.push([from, to, prom, to_fen(&copy)].join("?"));
+  }
   return player_moves.join(";");
 }
 
 #[wasm_bindgen]
 pub fn ai_search(depth: usize, fen: &str) -> String {
+  set_panic_hook();
   let board = Board::from_str(fen).expect("Valid FEN");
   match board.status() {
     BoardStatus::Checkmate => return String::from("you-cm"),
@@ -53,81 +70,73 @@ pub fn ai_search(depth: usize, fen: &str) -> String {
   let mut player_moves = Vec::new();
   let move_it = MoveGen::new_legal(&response);
   for m in move_it {
-    let mut bresult = mem::MaybeUninit::<Board>::uninit();
-    unsafe {
-      response.make_move(m, &mut *bresult.as_mut_ptr());
-      let from = m.get_source().to_int().to_string();
-      let to = m.get_dest().to_int().to_string();
-      let prom = match m.get_promotion() {
-        Some(Piece::Bishop) => String::from("B"),
-        Some(Piece::Queen)  => String::from("Q"),
-        Some(Piece::Knight) => String::from("N"),
-        Some(Piece::Rook)   => String::from("R"),
-        _                   => String::from("0"),
-      };
-      player_moves.push([from, to, prom, to_fen(&*bresult.as_ptr())].join("?"));
-    }
+    let copy = response.make_move_new(m);
+    let from = m.get_source().to_int().to_string();
+    let to = m.get_dest().to_int().to_string();
+    let prom = match m.get_promotion() {
+      Some(Piece::Bishop) => String::from("B"),
+      Some(Piece::Queen)  => String::from("Q"),
+      Some(Piece::Knight) => String::from("N"),
+      Some(Piece::Rook)   => String::from("R"),
+      _                   => String::from("0"),
+    };
+    player_moves.push([from, to, prom, to_fen(&copy)].join("?"));
   }
   // status,eval,ai move,fen on move,total nodes computed,all player moves in from?to?prom?fen format
   return [status,value.to_string(),ai_move,to_fen(&response),total.to_string(),player_moves.join(";")].join(",")
 }
 
 fn to_fen(board: &Board) -> String {
-  let mut fen_arr: [String; 8] = Default::default();
-  let mut fen: String = String::with_capacity(1);
+
+  let mut fen: String = String::with_capacity(90);
+
   let mut count = 0;
-  for i in 0..64 {
-    if i!=0 && (i-1)/8!=i/8 {
-      if count != 0 {
+  for rnk in ALL_RANKS.iter().rev() {
+    for file in ALL_FILES.iter() {
+
+      let sq: Square = Square::make_square(*rnk, *file);
+      let col = board.color_on(sq);
+      if col.is_none() || board.piece_on(sq).is_none() { 
+        count += 1; 
+        continue; 
+      }
+      else if count != 0 {
         fen.push(char::from_digit(count, 10).unwrap());
         count = 0;
       }
-      fen_arr[7-((i-1)/8)] = fen.clone();
-      fen = String::with_capacity(1);
+      match board.piece_on(sq) {
+        Some(Piece::Bishop) => {
+          fen.push(if col==Some(Color::White) { 'B' } else { 'b' });
+        },
+        Some(Piece::Knight) => {
+          fen.push(if col==Some(Color::White) { 'N' } else { 'n' });
+        },
+        Some(Piece::Queen) => {
+          fen.push(if col==Some(Color::White) { 'Q' } else { 'q' });
+        },
+        Some(Piece::Rook) => {
+          fen.push(if col==Some(Color::White) { 'R' } else { 'r' });
+        },
+        Some(Piece::Pawn) => {
+          fen.push(if col==Some(Color::White) { 'P' } else { 'p' });
+        },
+        Some(Piece::King) => {
+          fen.push(if col==Some(Color::White) { 'K' } else { 'k' });
+        },
+        _ =>  fen.push('X'),
+      }
     }
-    let sq: Square = unsafe { Square::new(i as u8 ) };
-    let col = board.color_on(sq);
-    if col.is_none() { 
-      count += 1; 
-      continue; 
-    };
-    if count != 0 {
-      fen.push(char::from_digit(count, 10).unwrap());
-      count = 0;
-    }
-    match board.piece_on(sq) {
-      Some(Piece::Bishop) => {
-        fen.push(if col==Some(Color::White) { 'B' } else { 'b' });
-      },
-      Some(Piece::Knight) => {
-        fen.push(if col==Some(Color::White) { 'N' } else { 'n' });
-      },
-      Some(Piece::Queen) => {
-        fen.push(if col==Some(Color::White) { 'Q' } else { 'q' });
-      },
-      Some(Piece::Rook) => {
-        fen.push(if col==Some(Color::White) { 'R' } else { 'r' });
-      },
-      Some(Piece::Pawn) => {
-        fen.push(if col==Some(Color::White) { 'P' } else { 'p' });
-      },
-      Some(Piece::King) => {
-        fen.push(if col==Some(Color::White) { 'K' } else { 'k' });
-      },
-      _ => (),
-    }
-    if i == 63 {
-      fen_arr[0] = fen.clone();
-    }
+    if count > 0 { fen.push(char::from_digit(count, 10).unwrap()); };
+    count = 0;
+    if *rnk != Rank::First { fen.push('/'); }
   }
-  let mut ranks: String = fen_arr.join("/");
   let side = match board.side_to_move() {
     Color::White => 'w',
     Color::Black => 'b',
   };
-  ranks.push(' ');
-  ranks.push(side);
-  ranks.push(' ');
+  fen.push(' ');
+  fen.push(side);
+  fen.push(' ');
   let white_castle = match board.castle_rights(Color::White) {
     CastleRights::Both      => String::from("KQ"),
     CastleRights::KingSide  => String::from("K"),
@@ -141,52 +150,52 @@ fn to_fen(board: &Board) -> String {
     CastleRights::NoRights  => String::from(""),
   };
   if black_castle == white_castle {
-    ranks.push('-');
+    fen.push('-');
   }
   else {
-    ranks.push_str(&white_castle);
-    ranks.push_str(&black_castle);
+    fen.push_str(&white_castle);
+    fen.push_str(&black_castle);
   }
-  ranks.push(' ');
+  fen.push(' ');
   let enp = board.en_passant();
   if enp.is_none() {
-    ranks.push('-');
+    fen.push('-');
   }
   else {
     let enpunw = enp.unwrap();
     let file = enpunw.get_file();
     let rank = enpunw.get_rank();
     match file {
-      File::A => ranks.push('a'),
-      File::B => ranks.push('b'),
-      File::C => ranks.push('c'),
-      File::D => ranks.push('d'),
-      File::E => ranks.push('e'),
-      File::F => ranks.push('f'),
-      File::G => ranks.push('g'),
-      File::H => ranks.push('h'),
+      File::A => fen.push('a'),
+      File::B => fen.push('b'),
+      File::C => fen.push('c'),
+      File::D => fen.push('d'),
+      File::E => fen.push('e'),
+      File::F => fen.push('f'),
+      File::G => fen.push('g'),
+      File::H => fen.push('h'),
     }
-    ranks.push(char::from_digit(((rank.to_index()+1)).try_into().unwrap(), 10).unwrap());
+    fen.push(char::from_digit(((rank.to_index()+1)).try_into().unwrap(), 10).unwrap());
   }
-  ranks.push(' ');
+  fen.push(' ');
   match board.checkers().popcnt() {
-    0 => ranks.push('n'),
-    _ => ranks.push('y'),
+    0 => fen.push('n'),
+    _ => fen.push('y'),
   }
-  return ranks;
+  fen.shrink_to_fit();
+  return fen;
 }
 
 fn eval_board(board: &Board, player: Color) -> i32 {
   let mut value = 0;
   //let w_queen_alive = false;
   //let b_queen_alive = false;
-  for i in 0..64u8 {
-    let sq: Square = unsafe { Square::new(i ) };
-    let col = board.color_on(sq);
-    if col.is_none() { continue; };
+  for sq in ALL_SQUARES.iter() {
+    let col = board.color_on(*sq);
+    if board.piece_on(*sq).is_none() || col.is_none() { continue; };
     let c = if col==Some(player) { 1 } else { -1 };
     //let pos_eval = if col==Some(Color::Black) { 63 - i } else { i };
-    match board.piece_on(sq) {
+    match board.piece_on(*sq) {
       Some(Piece::Bishop) => {
         value += (330/* +BISHOP_POS[pos_eval] */) * c;
       },

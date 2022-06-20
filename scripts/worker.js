@@ -11,7 +11,6 @@ onmessage = async function(event) {
   else {
     result = await init_moves(event.data.fen);
   }
-  console.log(result);
   postMessage([event.data.type, result]);
 
 }

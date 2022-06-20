@@ -343,8 +343,8 @@ async function conclude_move(fen) {
   [board_state, white_checked, black_checked] = parse_fen(fen);
   play_audio();
   await render_state();
+  console.log(fen);
   move_ai(fen);
-  await render_state();
 }
 function bind_click() {
   c.addEventListener("mousedown", async function(e) {
