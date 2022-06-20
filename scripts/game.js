@@ -13,7 +13,7 @@ export const K_PROM = 32; export const R_PROM = 39;
 
 export const WHITE = 0; export const BLACK = 1;
 
-const NONE = -1; export const EMPTY = 0;
+export const NONE = -1; export const EMPTY = 0;
 
 export const SQUARES_W = 8;export const SQUARES_H = 8;
 

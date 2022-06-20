@@ -1,10 +1,13 @@
-import { Game,
-         Q_PROM, R_PROM, B_PROM, K_PROM, ONPEASANT,
-         WHITE, BLACK, EMPTY,
-         SQUARES_W, SQUARES_H,
-         PAWN, BISHOP, ROOK, QUEEN, KING, KNIGHT } from "./scripts/game.js";
+const WHITE = 0; const BLACK = 1;
 
+const NONE = -1; const EMPTY = 0;
+         
+const SQUARES_W = 8; const SQUARES_H = 8;
 
+const ROOK   = 1; const KNIGHT = 2; const KING   = 3;
+const PAWN   = 4; const QUEEN  = 5; const BISHOP = 6;
+
+const DEFAULT_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
 const c_height = window.innerHeight / 1.1; // canvas height
 const c_width = c_height;  // canvas width
 const width = c_width/SQUARES_W;   // square width
@@ -24,24 +27,15 @@ const piece_sets = ["alpha", "anarcandy", "cburnett", "chessnut", "kosal", "maes
 const images = {}; // piece images
 const audio = {};
 const ai_vals = [ 1, 2, 3, 4, 5 ];
-const promotes = { 
-  "Q": Q_PROM,
-  "R": R_PROM,
-  "N": K_PROM,
-  "B": B_PROM 
-};
+const promotes = {"Q": null, "B": null, "R": null, "N": null};
 
-let prom_move = null;
 let curr_set = "kosal";
 let worker = null
-let main_state = null;
 let player = WHITE;
-let moves_highlight = [];
+let moves_highlight = null;
 let recent_from = -1;
 let recent_to = -1;
 let selected = -1;
-let is_black_checked = false;
-let is_white_checked = false;
 let is_flipped = false;
 let c = null; // canvas element
 let ctx = null; // canvas context
@@ -49,6 +43,19 @@ let evaluation = 0;
 let can_move = true;
 let ai_time = 0.0;
 let curr_depth = 4;
+let board_state = null;
+let white_checked = null; 
+let black_checked = null;
+let regular_moves = null;
+let prom_moves = null;
+let game_over = false;
+
+class Piece {
+  constructor(color, type) {
+    this.COLOR = color;
+    this.TYPE = type;
+  }
+}
 
 // TODO
 function promote(input) {
@@ -57,6 +64,18 @@ function promote(input) {
 // TODO
 function pick_color(input) {
   return;
+}
+function linear(x, y) {
+  return ((SQUARES_H*y)+x);
+}
+/**
+ * @param {Number} z 
+ * @returns Array of Numbers
+ */
+function nonlinear(z) {
+  let x = z % SQUARES_W;
+  let y = (z / SQUARES_H) | 0;
+  return [x, y];
 }
 /**
  * 
@@ -77,15 +96,15 @@ function render_board() {
   for (let i = 0; i < SQUARES_W; i++) {
     for (let j = 0; j < SQUARES_H; j++) {
       let [x,y] = (is_flipped) ? [7-i,7-j] : [i,j]; 
-      let pos = Game.linear(x,y);
+      let pos = linear(x,y);
       ctx.fillStyle =  border_color;
       ctx.fillRect(i*width,j*height,width,height);
-      ctx.fillStyle = ((pos===main_state.wk_pos && is_white_checked) 
-                      || (pos===main_state.bk_pos && is_black_checked)) 
+      ctx.fillStyle = ((board_state[pos].TYPE===KING && board_state[pos].COLOR===WHITE && white_checked) 
+                      || (board_state[pos].TYPE===KING && board_state[pos].COLOR===BLACK && black_checked)) 
                       ? check_color : 
                         ((j % 2 === i % 2) ? sq_lcolor : sq_dcolor);
       if (selected === pos) ctx.fillStyle = selected_color;
-      else if (selected_move(moves_highlight, pos) !== null) ctx.fillStyle = highlight_color;
+      else if (moves_highlight.has(pos)) ctx.fillStyle = highlight_color;
       else if (pos === recent_from) ctx.fillStyle = sq_from;
       else if (pos === recent_to) ctx.fillStyle = sq_to;
       ctx.fillRect(i*width,j*height,width-1,height-1);
@@ -95,13 +114,14 @@ function render_board() {
 
 async function render_state() {
   render_board();
+
   for (let i=0; i<SQUARES_H*SQUARES_W; i++) {
-    if (main_state.get_type(i)===EMPTY) {
+    if (board_state[i].TYPE===EMPTY) {
       continue;
     };
-    let [x, y] = Game.nonlinear(i);
+    let [x, y] = nonlinear(i);
     [x, y] = (is_flipped) ? [7-x,7-y] : [x,y];
-    let str = main_state.get_color(i) + "" + main_state.get_type(i);
+    let str = board_state[i].COLOR + "" + board_state[i].TYPE;
     let img = images[str];
     ctx.drawImage(img, (x*width)+(width/(SQUARES_W+SQUARES_W)), (y*height)+(height/(SQUARES_H+SQUARES_H)), c.width/(SQUARES_W+1), c.height/(SQUARES_H+1));
   }
@@ -111,7 +131,7 @@ async function flip(change=false) {
   if (change && ((is_flipped && player===BLACK) || (!is_flipped && player===WHITE))) return;
   is_flipped = !is_flipped;
   if(can_move) selected = -1;
-  moves_highlight = [];
+  moves_highlight = new Set();
   await render_state();
 }
 
@@ -152,7 +172,7 @@ function reset_highlight(iter) {
 }
 
 function set_worker() {
-  worker = new Worker("./scripts/ai.js", { type: "module" });
+  worker = new Worker("./scripts/worker.js");
   worker.onmessage = ai_done;
 }
 
@@ -160,16 +180,18 @@ async function reset() {
   if (worker !== null)  worker.terminate();
   set_worker();
   hide_prom();
-  main_state = new Game();
-  moves_highlight = [];
+  [board_state, white_checked, black_checked] = parse_fen(DEFAULT_FEN);
+  moves_highlight = new Set();
   recent_from = -1;
   recent_to = -1;
   selected = -1;
-  is_black_checked = false;
-  is_white_checked = false;
-  can_move = true;
+  can_move = false;
+  game_over = false;
   if (player===BLACK) {
-    move_ai(WHITE);
+    move_ai(DEFAULT_FEN);
+  }
+  else {
+    worker.postMessage({type: "init_moves", fen: DEFAULT_FEN});
   }
   await render_state();
 }
@@ -188,7 +210,9 @@ function change_color() {
 function hide_prom() {
   document.querySelector(".proms").style.display = "none";
 }
-
+function promote_fen(piece) {
+  return promotes[piece];
+}
 function bind_buttons() {
 
   let ai_iter = document.getElementById("drop-ai");
@@ -214,8 +238,7 @@ function bind_buttons() {
     let tag = document.createElement("a");
     tag.id = piece
     tag.addEventListener("click", () => {
-      prom_move.SPECIAL = promotes[piece];
-      conclude_move(prom_move);
+      conclude_move(promote_fen(piece));
       hide_prom();
     });
     prom_iter.appendChild(tag);
@@ -251,127 +274,219 @@ function bind_buttons() {
   });
 }
 
-
-function set_check() {
-  is_white_checked = main_state.under_attack(WHITE, main_state.king_pos(WHITE));
-  is_black_checked = main_state.under_attack(BLACK, main_state.king_pos(BLACK));
-}
-
 async function ai_done(event) {
-  let ai_move = event.data;
-  evaluation = ai_move[0].toFixed(2) * ((player===WHITE) ? -1 : 1);
+  if (event.data[0]==="init_moves") {
+    [regular_moves, prom_moves] = parse_player_moves(event.data[1]);
+    can_move = true;
+    worker.terminate();
+    set_worker();
+    return;
+  }
+  let result = parse_response(event.data[1]);
+  if (result[0] === "you-cm") {
+    alert("YOU WIN!");
+    game_over = true;
+    return;
+  }
+  else if (result[0] === "you-sm") {
+    alert("DRAW!");
+    game_over = true;
+    return;
+  }
+  // format: status, evaluation, ai move, new state, num nodes computed, player moves
+  evaluation = result[1].toFixed(2) * ((player===WHITE) ? -1 : 1);
   let time = ((Date.now() - ai_time) / 1000).toFixed(2);
   console.log("depth base: %d\n%f secs\neval: %f\nmove: %O\nleaf nodes:%i", 
-              curr_depth, time, evaluation, ai_move[1], ai_move[2]);
+              curr_depth, time, evaluation, result[2], result[4]);
 
-  if (ai_move[1] !== null) {
-    main_state.move(ai_move[1]);
-    play_audio(ai_move[1]);
-    recent_from = ai_move[1].FROM;
-    recent_to = ai_move[1].TO;
-    if (main_state.all_moves(true).length===0) {
-      if (ai_move[0]==Number.POSITIVE_INFINITY) {
-        alert("YOU LOSE!");
-      }
-      else {
-        alert("DRAW!");
-      }
-      main_state.game_over = true;
-    }
-  }
-  else {
-    recent_from = -1;
-    recent_to = -1;
-    if (ai_move[0]===0) alert("DRAW!");
-    else if (ai_move[0]<0) alert("YOU WIN!");
-    main_state.game_over = true;
-  }
-  if (!main_state.game_over) {
-    can_move = true;
-  }
-  set_check();
+  [board_state, white_checked, black_checked] = parse_fen(result[3]);
+  recent_from = result[2][0];
+  recent_to = result[2][1];
+  play_audio();
   await render_state();
+  if (result[0] === "ai-cm") {
+    alert("YOU LOSE!");
+    game_over = true;
+    return;
+  }
+  else if (result[0] === "ai-sm") {
+    alert("DRAW!");
+    game_over = true;
+    return;
+  }
+  regular_moves = result[5][0];
+  prom_moves = result[5][1];
+  worker.terminate();
+  set_worker();
+  can_move = true;
 }
 /**
- * @param {Number} color 
+ * @param {String} fen_str 
  */
-function move_ai(color) {
+function move_ai(fen_str) {
   can_move = false;
   ai_time = Date.now();
-  worker.postMessage(
-   { 
-    depth: curr_depth,
-    state: main_state,
-    color: color }
-  );
+  worker.postMessage({type: "ai_search", depth: curr_depth, fen: fen_str});
 }
 /**
  * @param {Move} move 
  */
-function play_audio(move) {
-  if (main_state.get_type(move.TO)!==EMPTY || move.SPECIAL===ONPEASANT) {
-    audio["move"].play();
-  }
-  else {
-    audio["move"].play();
-  }
+function play_audio() {
+  audio["move"].play();
 }
 /**
  * @param {Move} move 
  */
-async function conclude_move(move) {
-  let ai_color = (player===WHITE) ? BLACK : WHITE;
-  play_audio(move);
-  main_state.move(move);
-  moves_highlight = [];
+async function conclude_move(fen) {
   selected = -1
-  set_check();
+  moves_highlight = new Set();
+  [board_state, white_checked, black_checked] = parse_fen(fen);
+  play_audio();
   await render_state();
-  move_ai(ai_color);
+  move_ai(fen);
   await render_state();
 }
 function bind_click() {
   c.addEventListener("mousedown", async function(e) {
-    if (main_state.game_over || !can_move) return;
+    if (game_over || !can_move) return;
     let rect = c.getBoundingClientRect();
     let x = ((e.clientX - rect.left) / width) | 0;
     let y = ((e.clientY - rect.top) / height) | 0;
     if (x > 7 || y > 7) return;
     [x, y] = (is_flipped) ? [7-x,7-y] : [x,y];
-    let pos = Game.linear(x, y);
-    if (selected===-1 && main_state.get_type(pos)!==EMPTY && main_state.get_color(pos)===player) {
+    let pos = linear(x, y);
+
+    if (selected===-1 && board_state[pos].TYPE!==EMPTY && board_state[pos].COLOR===player) {
       selected = pos;
-      moves_highlight = main_state.moves_from(pos);
-      if(moves_highlight.length<1) selected = -1;
-    }
-    else if (selected!==-1) {
-      let mov = selected_move(moves_highlight, pos);
-      if (mov !== null) {
-        if (mov.SPECIAL>=Q_PROM && mov.SPECIAL<=R_PROM) {
-          prom_move = mov;
-          can_move = false;
-          let proms = document.querySelector(".proms");
-          proms.style.display = "block";
-          proms.style.position = "absolute";
-          proms.style.left = `${e.clientX}px`;
-          proms.style.top = `${e.clientY}px`;
-          return;
-        }
-        else {
-          conclude_move(mov);
-          return;
+      if (regular_moves[pos]) {
+        for (let mov of regular_moves[pos]) {
+          moves_highlight.add(mov.TO);
         }
       }
+      if (prom_moves[pos]) {
+        for (let mov of prom_moves[pos]) {
+          moves_highlight.add(mov.TO);
+        }
+      }
+      if(moves_highlight.size<1) selected = -1;
+    }
+    else if (selected!==-1) {
+      let mov_fen = null;
+      for (let mov of regular_moves[selected]) {
+        if (mov.TO==pos) {
+          mov_fen = mov.FEN;
+          break;
+        };
+      }
+      if (mov_fen !== null) {
+        conclude_move(mov_fen);
+        return;
+      }
+      else if (!!prom_moves[selected] && !!prom_moves[selected][pos]) {
+        for (let mov in prom_moves[selected][pos]) {
+          promotes[mov.PIECE] = mov.FEN;
+        }
+        can_move = false;
+        let proms = document.querySelector(".proms");
+        proms.style.display = "block";
+        proms.style.position = "absolute";
+        proms.style.left = `${e.clientX}px`;
+        proms.style.top = `${e.clientY}px`;
+        return;
+      }
       else {
-        selected = -1;
-        moves_highlight = [];
+        selected = -1
+        moves_highlight = new Set();
       }
     }
     if (can_move) await render_state();
   });
 }
+
+function parse_fen(string) {
+  if (string==="") return [null,null,null];
+  let str_split = string.split(' ');
+  let board = [];
+  for (let i = 0; i < str_split[0].length; i++) {
+    let curr_char = str_split[0].toString().charAt(i);
+    if (curr_char==="/") continue;
+    if (!isNaN(parseInt(curr_char))) {
+      for (let j = 0; j < parseInt(curr_char); j++) {
+        board.push(new Piece(NONE, EMPTY))
+      }
+      continue;
+    }
+    let upper = curr_char.toUpperCase();
+    let color = (upper===curr_char) ? WHITE : BLACK;
+    let type;
+    if (upper==="R") type = ROOK;
+    else if (upper==="Q") type = QUEEN;
+    else if (upper==="K") type = KING;
+    else if (upper==="B") type = BISHOP;
+    else if (upper==="N") type = KNIGHT;
+    else if (upper==="P") type = PAWN;
+    board.push(new Piece(color, type))
+  }
+  let black_checked = (str_split[1]==="b" && str_split[4]==="y") ? true : false;
+  let white_checked = (str_split[1]==="w" && str_split[4]==="y") ? true : false;
+  
+  return [board, white_checked, black_checked];
+}
+function parse_player_moves(fens) {
+  let player_moves = fens.split(";");
+  /**
+   * regular moves:
+   * {(from #): [{TO: (to #), FEN: (fen #)}, {TO: (to #), FEN: (fen #)}, ...]}
+   * 
+   * prom moves:
+   * {(from #): {TO: [{PIECE: (piece type), FEN: (fen#)}, {PIECE: (piece type), FEN: (fen#)}, ...]}}
+   */
+  let regular_list = {};
+  let prom_list = {};
+  for (let state of player_moves) {
+    let splitty = state.split("?");
+    splitty[0] = pos_conversion(parseInt(splitty[0]));
+    splitty[1] = pos_conversion(parseInt(splitty[1]));
+    if (splitty[2]==="0") {
+      if (!regular_list[splitty[0]]) {
+        regular_list[splitty[0]] = [];
+      }
+      regular_list[splitty[0]].push({TO: splitty[1], FEN: splitty[3]});
+    }
+    else {
+      if (!prom_list[splitty[0]]) {
+        prom_list[splitty[0]] = {};
+        if (!prom_list[splitty[0]][splitty[1]]) {
+          prom_list[splitty[0]][splitty[1]] = [];
+        }
+      }
+      prom_list[splitty[0]][splitty[1]].push({PIECE: splitty[2], FEN: splitty[3]})
+    }
+  }
+  return [regular_list,prom_list];
+}
+// format: status, evaluation, ai move, new state, num nodes computed, player moves
+function parse_response(string) {
+  let str_split = string.split(',');
+  if (str_split[0]==="you-cm" || str_split[0]==="you-sm") {
+    return [str_split[0],null,null,null,null,null,null];
+  }
+  let state_eval = parseInt(str_split[1]);
+  let ai_move = str_split[2].split("?");
+  ai_move = [pos_conversion(parseInt(ai_move[0])), pos_conversion(parseInt(ai_move[1]))];
+  let new_state = str_split[3];
+  let nodes_traversed = parseInt(str_split[4]);
+
+  let player_moves = parse_player_moves(str_split[5]);
+
+  return [str_split[0],state_eval,ai_move,new_state,nodes_traversed,player_moves];
+}
+function pos_conversion(pos) {
+  let x = (pos % SQUARES_W);
+  let y = 7-((pos / SQUARES_H) | 0);
+  return ((SQUARES_H*y)+x);
+}
 ////////////////////////////////////////////////////////////////////
-//let fen_state = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
 async function init() {
   c = document.createElement("canvas");
   let attrs = { 
@@ -391,19 +506,6 @@ async function init() {
   reset();
   bind_buttons();
   bind_click();
-  let rust_worker = new Worker("./scripts/worker.js");
-  rust_worker.onmessage = function(event) {
-    if (event.data[0] === "PERFT") {
-      console.log(event.data[1])
-      console.log(((Date.now() - event.data[2]) / 1000).toFixed(2));
-    }
-    else if (event.data[0]==="AI") {
-      console.log(event.data);
-      console.log(((Date.now() - event.data[2]) / 1000).toFixed(2));
-      rust_worker.terminate();
-    }
-  }
-  rust_worker.postMessage({type: "AI", depth: 6, time: Date.now(), fen: "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8"});
 }
 
 window.addEventListener("DOMContentLoaded", init());

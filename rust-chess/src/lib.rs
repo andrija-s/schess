@@ -1,46 +1,88 @@
 use wasm_bindgen::prelude::*;
-use chess::{Piece, Board, ChessMove, BoardStatus, Square, Color, MoveGen};
-use std::str::FromStr;
-use std::mem;
-use std::cmp;
+use chess::{Piece, Board, File, ChessMove, CastleRights, BoardStatus, Square, Color, MoveGen};
+use std::{mem, cmp, str::FromStr};
 
 #[wasm_bindgen]
-pub fn perft(depth: usize, fen: &str) -> usize {
+pub fn init_moves(fen: &str) -> String {
   let board = Board::from_str(fen).expect("Valid FEN");
-  let count = MoveGen::movegen_perft_test(&board, depth);
-  return count
+
+  let mut player_moves = Vec::new();
+  let move_it = MoveGen::new_legal(&board);
+  for m in move_it {
+    let mut bresult = mem::MaybeUninit::<Board>::uninit();
+    unsafe {
+      board.make_move(m, &mut *bresult.as_mut_ptr());
+      let from = m.get_source().to_int().to_string();
+      let to = m.get_dest().to_int().to_string();
+      let prom = match m.get_promotion() {
+        Some(Piece::Bishop) => String::from("B"),
+        Some(Piece::Queen)  => String::from("Q"),
+        Some(Piece::Knight) => String::from("N"),
+        Some(Piece::Rook)   => String::from("R"),
+        _                   => String::from("0"),
+      };
+      player_moves.push([from, to, prom, to_fen(&*bresult.as_ptr())].join("?"));
+    }
+  }
+
+  return player_moves.join(";");
 }
 
 #[wasm_bindgen]
 pub fn ai_search(depth: usize, fen: &str) -> String {
   let board = Board::from_str(fen).expect("Valid FEN");
+  match board.status() {
+    BoardStatus::Checkmate => return String::from("you-cm"),
+    BoardStatus::Stalemate => return String::from("you-sm"),
+    BoardStatus::Ongoing => ()
+  };
   let (value, mov, total) = 
                 ai(&board, board.side_to_move(), depth, depth, i32::MIN, i32::MAX, true);
-  let mid= match mov {
-    Some(t) => [",from:".to_string(), t.get_source().to_int().to_string(),
-                           ",to:".to_string(), t.get_dest().to_int().to_string()].join(""),
+  
+  let ai_move= match mov {
+    Some(t) => [t.get_source().to_int().to_string(),
+                           t.get_dest().to_int().to_string()].join("?"),
     None => "".to_string(),
   };
-  let bresult= board.make_move_new(mov.unwrap());
-  let status = match bresult.status() {
-    BoardStatus::Checkmate => "cm".to_string(),
-    BoardStatus::Stalemate => "sm".to_string(),
-    BoardStatus::Ongoing => "og".to_string()
+  let response= board.make_move_new(mov.unwrap());
+  let status = match response.status() {
+    BoardStatus::Checkmate => String::from("ai-cm"),
+    BoardStatus::Stalemate => String::from("ai-sm"),
+    BoardStatus::Ongoing   => String::from("ai-og")
   };
-
-  return [value.to_string(),mid,",status:".to_string(),status,",total:".to_string(),total.to_string(), " ".to_string(), to_fen(&board)].join("")
+  let mut player_moves = Vec::new();
+  let move_it = MoveGen::new_legal(&response);
+  for m in move_it {
+    let mut bresult = mem::MaybeUninit::<Board>::uninit();
+    unsafe {
+      response.make_move(m, &mut *bresult.as_mut_ptr());
+      let from = m.get_source().to_int().to_string();
+      let to = m.get_dest().to_int().to_string();
+      let prom = match m.get_promotion() {
+        Some(Piece::Bishop) => String::from("B"),
+        Some(Piece::Queen)  => String::from("Q"),
+        Some(Piece::Knight) => String::from("N"),
+        Some(Piece::Rook)   => String::from("R"),
+        _                   => String::from("0"),
+      };
+      player_moves.push([from, to, prom, to_fen(&*bresult.as_ptr())].join("?"));
+    }
+  }
+  // status,eval,ai move,fen on move,total nodes computed,all player moves in from?to?prom?fen format
+  return [status,value.to_string(),ai_move,to_fen(&response),total.to_string(),player_moves.join(";")].join(",")
 }
+
 fn to_fen(board: &Board) -> String {
-  let mut fen_arr: [String; 9] = Default::default();
+  let mut fen_arr: [String; 8] = Default::default();
   let mut fen: String = String::with_capacity(1);
   let mut count = 0;
-  for i in (0..64).rev() {
-    if i!=63 && (i+1)/8!=i/8 {
+  for i in 0..64 {
+    if i!=0 && (i-1)/8!=i/8 {
       if count != 0 {
-        fen.insert(0, char::from_digit(count, 10).unwrap());
+        fen.push(char::from_digit(count, 10).unwrap());
         count = 0;
       }
-      fen_arr[7-((i+1)/8)] = fen.clone();
+      fen_arr[7-((i-1)/8)] = fen.clone();
       fen = String::with_capacity(1);
     }
     let sq: Square = unsafe { Square::new(i as u8 ) };
@@ -50,32 +92,32 @@ fn to_fen(board: &Board) -> String {
       continue; 
     };
     if count != 0 {
-      fen.insert(0, char::from_digit(count, 10).unwrap());
+      fen.push(char::from_digit(count, 10).unwrap());
       count = 0;
     }
     match board.piece_on(sq) {
       Some(Piece::Bishop) => {
-        fen.insert(0, if col==Some(Color::White) { 'B' } else { 'b' });
+        fen.push(if col==Some(Color::White) { 'B' } else { 'b' });
       },
       Some(Piece::Knight) => {
-        fen.insert(0, if col==Some(Color::White) { 'N' } else { 'n' });
+        fen.push(if col==Some(Color::White) { 'N' } else { 'n' });
       },
       Some(Piece::Queen) => {
-        fen.insert(0, if col==Some(Color::White) { 'Q' } else { 'q' });
+        fen.push(if col==Some(Color::White) { 'Q' } else { 'q' });
       },
       Some(Piece::Rook) => {
-        fen.insert(0, if col==Some(Color::White) { 'R' } else { 'r' });
+        fen.push(if col==Some(Color::White) { 'R' } else { 'r' });
       },
       Some(Piece::Pawn) => {
-        fen.insert(0, if col==Some(Color::White) { 'P' } else { 'p' });
+        fen.push(if col==Some(Color::White) { 'P' } else { 'p' });
       },
       Some(Piece::King) => {
-        fen.insert(0, if col==Some(Color::White) { 'K' } else { 'k' });
+        fen.push(if col==Some(Color::White) { 'K' } else { 'k' });
       },
       _ => (),
     }
-    if i == 0 {
-      fen_arr[7] = fen.clone();
+    if i == 63 {
+      fen_arr[0] = fen.clone();
     }
   }
   let mut ranks: String = fen_arr.join("/");
@@ -85,72 +127,55 @@ fn to_fen(board: &Board) -> String {
   };
   ranks.push(' ');
   ranks.push(side);
+  ranks.push(' ');
+  let white_castle = match board.castle_rights(Color::White) {
+    CastleRights::Both      => String::from("KQ"),
+    CastleRights::KingSide  => String::from("K"),
+    CastleRights::QueenSide => String::from("Q"),
+    CastleRights::NoRights  => String::from(""),
+  };
+  let black_castle = match board.castle_rights(Color::White) {
+    CastleRights::Both      => String::from("kq"),
+    CastleRights::KingSide  => String::from("k"),
+    CastleRights::QueenSide => String::from("q"),
+    CastleRights::NoRights  => String::from(""),
+  };
+  if black_castle == white_castle {
+    ranks.push('-');
+  }
+  else {
+    ranks.push_str(&white_castle);
+    ranks.push_str(&black_castle);
+  }
+  ranks.push(' ');
+  let enp = board.en_passant();
+  if enp.is_none() {
+    ranks.push('-');
+  }
+  else {
+    let enpunw = enp.unwrap();
+    let file = enpunw.get_file();
+    let rank = enpunw.get_rank();
+    match file {
+      File::A => ranks.push('a'),
+      File::B => ranks.push('b'),
+      File::C => ranks.push('c'),
+      File::D => ranks.push('d'),
+      File::E => ranks.push('e'),
+      File::F => ranks.push('f'),
+      File::G => ranks.push('g'),
+      File::H => ranks.push('h'),
+    }
+    ranks.push(char::from_digit(((rank.to_index()+1)).try_into().unwrap(), 10).unwrap());
+  }
+  ranks.push(' ');
+  match board.checkers().popcnt() {
+    0 => ranks.push('n'),
+    _ => ranks.push('y'),
+  }
   return ranks;
 }
-/* const PAWN_POS: [i32; 64] = 
-[ 0,  0,  0,  0,  0,  0,  0,  0,
- 50, 50, 50, 50, 50, 50, 50, 50,
- 10, 10, 20, 30, 30, 20, 10, 10,
-  5,  5, 10, 25, 25, 10,  5,  5,
-  0,  0,  0, 20, 20,  0,  0,  0,
-  5, -5,-10,  0,  0,-10, -5,  5,
-  5, 10, 10,-25,-25, 10, 10,  5,
-  0,  0,  0,  0,  0,  0,  0,  0];
-const KNIGHT_POS: [i32; 64] = 
-[-50,-40,-30,-30,-30,-30,-40,-50,
- -40,-20,  0,  0,  0,  0,-20,-40,
- -30,  0, 10, 15, 15, 10,  0,-30,
- -30,  5, 15, 20, 20, 15,  5,-30,
- -30,  0, 15, 20, 20, 15,  0,-30,
- -30,  5, 10, 15, 15, 10,  5,-30,
- -40,-20,  0,  5,  5,  0,-20,-40,
- -50,-40,-30,-30,-30,-30,-40,-50];
-const BISHOP_POS: [i32; 64] = 
-[-20,-10,-10,-10,-10,-10,-10,-20,
- -10,  0,  0,  0,  0,  0,  0,-10,
- -10,  0,  5, 10, 10,  5,  0,-10,
- -10,  5,  5, 10, 10,  5,  5,-10,
- -10,  0, 10, 10, 10, 10,  0,-10,
- -10, 10, 10, 10, 10, 10, 10,-10,
- -10,  5,  0,  0,  0,  0,  5,-10,
- -20,-10,-10,-10,-10,-10,-10,-20];
-const ROOK_POS: [i32; 64] =
-[0,  0,  0,  0,  0,  0,  0, 0,
- 5, 10, 10, 10, 10, 10, 10, 5,
--5,  0,  0,  0,  0,  0,  0,-5,
--5,  0,  0,  0,  0,  0,  0,-5,
--5,  0,  0,  0,  0,  0,  0,-5,
--5,  0,  0,  0,  0,  0,  0,-5,
--5,  0,  0,  0,  0,  0,  0,-5,
- 0,  0,  5,  5,  5,  0,  0, 0];
-const QUEEN_POS: [i32; 64] =
-[-20,-10,-10,-5,-5,-10,-10,-20,
- -10,  0,  0, 0, 0,  0,  0,-10,
- -10,  0,  5, 5, 5,  5,  0,-10,
- -5,   0,  5, 5, 5,  5,  0, -5,
-  0,   0,  5, 5, 5,  5,  0, -5,
- -10,  5,  5, 5, 5,  5,  0,-10,
- -10,  0,  5, 0, 0,  0,  0,-10,
- -20,-10,-10,-5,-5,-10,-10,-20];
-const KINGMID_POS: [i32; 64] =
-[-30,-40,-40,-50,-50,-40,-40,-30,
- -30,-40,-40,-50,-50,-40,-40,-30,
- -30,-40,-40,-50,-50,-40,-40,-30,
- -30,-40,-40,-50,-50,-40,-40,-30,
- -20,-30,-30,-40,-40,-30,-30,-20,
- -10,-20,-20,-20,-20,-20,-20,-10,
-  20, 20,  0,  0,  0,  0, 20, 20,
-  20, 30, 10,  0,  0, 10, 30, 20];
-const KINGEND_POS: [i32; 64] =
-[-50,-40,-30,-20,-20,-30,-40,-50,
- -30,-20,-10,  0,  0,-10,-20,-30,
- -30,-10, 20, 30, 30, 20,-10,-30,
- -30,-10, 30, 40, 40, 30,-10,-30,
- -30,-10, 30, 40, 40, 30,-10,-30,
- -30,-10, 20, 30, 30, 20,-10,-30,
- -30,-30,  0,  0,  0,  0,-30,-30,
- -50,-30,-30,-30,-30,-30,-30,-50];
- */
+
 fn eval_board(board: &Board, player: Color) -> i32 {
   let mut value = 0;
   //let w_queen_alive = false;
@@ -196,14 +221,9 @@ fn eval_board(board: &Board, player: Color) -> i32 {
 }
 
 fn ai(board: &Board, player: Color, depth: usize, core_depth: usize, alpha: i32, beta: i32, max_player: bool) -> (i32, Option<ChessMove>, usize) {
-
-  if depth < 1 {
-    let value = eval_board(board, player);
-    return (value, None, 1);
-  }
-
+  
   let mut best_val:i32 = if max_player { i32::MIN } else { i32::MAX };
-  let mut sum: usize = 0;
+  let mut sum: usize = 1;
   let mut best_move = None;
 
   match board.status() {
@@ -211,6 +231,12 @@ fn ai(board: &Board, player: Color, depth: usize, core_depth: usize, alpha: i32,
     BoardStatus::Stalemate => return (0, best_move, sum),
     _ => ()
   }
+
+  if depth < 1 {
+    let value = eval_board(board, player);
+    return (value, None, 1);
+  }
+
   let move_it = MoveGen::new_legal(board);
 
   if max_player {
@@ -265,7 +291,7 @@ fn ai(board: &Board, player: Color, depth: usize, core_depth: usize, alpha: i32,
 
 
 
-/* pub fn set_panic_hook() {
+pub fn set_panic_hook() {
     #[cfg(feature = "console_error_panic_hook")]
     console_error_panic_hook::set_once();
-} */
+}
