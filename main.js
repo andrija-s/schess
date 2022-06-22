@@ -9,7 +9,7 @@ const KING = "K";
 const PAWN = "P";
 const QUEEN  = "Q";
 const BISHOP = "B";
-const DEFAULT_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
+const DEFAULT_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - n";
 const c_height = window.innerHeight / 1.1; // canvas height
 const c_width = c_height;  // canvas width
 const width = c_width/SQUARES_W;   // square width
@@ -354,7 +354,7 @@ async function conclude_move(move) {
       win();
     }
     else {
-      lose();
+      draw();
     }
     game_over = true;
     return;
