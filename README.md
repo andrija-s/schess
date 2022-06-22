@@ -1,6 +1,6 @@
 # Schess
 
-[Play!](https://andrija-s.github.io/schess/)
+[Play!](https://andrija-s.github.io/schess/) - Works off the [Rust branch](https://github.com/andrija-s/schess/tree/rust_switch) currently.
 
 
 Assets Used: <br />
