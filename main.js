@@ -45,7 +45,7 @@ let ctx = null; // canvas context
 let evaluation = 0;
 let can_move = true;
 let ai_time = 0.0;
-let curr_depth = 6;
+let curr_depth = 5;
 let board_state = null;
 let white_checked = null; 
 let black_checked = null;
@@ -286,7 +286,6 @@ async function ai_done(event) {
     set_worker();
     return;
   }
-  console.log(event.data);
   let result = parse_response(event.data[1]);
   if (result[0] === "you-cm") {
     alert("YOU WIN!");
