@@ -47,8 +47,8 @@ pub fn init_moves(fen: &str) -> String {
 pub fn ai_search(depth: usize, fen: &str) -> String {
   let board = Board::from_str(fen).expect("Valid FEN");
 
-  let (value, mov, total) = 
-                ai(&board, board.side_to_move(), depth, depth, i32::MIN, i32::MAX, true);
+  let (value, mov, total, move_depth) = 
+                ai(&board, board.side_to_move(), depth, i32::MIN, i32::MAX, true);
 
   let ai_move= match mov {
     Some(t) => [t.get_source().to_int().to_string(),
@@ -83,7 +83,7 @@ pub fn ai_search(depth: usize, fen: &str) -> String {
     player_moves.push([from, to, prom, fen, status].join("?"));
   }
   // status,eval,ai move,fen on move,total nodes computed,all player moves in from?to?prom?fen format
-  return [status,value.to_string(),ai_move,to_fen(&response),total.to_string(),player_moves.join(";")].join(",")
+  return [status,value.to_string(),ai_move,to_fen(&response),total.to_string(),player_moves.join(";"),move_depth.to_string()].join(",")
 }
 
 fn to_fen(board: &Board) -> String {
@@ -206,21 +206,22 @@ fn eval_board(board: &Board, player: Color) -> i32 {
   return value;
 }
 
-fn ai(board: &Board, player: Color, depth: usize, core_depth: usize, alpha: i32, beta: i32, max_player: bool) -> (i32, Option<ChessMove>, usize) {
+fn ai(board: &Board, player: Color, depth: usize, alpha: i32, beta: i32, max_player: bool) -> (i32, Option<ChessMove>, usize, usize) {
   
   let mut best_val:i32 = if max_player { i32::MIN } else { i32::MAX };
   let mut sum: usize = 1;
   let mut best_move = None;
+  let mut shallowest = usize::MIN;
 
   match board.status() {
-    BoardStatus::Checkmate => return (best_val, best_move, sum),
-    BoardStatus::Stalemate => return (0, best_move, sum),
+    BoardStatus::Checkmate => return (best_val, best_move, sum, depth),
+    BoardStatus::Stalemate => return (0, best_move, sum, depth),
     _ => ()
   }
 
   if depth < 1 {
     let value = eval_board(board, player);
-    return (value, best_move, sum);
+    return (value, best_move, sum, depth);
   }
 
   let move_it = MoveGen::new_legal(board);
@@ -235,20 +236,14 @@ fn ai(board: &Board, player: Color, depth: usize, core_depth: usize, alpha: i32,
       let mut bresult = mem::MaybeUninit::<Board>::uninit();
       unsafe {
         board.make_move(m, &mut *bresult.as_mut_ptr());
-        let (value, _, ret_sum) = ai(&*bresult.as_ptr(), player, depth - 1, core_depth, curr_alpha, beta, !max_player);
+        let (value, _, ret_sum, mov_depth) = ai(&*bresult.as_ptr(), player, depth - 1, curr_alpha, beta, !max_player);
         sum += ret_sum;
-        if depth == core_depth && value == i32::MAX {
-          if (&*bresult.as_ptr()).status() == BoardStatus::Checkmate {
-            best_val = value;
-            best_move = Some(m);
-            break;
-          }
-        }
-        if value > best_val {
+        if value > best_val || (value == best_val && mov_depth > shallowest) {
           best_val = value;
           best_move = Some(m);
+          shallowest = mov_depth;
         }
-        if best_val >= beta && depth != core_depth { break; }
+        if best_val >= beta { break; }
         curr_alpha = cmp::max(curr_alpha, best_val);
       }
     }
@@ -263,11 +258,12 @@ fn ai(board: &Board, player: Color, depth: usize, core_depth: usize, alpha: i32,
       let mut bresult = mem::MaybeUninit::<Board>::uninit();
       unsafe {
         board.make_move(m, &mut *bresult.as_mut_ptr());
-        let (value, _, ret_sum) = ai(&*bresult.as_ptr(), player, depth - 1, core_depth, alpha, curr_beta, !max_player);
+        let (value, _, ret_sum, mov_depth) = ai(&*bresult.as_ptr(), player, depth - 1, alpha, curr_beta, !max_player);
         sum += ret_sum;
-        if value < best_val {
+        if value < best_val || (value == best_val && mov_depth > shallowest) {
           best_val = value;
           best_move = Some(m);
+          shallowest = mov_depth;
         }
         if best_val <= alpha { break; }
         curr_beta = cmp::min(curr_beta, best_val);
@@ -278,7 +274,7 @@ fn ai(board: &Board, player: Color, depth: usize, core_depth: usize, alpha: i32,
   if best_move.is_none() && size > 0 {
     best_move = MoveGen::new_legal(board).next();
   }
-  return (best_val, best_move, sum);
+  return (best_val, best_move, sum, depth);
 
 }
 
