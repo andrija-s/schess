@@ -334,7 +334,7 @@ async function ai_done(event) {
 function move_ai(fen) {
   can_move = false;
   ai_time = Date.now();
-  worker.postMessage({TYPE: AI_SEARCH, DEPTH: curr_depth, FEN: fen, TIME: ai_time});
+  worker.postMessage({TYPE: AI_SEARCH, DEPTH: curr_depth, FEN: fen});
 }
 /**
  * @param {Move} move 

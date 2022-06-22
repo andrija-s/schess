@@ -9,6 +9,7 @@ onmessage = async function(event) {
   await wasm_bindgen('../rust-chess/pkg/rust_chess_bg.wasm');
 
   let result;
+  let time = Date.now();
 
   if (event.data.TYPE==="ai_search") {
     result = await ai_search(event.data.DEPTH, event.data.FEN);
@@ -16,9 +17,11 @@ onmessage = async function(event) {
   else {
     result = await init_moves(event.data.FEN);
   }
-  while (DO_DELAY && (Date.now() - event.data.TIME) / 1000 < AI_DELAY) {
+
+  while (DO_DELAY && (Date.now() - time) / 1000 < AI_DELAY) {
     // ai delay
   }
+  
   postMessage([event.data.TYPE, result]);
 
 }
