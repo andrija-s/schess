@@ -1,6 +1,8 @@
 importScripts('../rust-chess/pkg/rust_chess.js');
 
 const {init_moves, ai_search} = wasm_bindgen;
+const AI_DELAY = .25;
+const DO_DELAY = true;
 
 onmessage = async function(event) {
 
@@ -14,7 +16,9 @@ onmessage = async function(event) {
   else {
     result = await init_moves(event.data.FEN);
   }
-  
+  while (DO_DELAY && (Date.now() - event.data.TIME) / 1000 < AI_DELAY) {
+    // ai delay
+  }
   postMessage([event.data.TYPE, result]);
 
 }

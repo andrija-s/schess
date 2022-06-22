@@ -35,8 +35,6 @@ const DEPTHS = [ 1, 2, 3, 4, 5, 6 ];
 const WORKER_PATH = "./scripts/worker.js";
 const AI_SEARCH = "ai_search";
 const INIT_MOVES = "init_moves";
-const AI_DELAY = .25;
-const DO_DELAY = true;
 
 let promote_fens = {"Q": null, "B": null, "R": null, "N": null};
 let curr_set = "kosal";
@@ -308,10 +306,7 @@ async function ai_done(event) {
   let time = ((Date.now() - ai_time) / 1000).toFixed(2);
   console.log("depth base: %d\n%f secs\neval: %f\nmove: %O\nleaf nodes:%i", 
               curr_depth, time, evaluation, result[2], result[4]);
-  
-  while (DO_DELAY && (Date.now() - ai_time) / 1000 < AI_DELAY) {
-    // ai delay
-  }
+
   [board_state, white_checked, black_checked] = await parse_fen(result[3]);
   recent_from = result[2][0];
   recent_to = result[2][1];
@@ -339,7 +334,7 @@ async function ai_done(event) {
 function move_ai(fen) {
   can_move = false;
   ai_time = Date.now();
-  worker.postMessage({TYPE: AI_SEARCH, DEPTH: curr_depth, FEN: fen});
+  worker.postMessage({TYPE: AI_SEARCH, DEPTH: curr_depth, FEN: fen, TIME: ai_time});
 }
 /**
  * @param {Move} move 
