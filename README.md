@@ -4,6 +4,8 @@
 
 AI is currently very basic, only evaluates material and transpositions/iterative deepening has not been implemented (yet, one would hope).
 
+The chess move generator is by user [jordanbray](https://github.com/jordanbray/chess) with a little fix from [AlexanderHarrison](https://github.com/jordanbray/chess/issues/63)
+
 Assets Used: <br />
 [alpha]() by Eric Bentzen <br />
 [anarcandy](https://github.com/caderek) by caderek <br />
