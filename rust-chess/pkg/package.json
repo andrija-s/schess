@@ -1,0 +1,11 @@
+{
+  "name": "rust-chess",
+  "version": "0.1.0",
+  "files": [
+    "rust_chess_bg.wasm",
+    "rust_chess.js",
+    "rust_chess.d.ts"
+  ],
+  "browser": "rust_chess.js",
+  "types": "rust_chess.d.ts"
+}

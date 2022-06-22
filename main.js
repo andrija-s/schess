@@ -29,7 +29,7 @@ const sq_to ="aqua";
 const piece_sets = ["alpha", "anarcandy", "cburnett", "chessnut", "kosal", "maestro", "merida"];
 const images = {}; // piece images
 const audio = {};
-const ai_vals = [ 1, 2, 3, 4, 5, 6, 7 ];
+const ai_vals = [ 1, 2, 3, 4, 5, 6 ];
 const promotes = {"Q": null, "B": null, "R": null, "N": null};
 
 let curr_set = "kosal";
@@ -45,7 +45,7 @@ let ctx = null; // canvas context
 let evaluation = 0;
 let can_move = true;
 let ai_time = 0.0;
-let curr_depth = 5;
+let curr_depth = 6;
 let board_state = null;
 let white_checked = null; 
 let black_checked = null;
@@ -61,13 +61,14 @@ class Piece {
 }
 
 // TODO
-function promote(input) {
-  promote_piece = input;
-}
-// TODO
 function pick_color(input) {
   return;
 }
+/**
+ * @param {Number} x 
+ * @param {Number} y 
+ * @returns 
+ */
 function linear(x, y) {
   return ((SQUARES_H*y)+x);
 }
