@@ -1,6 +1,6 @@
 const WHITE = "w";
 const BLACK = "b";
-const NONE = "-0";
+const EMPTY = "-0";
 const ROOK = "R";
 const KNIGHT = "N";
 const KING = "K";
@@ -139,7 +139,7 @@ async function render_state() {
   await render_board();
 
   for (let i=0; i<SQUARES_H*SQUARES_W; i++) {
-    if (board_state[i].TYPE===NONE) {
+    if (board_state[i].TYPE===EMPTY) {
       continue;
     };
     let [x, y] = nonlinear(i);
@@ -232,9 +232,6 @@ function change_color() {
 function hide_prom() {
   document.querySelector(".proms").style.display = "none";
 }
-function promote_fen(piece) {
-  return promote_fens[piece];
-}
 function bind_buttons() {
 
   let ai_iter = document.getElementById("drop-ai");
@@ -260,7 +257,7 @@ function bind_buttons() {
     let tag = document.createElement("a");
     tag.id = piece
     tag.addEventListener("click", () => {
-      conclude_move(promote_fen(piece));
+      conclude_move(promote_fens[piece]);
       hide_prom();
     });
     prom_iter.appendChild(tag);
@@ -381,7 +378,7 @@ function bind_click() {
     [x, y] = (is_flipped) ? [7-x,7-y] : [x,y];
     let pos = linear(x, y);
 
-    if (selected===-1 && board_state[pos].TYPE!==NONE && board_state[pos].COLOR===player) {
+    if (selected===-1 && board_state[pos].TYPE!==EMPTY && board_state[pos].COLOR===player) {
       selected = pos;
       if (regular_moves[pos]) {
         for (let mov of regular_moves[pos]) {
@@ -440,7 +437,7 @@ async function parse_fen(string) {
     if (curr_char==="/") continue;
     if (!isNaN(parseInt(curr_char))) {
       for (let j = 0; j < parseInt(curr_char); j++) {
-        board.push(new Piece(NONE, NONE));
+        board.push(new Piece(EMPTY, EMPTY));
       }
       continue;
     }
