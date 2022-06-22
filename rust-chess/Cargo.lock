@@ -59,8 +59,6 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 [[package]]
 name = "chess"
 version = "3.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ed299b171ec34f372945ad6726f7bc1d2afd5f59fb8380f64f48e2bab2f0ec8"
 dependencies = [
  "arrayvec",
  "failure",

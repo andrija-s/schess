@@ -1,12 +1,15 @@
-const WHITE = 0; const BLACK = 1;
-
-const NONE = -1; const EMPTY = 0;
-         
-const SQUARES_W = 8; const SQUARES_H = 8;
-
-const ROOK   = 1; const KNIGHT = 2; const KING   = 3;
-const PAWN   = 4; const QUEEN  = 5; const BISHOP = 6;
-
+const WHITE = 0;
+const BLACK = 1;
+const NONE = -1;
+const EMPTY = 0;
+const SQUARES_W = 8;
+const SQUARES_H = 8;
+const ROOK = 1;
+const KNIGHT = 2;
+const KING = 3;
+const PAWN = 4;
+const QUEEN  = 5;
+const BISHOP = 6;
 const DEFAULT_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
 const c_height = window.innerHeight / 1.1; // canvas height
 const c_width = c_height;  // canvas width
@@ -26,7 +29,7 @@ const sq_to ="aqua";
 const piece_sets = ["alpha", "anarcandy", "cburnett", "chessnut", "kosal", "maestro", "merida"];
 const images = {}; // piece images
 const audio = {};
-const ai_vals = [ 1, 2, 3, 4, 5 ];
+const ai_vals = [ 1, 2, 3, 4, 5, 6, 7 ];
 const promotes = {"Q": null, "B": null, "R": null, "N": null};
 
 let curr_set = "kosal";
@@ -42,7 +45,7 @@ let ctx = null; // canvas context
 let evaluation = 0;
 let can_move = true;
 let ai_time = 0.0;
-let curr_depth = 4;
+let curr_depth = 5;
 let board_state = null;
 let white_checked = null; 
 let black_checked = null;
@@ -282,6 +285,7 @@ async function ai_done(event) {
     set_worker();
     return;
   }
+  console.log(event.data);
   let result = parse_response(event.data[1]);
   if (result[0] === "you-cm") {
     alert("YOU WIN!");
@@ -364,26 +368,29 @@ function bind_click() {
         }
       }
       if (prom_moves[pos]) {
-        for (let mov of prom_moves[pos]) {
-          moves_highlight.add(mov.TO);
+        for (let mov in prom_moves[pos]) {
+          moves_highlight.add(parseInt(mov));
         }
       }
       if(moves_highlight.size<1) selected = -1;
     }
     else if (selected!==-1) {
       let mov_fen = null;
-      for (let mov of regular_moves[selected]) {
-        if (mov.TO==pos) {
-          mov_fen = mov.FEN;
-          break;
-        };
+      if (regular_moves[selected]) {
+        for (let mov of regular_moves[selected]) {
+          if (mov.TO==pos) {
+            mov_fen = mov.FEN;
+            break;
+          };
+        }
       }
       if (mov_fen !== null) {
         conclude_move(mov_fen);
         return;
       }
-      else if (!!prom_moves[selected] && !!prom_moves[selected][pos]) {
-        for (let mov in prom_moves[selected][pos]) {
+      else if (prom_moves[selected] && prom_moves[selected][pos]) {
+
+        for (let mov of prom_moves[selected][pos]) {
           promotes[mov.PIECE] = mov.FEN;
         }
         can_move = false;
