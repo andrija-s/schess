@@ -1,8 +1,6 @@
 const WHITE = "w";
 const BLACK = "b";
 const NONE = "-0";
-const SQUARES_W = 8;
-const SQUARES_H = 8;
 const ROOK = "R";
 const KNIGHT = "N";
 const KING = "K";
@@ -10,8 +8,13 @@ const PAWN = "P";
 const QUEEN  = "Q";
 const BISHOP = "B";
 const DEFAULT_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - n";
+const STATUS_CM = "cm"; // checkmate
+const STATUS_SM = "sm"; // stalemate
+const STATUS_OG = "og"; // ongoing
 const c_height = window.innerHeight / 1.1; // canvas height
 const c_width = c_height;  // canvas width
+const SQUARES_W = 8;
+const SQUARES_H = 8;
 const width = c_width/SQUARES_W;   // square width
 const height = c_height/SQUARES_H; // square height
 const PROM_IMG_W = SQUARES_W+3;
@@ -114,14 +117,17 @@ async function render_board() {
       let pos = linear(x,y);
       ctx.fillStyle =  BORDER_COLOR;
       ctx.fillRect(i*width,j*height,width,height);
-      ctx.fillStyle = ((board_state[pos].TYPE===KING && board_state[pos].COLOR===WHITE && white_checked) 
-                      || (board_state[pos].TYPE===KING && board_state[pos].COLOR===BLACK && black_checked)) 
-                      ? CHECK_COLOR : 
-                        ((j % 2 === i % 2) ? LSQ_COLOR : DSQ_COLOR);
+      ctx.fillStyle = (j % 2 === i % 2) ? LSQ_COLOR : DSQ_COLOR;
       if (selected === pos) ctx.fillStyle = SELECT_COLOR;
-      else if (moves_highlight.has(pos)) ctx.fillStyle = MOVE_HGHLT_COLOR;
-      else if (pos === recent_from) ctx.fillStyle = SQ_FROM_COLOR;
-      else if (pos === recent_to) ctx.fillStyle = SQ_TO_COLOR;
+      else if (moves_highlight.has(pos)) 
+        ctx.fillStyle = MOVE_HGHLT_COLOR;
+      else if ((board_state[pos].TYPE===KING && board_state[pos].COLOR===WHITE && white_checked) 
+                || (board_state[pos].TYPE===KING && board_state[pos].COLOR===BLACK && black_checked)) 
+        ctx.fillStyle = CHECK_COLOR;
+      else if (pos === recent_from) 
+        ctx.fillStyle = SQ_FROM_COLOR;
+      else if (pos === recent_to)
+        ctx.fillStyle = SQ_TO_COLOR;
       ctx.fillRect(i*width,j*height,width-1,height-1);
     }
   }
@@ -189,7 +195,6 @@ function reset_highlight(iter) {
 function set_worker() {
   worker = new Worker(WORKER_PATH);
   worker.onmessage = ai_done;
-  //move_ai("2R1Nrk1/8/8/6Qp/8/4P3/4K1P1/8 b - - y");
 }
 
 async function reset() {
@@ -304,18 +309,21 @@ async function ai_done(event) {
   let time = ((Date.now() - ai_time) / 1000).toFixed(2);
   console.log("depth base: %d\n%f secs\neval: %f\nmove: %O\nleaf nodes:%i", 
               curr_depth, time, evaluation, result[2], result[4]);
-
+  
+  while ((Date.now() - ai_time) / 1000 < .25) {
+    // ai delay
+  }
   [board_state, white_checked, black_checked] = await parse_fen(result[3]);
   recent_from = result[2][0];
   recent_to = result[2][1];
   play_audio();
   await render_state();
-  if (result[0] === "cm") {
+  if (result[0] === STATUS_CM) {
     lose();
     game_over = true;
     return;
   }
-  else if (result[0] === "sm") {
+  else if (result[0] === STATUS_SM) {
     draw();
     game_over = true;
     return;
@@ -349,8 +357,8 @@ async function conclude_move(move) {
   [board_state, white_checked, black_checked] = await parse_fen(move.FEN);
   await render_state();
   play_audio();
-  if (move.STATUS !== "og") {
-    if (move.STATUS == "cm") {
+  if (move.STATUS !== STATUS_OG) {
+    if (move.STATUS === STATUS_CM) {
       win();
     }
     else {

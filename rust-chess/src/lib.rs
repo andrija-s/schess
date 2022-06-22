@@ -237,6 +237,13 @@ fn ai(board: &Board, player: Color, depth: usize, core_depth: usize, alpha: i32,
         board.make_move(m, &mut *bresult.as_mut_ptr());
         let (value, _, ret_sum) = ai(&*bresult.as_ptr(), player, depth - 1, core_depth, curr_alpha, beta, !max_player);
         sum += ret_sum;
+        if depth == core_depth && value == i32::MAX {
+          if (&*bresult.as_ptr()).status() == BoardStatus::Checkmate {
+            best_val = value;
+            best_move = Some(m);
+            break;
+          }
+        }
         if value > best_val {
           best_val = value;
           best_move = Some(m);
