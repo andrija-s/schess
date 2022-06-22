@@ -8,13 +8,13 @@ onmessage = async function(event) {
 
   let result;
 
-  if (event.data.type==="ai_search") {
-    result = await ai_search(event.data.depth, event.data.fen);
+  if (event.data.TYPE==="ai_search") {
+    result = await ai_search(event.data.DEPTH, event.data.FEN);
   }
   else {
-    result = await init_moves(event.data.fen);
+    result = await init_moves(event.data.FEN);
   }
   
-  postMessage([event.data.type, result]);
+  postMessage([event.data.TYPE, result]);
 
 }

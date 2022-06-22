@@ -1,15 +1,14 @@
-const WHITE = 0;
-const BLACK = 1;
-const NONE = -1;
-const EMPTY = 0;
+const WHITE = "w";
+const BLACK = "b";
+const NONE = "-0";
 const SQUARES_W = 8;
 const SQUARES_H = 8;
-const ROOK = 1;
-const KNIGHT = 2;
-const KING = 3;
-const PAWN = 4;
-const QUEEN  = 5;
-const BISHOP = 6;
+const ROOK = "R";
+const KNIGHT = "N";
+const KING = "K";
+const PAWN = "P";
+const QUEEN  = "Q";
+const BISHOP = "B";
 const DEFAULT_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
 const c_height = window.innerHeight / 1.1; // canvas height
 const c_width = c_height;  // canvas width
@@ -17,21 +16,24 @@ const width = c_width/SQUARES_W;   // square width
 const height = c_height/SQUARES_H; // square height
 const PROM_IMG_W = SQUARES_W+3;
 const PROM_IMG_H = SQUARES_H+3;
-const btn_highl = "#d4d422";
-const check_color = "yellow";
-const border_color = "black"; // square border
-const selected_color = "goldenrod";
-const sq_lcolor = "#ff7a39"; // square light
-const sq_dcolor = "brown";   // square dark
-const highlight_color = "navajowhite"; // move highlight
-const sq_from ="teal";
-const sq_to ="aqua";
-const piece_sets = ["alpha", "anarcandy", "cburnett", "chessnut", "kosal", "maestro", "merida"];
-const images = {}; // piece images
-const audio = {};
-const ai_vals = [ 1, 2, 3, 4, 5, 6 ];
-const promotes = {"Q": null, "B": null, "R": null, "N": null};
+const BTN_HGHLT = "#d4d422";
+const CHECK_COLOR = "yellow";
+const BORDER_COLOR = "black"; // square border
+const SELECT_COLOR = "goldenrod";
+const LSQ_COLOR = "#ff7a39"; // square light
+const DSQ_COLOR = "brown";   // square dark
+const MOVE_HGHLT_COLOR = "navajowhite"; // move highlight
+const SQ_FROM_COLOR ="teal";
+const SQ_TO_COLOR ="aqua";
+const PIECE_SETS = ["alpha", "anarcandy", "cburnett", "chessnut", "kosal", "maestro", "merida"];
+const IMAGES = {}; // piece images
+const AUDIO = {};
+const DEPTHS = [ 1, 2, 3, 4, 5, 6 ];
+const WORKER_PATH = "./scripts/worker.js";
+const AI_SEARCH = "ai_search";
+const INIT_MOVES = "init_moves";
 
+let promote_fens = {"Q": null, "B": null, "R": null, "N": null};
 let curr_set = "kosal";
 let worker = null
 let player = WHITE;
@@ -63,6 +65,15 @@ class Piece {
 // TODO
 function pick_color(input) {
   return;
+}
+function draw() {
+  alert("DRAW!");
+}
+function win() {
+  alert("YOU WIN!");
+}
+function lose() {
+  alert("YOU LOSE!");
 }
 /**
  * @param {Number} x 
@@ -96,37 +107,37 @@ function selected_move(moves, pos) {
   return null;
 }
 
-function render_board() {
+async function render_board() {
   for (let i = 0; i < SQUARES_W; i++) {
     for (let j = 0; j < SQUARES_H; j++) {
       let [x,y] = (is_flipped) ? [7-i,7-j] : [i,j]; 
       let pos = linear(x,y);
-      ctx.fillStyle =  border_color;
+      ctx.fillStyle =  BORDER_COLOR;
       ctx.fillRect(i*width,j*height,width,height);
       ctx.fillStyle = ((board_state[pos].TYPE===KING && board_state[pos].COLOR===WHITE && white_checked) 
                       || (board_state[pos].TYPE===KING && board_state[pos].COLOR===BLACK && black_checked)) 
-                      ? check_color : 
-                        ((j % 2 === i % 2) ? sq_lcolor : sq_dcolor);
-      if (selected === pos) ctx.fillStyle = selected_color;
-      else if (moves_highlight.has(pos)) ctx.fillStyle = highlight_color;
-      else if (pos === recent_from) ctx.fillStyle = sq_from;
-      else if (pos === recent_to) ctx.fillStyle = sq_to;
+                      ? CHECK_COLOR : 
+                        ((j % 2 === i % 2) ? LSQ_COLOR : DSQ_COLOR);
+      if (selected === pos) ctx.fillStyle = SELECT_COLOR;
+      else if (moves_highlight.has(pos)) ctx.fillStyle = MOVE_HGHLT_COLOR;
+      else if (pos === recent_from) ctx.fillStyle = SQ_FROM_COLOR;
+      else if (pos === recent_to) ctx.fillStyle = SQ_TO_COLOR;
       ctx.fillRect(i*width,j*height,width-1,height-1);
     }
   }
 }
 
 async function render_state() {
-  render_board();
+  await render_board();
 
   for (let i=0; i<SQUARES_H*SQUARES_W; i++) {
-    if (board_state[i].TYPE===EMPTY) {
+    if (board_state[i].TYPE===NONE) {
       continue;
     };
     let [x, y] = nonlinear(i);
     [x, y] = (is_flipped) ? [7-x,7-y] : [x,y];
     let str = board_state[i].COLOR + "" + board_state[i].TYPE;
-    let img = images[str];
+    let img = IMAGES[str];
     ctx.drawImage(img, (x*width)+(width/(SQUARES_W+SQUARES_W)), (y*height)+(height/(SQUARES_H+SQUARES_H)), c.width/(SQUARES_W+1), c.height/(SQUARES_H+1));
   }
 }
@@ -142,7 +153,7 @@ async function flip(change=false) {
 function load_image(key, url) {
   return new Promise((resolve, reject) => { 
                         let i = new Image();
-                        images[key] = i;
+                        IMAGES[key] = i;
                         i.addEventListener('load', () => resolve(i));
                         i.addEventListener('error', (err) => reject(err));
                         i.src = url; 
@@ -150,23 +161,23 @@ function load_image(key, url) {
 }
 async function init_images(set) {
   let jar = [];
-  jar.push(load_image(""+BLACK+ROOK,   `./assets/pieces/${set}/bR.svg`));
-  jar.push(load_image(""+BLACK+KNIGHT, `./assets/pieces/${set}/bN.svg`));
-  jar.push(load_image(""+BLACK+KING,   `./assets/pieces/${set}/bK.svg`));
-  jar.push(load_image(""+BLACK+PAWN,   `./assets/pieces/${set}/bP.svg`));
-  jar.push(load_image(""+BLACK+QUEEN,  `./assets/pieces/${set}/bQ.svg`));
-  jar.push(load_image(""+BLACK+BISHOP, `./assets/pieces/${set}/bB.svg`));
-  jar.push(load_image(""+WHITE+ROOK,   `./assets/pieces/${set}/wR.svg`));
-  jar.push(load_image(""+WHITE+KNIGHT, `./assets/pieces/${set}/wN.svg`));
-  jar.push(load_image(""+WHITE+KING,   `./assets/pieces/${set}/wK.svg`));
-  jar.push(load_image(""+WHITE+PAWN,   `./assets/pieces/${set}/wP.svg`));
-  jar.push(load_image(""+WHITE+QUEEN,  `./assets/pieces/${set}/wQ.svg`));
-  jar.push(load_image(""+WHITE+BISHOP, `./assets/pieces/${set}/wB.svg`));
+  jar.push(load_image(BLACK+ROOK,   `./assets/pieces/${set}/bR.svg`));
+  jar.push(load_image(BLACK+KNIGHT, `./assets/pieces/${set}/bN.svg`));
+  jar.push(load_image(BLACK+KING,   `./assets/pieces/${set}/bK.svg`));
+  jar.push(load_image(BLACK+PAWN,   `./assets/pieces/${set}/bP.svg`));
+  jar.push(load_image(BLACK+QUEEN,  `./assets/pieces/${set}/bQ.svg`));
+  jar.push(load_image(BLACK+BISHOP, `./assets/pieces/${set}/bB.svg`));
+  jar.push(load_image(WHITE+ROOK,   `./assets/pieces/${set}/wR.svg`));
+  jar.push(load_image(WHITE+KNIGHT, `./assets/pieces/${set}/wN.svg`));
+  jar.push(load_image(WHITE+KING,   `./assets/pieces/${set}/wK.svg`));
+  jar.push(load_image(WHITE+PAWN,   `./assets/pieces/${set}/wP.svg`));
+  jar.push(load_image(WHITE+QUEEN,  `./assets/pieces/${set}/wQ.svg`));
+  jar.push(load_image(WHITE+BISHOP, `./assets/pieces/${set}/wB.svg`));
   await Promise.all(jar);
 }
 
 async function init_audio() {
-  audio["move"] = new Audio("./assets/sound/move.wav");
+  AUDIO["move"] = new Audio("./assets/sound/move.wav");
 }
 
 function reset_highlight(iter) {
@@ -176,7 +187,7 @@ function reset_highlight(iter) {
 }
 
 function set_worker() {
-  worker = new Worker("./scripts/worker.js");
+  worker = new Worker(WORKER_PATH);
   worker.onmessage = ai_done;
   //move_ai("2R1Nrk1/8/8/6Qp/8/4P3/4K1P1/8 b - - y");
 }
@@ -196,14 +207,13 @@ async function reset() {
     move_ai(DEFAULT_FEN);
   }
   else {
-    worker.postMessage({type: "init_moves", fen: DEFAULT_FEN});
+    worker.postMessage({TYPE: INIT_MOVES, FEN: DEFAULT_FEN});
   }
   await render_state();
 }
 function prom_images() {
-  let color = (player===WHITE) ? "w" : "b";
   for (let prom of document.getElementById("drop-prom").children) {
-    prom.innerHTML = `<img src="./assets/pieces/${curr_set}/${color}${prom.id}.svg" width="${c.width/PROM_IMG_W}" height="${c.height/PROM_IMG_H}"/>`;
+    prom.innerHTML = `<img src="./assets/pieces/${curr_set}/${player}${prom.id}.svg" width="${c.width/PROM_IMG_W}" height="${c.height/PROM_IMG_H}"/>`;
   }
 }
 function change_color() {
@@ -216,20 +226,20 @@ function hide_prom() {
   document.querySelector(".proms").style.display = "none";
 }
 function promote_fen(piece) {
-  return promotes[piece];
+  return promote_fens[piece];
 }
 function bind_buttons() {
 
   let ai_iter = document.getElementById("drop-ai");
-  for (let i=0; i<ai_vals.length; i++) {
+  for (let i=0; i<DEPTHS.length; i++) {
     let tag = document.createElement("a");
-    tag.innerHTML = "Depth " + ai_vals[i];
-    if (tag.innerHTML==="Depth " + curr_depth) tag.style["background-color"] = btn_highl;
+    tag.innerHTML = "Depth " + DEPTHS[i];
+    if (tag.innerHTML==="Depth " + curr_depth) tag.style["background-color"] = BTN_HGHLT;
     tag.addEventListener("click", (e) => {
       if (tag.innerHTML==="Depth " + curr_depth) { return; }
       reset_highlight(ai_iter);
-      e.target.style["background-color"] = btn_highl;
-      curr_depth = ai_vals[i];
+      e.target.style["background-color"] = BTN_HGHLT;
+      curr_depth = DEPTHS[i];
     });
     ai_iter.appendChild(tag);
   }
@@ -239,7 +249,7 @@ function bind_buttons() {
   });
 
   let prom_iter = document.getElementById("drop-prom");
-  for (const piece in promotes) {
+  for (const piece in promote_fens) {
     let tag = document.createElement("a");
     tag.id = piece
     tag.addEventListener("click", () => {
@@ -250,17 +260,17 @@ function bind_buttons() {
   }
   prom_images();
   let set_iter = document.getElementById("drop-sets");
-  for (const set of piece_sets) {
+  for (const set of PIECE_SETS) {
     let tag = document.createElement("a");
     tag.innerHTML = set;
-    if (tag.innerHTML===curr_set) tag.style["background-color"] = btn_highl;
+    if (tag.innerHTML===curr_set) tag.style["background-color"] = BTN_HGHLT;
     tag.addEventListener("click", async function(e) {
       if (tag.innerHTML===curr_set) { return; }
       try { await init_images(tag.innerHTML); }
       catch(e) { return; }
       curr_set = tag.innerHTML;
       reset_highlight(set_iter);
-      e.target.style["background-color"] = btn_highl;
+      e.target.style["background-color"] = BTN_HGHLT;
       prom_images();
       await render_state();
     });
@@ -281,7 +291,7 @@ function bind_buttons() {
 
 async function ai_done(event) {
   //console.log(event.data);
-  if (event.data[0]==="init_moves") {
+  if (event.data[0]===INIT_MOVES) {
     [regular_moves, prom_moves] = parse_player_moves(event.data[1]);
     can_move = true;
     worker.terminate();
@@ -301,12 +311,12 @@ async function ai_done(event) {
   play_audio();
   await render_state();
   if (result[0] === "cm") {
-    alert("YOU LOSE!");
+    lose();
     game_over = true;
     return;
   }
   else if (result[0] === "sm") {
-    alert("DRAW!");
+    draw();
     game_over = true;
     return;
   }
@@ -317,18 +327,18 @@ async function ai_done(event) {
   can_move = true;
 }
 /**
- * @param {String} fen_str 
+ * @param {String} fen 
  */
-function move_ai(fen_str) {
+function move_ai(fen) {
   can_move = false;
   ai_time = Date.now();
-  worker.postMessage({type: "ai_search", depth: curr_depth, fen: fen_str});
+  worker.postMessage({TYPE: AI_SEARCH, DEPTH: curr_depth, FEN: fen});
 }
 /**
  * @param {Move} move 
  */
 function play_audio() {
-  audio["move"].play();
+  AUDIO["move"].play();
 }
 /**
  * @param {Move} move 
@@ -337,14 +347,14 @@ async function conclude_move(move) {
   selected = -1
   moves_highlight = new Set();
   [board_state, white_checked, black_checked] = await parse_fen(move.FEN);
-  play_audio();
   await render_state();
+  play_audio();
   if (move.STATUS !== "og") {
     if (move.STATUS == "cm") {
-      alert("YOU WIN!");
+      win();
     }
     else {
-      alert("YOU LOSE!");
+      lose();
     }
     game_over = true;
     return;
@@ -361,7 +371,7 @@ function bind_click() {
     [x, y] = (is_flipped) ? [7-x,7-y] : [x,y];
     let pos = linear(x, y);
 
-    if (selected===-1 && board_state[pos].TYPE!==EMPTY && board_state[pos].COLOR===player) {
+    if (selected===-1 && board_state[pos].TYPE!==NONE && board_state[pos].COLOR===player) {
       selected = pos;
       if (regular_moves[pos]) {
         for (let mov of regular_moves[pos]) {
@@ -392,7 +402,7 @@ function bind_click() {
       else if (prom_moves[selected] && prom_moves[selected][pos]) {
 
         for (let mov of prom_moves[selected][pos]) {
-          promotes[mov.PIECE] = {FEN: mov.FEN, STATUS: mov.STATUS};
+          promote_fens[mov.PIECE] = {FEN: mov.FEN, STATUS: mov.STATUS};
         }
         can_move = false;
         let proms = document.querySelector(".proms");
@@ -420,23 +430,16 @@ async function parse_fen(string) {
     if (curr_char==="/") continue;
     if (!isNaN(parseInt(curr_char))) {
       for (let j = 0; j < parseInt(curr_char); j++) {
-        board.push(new Piece(NONE, EMPTY));
+        board.push(new Piece(NONE, NONE));
       }
       continue;
     }
     let upper = curr_char.toUpperCase();
     let color = (upper===curr_char) ? WHITE : BLACK;
-    let type;
-    if (upper==="R") type = ROOK;
-    else if (upper==="Q") type = QUEEN;
-    else if (upper==="K") type = KING;
-    else if (upper==="B") type = BISHOP;
-    else if (upper==="N") type = KNIGHT;
-    else if (upper==="P") type = PAWN;
-    board.push(new Piece(color, type));
+    board.push(new Piece(color, upper));
   }
-  let black_checked = (str_split[1]==="b" && str_split[4]==="y") ? true : false;
-  let white_checked = (str_split[1]==="w" && str_split[4]==="y") ? true : false;
+  let black_checked = (str_split[1]===BLACK && str_split[4]==="y") ? true : false;
+  let white_checked = (str_split[1]===WHITE && str_split[4]==="y") ? true : false;
   
   return [board, white_checked, black_checked];
 }
@@ -476,9 +479,6 @@ function parse_player_moves(fens) {
 // format: status, evaluation, ai move, new state, num nodes computed, player moves
 function parse_response(string) {
   let str_split = string.split(',');
-  if (str_split[0]==="you-cm" || str_split[0]==="you-sm") {
-    return [str_split[0],null,null,null,null,null,null];
-  }
   let state_eval = parseInt(str_split[1]);
   let ai_move = str_split[2].split("?");
   ai_move = [pos_conversion(parseInt(ai_move[0])), pos_conversion(parseInt(ai_move[1]))];
