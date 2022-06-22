@@ -2,6 +2,7 @@
 
 [Play!](https://andrija-s.github.io/schess/) - Works off the [Rust branch](https://github.com/andrija-s/schess/tree/rust_switch) currently.
 
+AI is currently very basic, only evaluates material and transpositions/iterative deepening has not been implemented (yet, one would hope).
 
 Assets Used: <br />
 [alpha]() by Eric Bentzen <br />
