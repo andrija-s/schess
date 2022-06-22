@@ -3,7 +3,9 @@ let wasm_bindgen;
     const __exports = {};
     let wasm;
 
-    let WASM_VECTOR_LEN = 0;
+    const cachedTextDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: true });
+
+    cachedTextDecoder.decode();
 
     let cachedUint8Memory0;
     function getUint8Memory0() {
@@ -12,6 +14,12 @@ let wasm_bindgen;
         }
         return cachedUint8Memory0;
     }
+
+    function getStringFromWasm0(ptr, len) {
+        return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
+    }
+
+    let WASM_VECTOR_LEN = 0;
 
     const cachedTextEncoder = new TextEncoder('utf-8');
 
@@ -72,14 +80,6 @@ let wasm_bindgen;
             cachedInt32Memory0 = new Int32Array(wasm.memory.buffer);
         }
         return cachedInt32Memory0;
-    }
-
-    const cachedTextDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: true });
-
-    cachedTextDecoder.decode();
-
-    function getStringFromWasm0(ptr, len) {
-        return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
     }
     /**
     * @param {string} fen
@@ -154,6 +154,9 @@ let wasm_bindgen;
     function getImports() {
         const imports = {};
         imports.wbg = {};
+        imports.wbg.__wbg_log_6be25f6be6f8feca = function(arg0, arg1) {
+            console.log(getStringFromWasm0(arg0, arg1));
+        };
 
         return imports;
     }

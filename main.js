@@ -178,13 +178,14 @@ function reset_highlight(iter) {
 function set_worker() {
   worker = new Worker("./scripts/worker.js");
   worker.onmessage = ai_done;
+  //move_ai("2R1Nrk1/8/8/6Qp/8/4P3/4K1P1/8 b - - y");
 }
 
 async function reset() {
   if (worker !== null)  worker.terminate();
   set_worker();
   hide_prom();
-  [board_state, white_checked, black_checked] = parse_fen(DEFAULT_FEN);
+  [board_state, white_checked, black_checked] = await parse_fen(DEFAULT_FEN);
   moves_highlight = new Set();
   recent_from = -1;
   recent_to = -1;
@@ -279,6 +280,7 @@ function bind_buttons() {
 }
 
 async function ai_done(event) {
+  //console.log(event.data);
   if (event.data[0]==="init_moves") {
     [regular_moves, prom_moves] = parse_player_moves(event.data[1]);
     can_move = true;
@@ -287,33 +289,23 @@ async function ai_done(event) {
     return;
   }
   let result = parse_response(event.data[1]);
-  if (result[0] === "you-cm") {
-    alert("YOU WIN!");
-    game_over = true;
-    return;
-  }
-  else if (result[0] === "you-sm") {
-    alert("DRAW!");
-    game_over = true;
-    return;
-  }
   // format: status, evaluation, ai move, new state, num nodes computed, player moves
   evaluation = result[1].toFixed(2) * ((player===WHITE) ? -1 : 1);
   let time = ((Date.now() - ai_time) / 1000).toFixed(2);
   console.log("depth base: %d\n%f secs\neval: %f\nmove: %O\nleaf nodes:%i", 
               curr_depth, time, evaluation, result[2], result[4]);
 
-  [board_state, white_checked, black_checked] = parse_fen(result[3]);
+  [board_state, white_checked, black_checked] = await parse_fen(result[3]);
   recent_from = result[2][0];
   recent_to = result[2][1];
   play_audio();
   await render_state();
-  if (result[0] === "ai-cm") {
+  if (result[0] === "cm") {
     alert("YOU LOSE!");
     game_over = true;
     return;
   }
-  else if (result[0] === "ai-sm") {
+  else if (result[0] === "sm") {
     alert("DRAW!");
     game_over = true;
     return;
@@ -341,14 +333,23 @@ function play_audio() {
 /**
  * @param {Move} move 
  */
-async function conclude_move(fen) {
+async function conclude_move(move) {
   selected = -1
   moves_highlight = new Set();
-  [board_state, white_checked, black_checked] = parse_fen(fen);
+  [board_state, white_checked, black_checked] = await parse_fen(move.FEN);
   play_audio();
   await render_state();
-  console.log(fen);
-  move_ai(fen);
+  if (move.STATUS !== "og") {
+    if (move.STATUS == "cm") {
+      alert("YOU WIN!");
+    }
+    else {
+      alert("YOU LOSE!");
+    }
+    game_over = true;
+    return;
+  }
+  move_ai(move.FEN);
 }
 function bind_click() {
   c.addEventListener("mousedown", async function(e) {
@@ -375,23 +376,23 @@ function bind_click() {
       if(moves_highlight.size<1) selected = -1;
     }
     else if (selected!==-1) {
-      let mov_fen = null;
+      let move = null;
       if (regular_moves[selected]) {
         for (let mov of regular_moves[selected]) {
           if (mov.TO==pos) {
-            mov_fen = mov.FEN;
+            move = {FEN: mov.FEN, STATUS: mov.STATUS};
             break;
           };
         }
       }
-      if (mov_fen !== null) {
-        conclude_move(mov_fen);
+      if (move !== null) {
+        conclude_move(move);
         return;
       }
       else if (prom_moves[selected] && prom_moves[selected][pos]) {
 
         for (let mov of prom_moves[selected][pos]) {
-          promotes[mov.PIECE] = mov.FEN;
+          promotes[mov.PIECE] = {FEN: mov.FEN, STATUS: mov.STATUS};
         }
         can_move = false;
         let proms = document.querySelector(".proms");
@@ -410,7 +411,7 @@ function bind_click() {
   });
 }
 
-function parse_fen(string) {
+async function parse_fen(string) {
   if (string==="") return [null,null,null];
   let str_split = string.split(' ');
   let board = [];
@@ -419,7 +420,7 @@ function parse_fen(string) {
     if (curr_char==="/") continue;
     if (!isNaN(parseInt(curr_char))) {
       for (let j = 0; j < parseInt(curr_char); j++) {
-        board.push(new Piece(NONE, EMPTY))
+        board.push(new Piece(NONE, EMPTY));
       }
       continue;
     }
@@ -432,7 +433,7 @@ function parse_fen(string) {
     else if (upper==="B") type = BISHOP;
     else if (upper==="N") type = KNIGHT;
     else if (upper==="P") type = PAWN;
-    board.push(new Piece(color, type))
+    board.push(new Piece(color, type));
   }
   let black_checked = (str_split[1]==="b" && str_split[4]==="y") ? true : false;
   let white_checked = (str_split[1]==="w" && str_split[4]==="y") ? true : false;
@@ -458,16 +459,16 @@ function parse_player_moves(fens) {
       if (!regular_list[splitty[0]]) {
         regular_list[splitty[0]] = [];
       }
-      regular_list[splitty[0]].push({TO: splitty[1], FEN: splitty[3]});
+      regular_list[splitty[0]].push({TO: splitty[1], FEN: splitty[3], STATUS: splitty[4]});
     }
     else {
       if (!prom_list[splitty[0]]) {
         prom_list[splitty[0]] = {};
-        if (!prom_list[splitty[0]][splitty[1]]) {
-          prom_list[splitty[0]][splitty[1]] = [];
-        }
       }
-      prom_list[splitty[0]][splitty[1]].push({PIECE: splitty[2], FEN: splitty[3]})
+      if (!prom_list[splitty[0]][splitty[1]]) {
+        prom_list[splitty[0]][splitty[1]] = [];
+      }
+      prom_list[splitty[0]][splitty[1]].push({PIECE: splitty[2], FEN: splitty[3], STATUS: splitty[4]});
     }
   }
   return [regular_list,prom_list];

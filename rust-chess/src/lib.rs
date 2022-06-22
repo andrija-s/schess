@@ -2,7 +2,7 @@ use wasm_bindgen::prelude::*;
 use chess::{Piece, Board, ChessMove, Rank, CastleRights, BoardStatus, Square, Color, MoveGen, ALL_FILES, ALL_RANKS, ALL_SQUARES};
 use std::{mem, cmp, str::FromStr};
 
-/* #[wasm_bindgen]
+#[wasm_bindgen]
 extern "C" {
 
     #[wasm_bindgen(js_namespace = console)]
@@ -13,7 +13,7 @@ extern "C" {
 
     #[wasm_bindgen(js_namespace = console, js_name = log)]
     fn log_many(a: &str, b: &str);
-} */
+}
 
 #[wasm_bindgen]
 pub fn init_moves(fen: &str) -> String {
@@ -25,6 +25,11 @@ pub fn init_moves(fen: &str) -> String {
     let copy = board.make_move_new(m);
     let from = m.get_source().to_int().to_string();
     let to = m.get_dest().to_int().to_string();
+    let status = match copy.status() {
+      BoardStatus::Checkmate => String::from("cm"),
+      BoardStatus::Stalemate => String::from("sm"),
+      BoardStatus::Ongoing   => String::from("og")
+    };
     let prom = match m.get_promotion() {
       Some(Piece::Bishop) => String::from("B"),
       Some(Piece::Queen)  => String::from("Q"),
@@ -33,7 +38,7 @@ pub fn init_moves(fen: &str) -> String {
       _                   => String::from("0"),
     };
 
-    player_moves.push([from, to, prom, to_fen(&copy)].join("?"));
+    player_moves.push([from, to, prom, to_fen(&copy), status].join("?"));
   }
   return player_moves.join(";");
 }
@@ -41,24 +46,20 @@ pub fn init_moves(fen: &str) -> String {
 #[wasm_bindgen]
 pub fn ai_search(depth: usize, fen: &str) -> String {
   let board = Board::from_str(fen).expect("Valid FEN");
-  match board.status() {
-    BoardStatus::Checkmate => return String::from("you-cm"),
-    BoardStatus::Stalemate => return String::from("you-sm"),
-    BoardStatus::Ongoing => ()
-  };
+
   let (value, mov, total) = 
                 ai(&board, board.side_to_move(), depth, depth, i32::MIN, i32::MAX, true);
-  
+
   let ai_move= match mov {
     Some(t) => [t.get_source().to_int().to_string(),
                            t.get_dest().to_int().to_string()].join("?"),
-    None => "".to_string(),
+    None => { log("No Move"); "No Move".to_string() },
   };
   let response= board.make_move_new(mov.unwrap());
   let status = match response.status() {
-    BoardStatus::Checkmate => String::from("ai-cm"),
-    BoardStatus::Stalemate => String::from("ai-sm"),
-    BoardStatus::Ongoing   => String::from("ai-og")
+    BoardStatus::Checkmate => String::from("cm"),
+    BoardStatus::Stalemate => String::from("sm"),
+    BoardStatus::Ongoing   => String::from("og")
   };
   let mut player_moves = Vec::new();
   let move_it = MoveGen::new_legal(&response);
@@ -73,7 +74,13 @@ pub fn ai_search(depth: usize, fen: &str) -> String {
       Some(Piece::Rook)   => String::from("R"),
       _                   => String::from("0"),
     };
-    player_moves.push([from, to, prom, to_fen(&copy)].join("?"));
+    let fen = to_fen(&copy);
+    let status = match copy.status() {
+      BoardStatus::Checkmate => String::from("cm"),
+      BoardStatus::Stalemate => String::from("sm"),
+      BoardStatus::Ongoing   => String::from("og")
+    };
+    player_moves.push([from, to, prom, fen, status].join("?"));
   }
   // status,eval,ai move,fen on move,total nodes computed,all player moves in from?to?prom?fen format
   return [status,value.to_string(),ai_move,to_fen(&response),total.to_string(),player_moves.join(";")].join(",")
@@ -213,11 +220,11 @@ fn ai(board: &Board, player: Color, depth: usize, core_depth: usize, alpha: i32,
 
   if depth < 1 {
     let value = eval_board(board, player);
-    return (value, None, 1);
+    return (value, best_move, sum);
   }
 
   let move_it = MoveGen::new_legal(board);
-
+  let size = move_it.len();
   if max_player {
     let mut curr_alpha = alpha;
     for m in move_it {
@@ -260,7 +267,10 @@ fn ai(board: &Board, player: Color, depth: usize, core_depth: usize, alpha: i32,
       }
     }
   }
-
+  // hotfix until minimax logic is worked out
+  if best_move.is_none() && size > 0 {
+    best_move = MoveGen::new_legal(board).next();
+  }
   return (best_val, best_move, sum);
 
 }
