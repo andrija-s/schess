@@ -11,12 +11,12 @@ const DEFAULT_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - n";
 const STATUS_CM = "cm"; // checkmate
 const STATUS_SM = "sm"; // stalemate
 const STATUS_OG = "og"; // ongoing
-const c_height = window.innerHeight / 1.1; // canvas height
-const c_width = c_height;  // canvas width
+const C_HEIGHT = window.innerHeight / 1.1; // canvas height
+const C_WIDTH = C_HEIGHT;  // canvas width
 const SQUARES_W = 8;
 const SQUARES_H = 8;
-const width = c_width/SQUARES_W;   // square width
-const height = c_height/SQUARES_H; // square height
+const SQ_WIDTH = C_WIDTH/SQUARES_W;   // square width
+const SQ_HEIGHT = C_HEIGHT/SQUARES_H; // square height
 const PROM_IMG_W = SQUARES_W+3;
 const PROM_IMG_H = SQUARES_H+3;
 const BTN_HGHLT = "#d4d422";
@@ -28,7 +28,7 @@ const DSQ_COLOR = "brown";   // square dark
 const MOVE_HGHLT_COLOR = "navajowhite"; // move highlight
 const SQ_FROM_COLOR ="teal";
 const SQ_TO_COLOR ="aqua";
-const PIECE_SETS = ["alpha", "anarcandy", "cburnett", "chessnut", "kosal", "maestro", "merida"];
+const PIECE_SETS = [ "alpha", "anarcandy", "cburnett", "chessnut", "kosal", "maestro", "merida" ];
 const IMAGES = {}; // piece images
 const AUDIO = {};
 const DEPTHS = [ 1, 2, 3, 4, 5, 6 ];
@@ -259,7 +259,7 @@ function render_board() {
       let [x,y] = (is_flipped_flag) ? [7-i,7-j] : [i,j]; 
       let pos = linear(x,y);
       ctx.fillStyle =  BORDER_COLOR;
-      ctx.fillRect(i*width,j*height,width,height);
+      ctx.fillRect(i*SQ_WIDTH,j*SQ_HEIGHT,SQ_WIDTH,SQ_HEIGHT);
       ctx.fillStyle = (j % 2 === i % 2) ? LSQ_COLOR : DSQ_COLOR;
       if (get_selected() === pos) ctx.fillStyle = SELECT_COLOR;
       else if (moves_highlight.has(pos)) 
@@ -271,7 +271,7 @@ function render_board() {
         ctx.fillStyle = SQ_FROM_COLOR;
       else if (pos === get_recent_to())
         ctx.fillStyle = SQ_TO_COLOR;
-      ctx.fillRect(i*width,j*height,width-1,height-1);
+      ctx.fillRect(i*SQ_WIDTH,j*SQ_HEIGHT,SQ_WIDTH-1,SQ_HEIGHT-1);
     }
   }
 }
@@ -285,7 +285,7 @@ function render_state() {
     [x, y] = (is_flipped_flag) ? [7-x,7-y] : [x,y];
     let str = get_color_at(i) + "" + get_piece_at(i);
     let img = IMAGES[str];
-    ctx.drawImage(img, (x*width)+(width/(SQUARES_W+SQUARES_W)), (y*height)+(height/(SQUARES_H+SQUARES_H)), c.width/(SQUARES_W+1), c.height/(SQUARES_H+1));
+    ctx.drawImage(img, (x*SQ_WIDTH)+(SQ_WIDTH/(SQUARES_W+SQUARES_W)), (y*SQ_HEIGHT)+(SQ_HEIGHT/(SQUARES_H+SQUARES_H)), C_WIDTH/(SQUARES_W+1), C_HEIGHT/(SQUARES_H+1));
   }
 }
 
@@ -348,7 +348,7 @@ function reset_dropdown_highlight(iter) {
 }
 function prom_images() {
   for (let prom of document.getElementById("drop-prom").children) {
-    prom.innerHTML = `<img src="./assets/pieces/${get_set()}/${get_player()}${prom.id}.svg" width="${c.width/PROM_IMG_W}" height="${c.height/PROM_IMG_H}"/>`;
+    prom.innerHTML = `<img src="./assets/pieces/${get_set()}/${get_player()}${prom.id}.svg" width="${C_WIDTH/PROM_IMG_W}" height="${C_HEIGHT/PROM_IMG_H}"/>`;
   }
 }
 function hide_prom() {
@@ -457,8 +457,8 @@ function bind_click() {
   c.addEventListener("mousedown", function(e) {
     if (get_game_over() || !can_move()) return;
     let rect = c.getBoundingClientRect();
-    let x = ((e.clientX - rect.left) / width) | 0;
-    let y = ((e.clientY - rect.top) / height) | 0;
+    let x = ((e.clientX - rect.left) / SQ_WIDTH) | 0;
+    let y = ((e.clientY - rect.top) / SQ_HEIGHT) | 0;
     if (x > 7 || y > 7) return;
     [x, y] = (is_flipped_flag) ? [7-x,7-y] : [x,y];
     let pos = linear(x, y);
@@ -595,8 +595,8 @@ async function init() {
   c = document.createElement("canvas");
   let attrs = { 
     id: "chessBoard", 
-    width: c_width, 
-    height: c_height, 
+    width: C_WIDTH, 
+    height: C_HEIGHT, 
     style: "border:.25em solid black; position:relative; top:2rem; left:15rem;"
   };
   for(let key in attrs) {
