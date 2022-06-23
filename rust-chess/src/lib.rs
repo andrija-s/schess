@@ -44,7 +44,7 @@ pub fn init_moves(fen: &str) -> String {
 }
 
 #[wasm_bindgen]
-pub fn ai_search(depth: usize, fen: &str) -> String {
+pub fn ai_search(depth: isize, fen: &str) -> String {
   let board = Board::from_str(fen).expect("Valid FEN");
 
   let (value, mov, total, move_depth) = 
@@ -206,12 +206,12 @@ fn eval_board(board: &Board, player: Color) -> i32 {
   return value;
 }
 
-fn ai(board: &Board, player: Color, depth: usize, alpha: i32, beta: i32, max_player: bool) -> (i32, Option<ChessMove>, usize, usize) {
+fn ai(board: &Board, player: Color, depth: isize, alpha: i32, beta: i32, max_player: bool) -> (i32, Option<ChessMove>, usize, isize) {
   
   let mut best_val:i32 = if max_player { i32::MIN } else { i32::MAX };
-  let mut sum: usize = 1;
   let mut best_move = None;
-  let mut shallowest = usize::MIN;
+  let mut sum: usize = 1;
+  let mut shallowest = isize::MIN;
 
   match board.status() {
     BoardStatus::Checkmate => return (best_val, best_move, sum, depth),
