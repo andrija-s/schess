@@ -159,19 +159,15 @@ fn ai(board: &Board, player: Color, depth: isize, alpha: i32, beta: i32, max_pla
   let mut sum: usize = 1;
   let mut shallowest = isize::MIN;
 
-  match board.status() {
-    BoardStatus::Checkmate => return (best_val, best_move, sum, depth),
-    BoardStatus::Stalemate => return (0, best_move, sum, depth),
-    _ => ()
-  }
-
   if depth < 1 {
-    let value = eval_board(board, player);
-    return (value, best_move, sum, depth);
+    match board.status() {
+      BoardStatus::Checkmate => return (best_val, best_move, sum, depth),
+      BoardStatus::Stalemate => return (0, best_move, sum, depth),
+      _ => return (eval_board(board, player), best_move, sum, depth)
+    }
   }
 
   let move_it = MoveGen::new_legal(board);
-  let size = move_it.len();
   if max_player {
     let mut curr_alpha = alpha;
     for m in move_it {
@@ -217,11 +213,16 @@ fn ai(board: &Board, player: Color, depth: isize, alpha: i32, beta: i32, max_pla
     }
   }
   // hotfix until minimax logic is worked out
-  if best_move.is_none() && size > 0 {
-    best_move = MoveGen::new_legal(board).next();
+  match best_move {
+    None => {
+      best_move = MoveGen::new_legal(board).next();
+      match board.status() {
+        BoardStatus::Stalemate => return (0, best_move, sum, depth),
+        _ => return (best_val, best_move, sum, depth),
+      }
+    }
+    _ => return (best_val, best_move, sum, shallowest),
   }
-  return (best_val, best_move, sum, shallowest);
-
 }
 
 

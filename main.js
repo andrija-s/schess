@@ -515,7 +515,7 @@ function bind_click() {
  * @returns state / white checked? / black checked?
  */
 function parse_fen(fen) {
-  console.log(fen);
+  
   if (fen==="") return [null,null,null];
   let split_fen = fen.split(' ');
   let state = [];
