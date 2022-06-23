@@ -274,7 +274,7 @@ fn ai(board: &Board, player: Color, depth: isize, alpha: i32, beta: i32, max_pla
   if best_move.is_none() && size > 0 {
     best_move = MoveGen::new_legal(board).next();
   }
-  return (best_val, best_move, sum, depth);
+  return (best_val, best_move, sum, shallowest);
 
 }
 
