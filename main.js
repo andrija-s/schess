@@ -110,7 +110,7 @@ function selected_move(moves, pos) {
   return null;
 }
 
-async function render_board() {
+function render_board() {
   for (let i = 0; i < SQUARES_W; i++) {
     for (let j = 0; j < SQUARES_H; j++) {
       let [x,y] = (is_flipped) ? [7-i,7-j] : [i,j]; 
@@ -133,8 +133,8 @@ async function render_board() {
   }
 }
 
-async function render_state() {
-  await render_board();
+function render_state() {
+  render_board();
 
   for (let i=0; i<SQUARES_H*SQUARES_W; i++) {
     if (board_state[i].TYPE===EMPTY) {
@@ -148,12 +148,12 @@ async function render_state() {
   }
 }
 
-async function flip(change=false) {
+function flip(change=false) {
   if (change && ((is_flipped && player===BLACK) || (!is_flipped && player===WHITE))) return;
   is_flipped = !is_flipped;
   if(can_move) selected = -1;
   moves_highlight = new Set();
-  await render_state();
+  render_state();
 }
 
 function load_image(key, url) {
@@ -197,11 +197,11 @@ function set_worker() {
   worker.onmessage = ai_done;
 }
 
-async function reset() {
+function reset() {
   if (worker !== null)  worker.terminate();
   set_worker();
   hide_prom();
-  [board_state, white_checked, black_checked] = await parse_fen(DEFAULT_FEN);
+  [board_state, white_checked, black_checked] = parse_fen(DEFAULT_FEN);
   moves_highlight = new Set();
   recent_from = -1;
   recent_to = -1;
@@ -214,7 +214,7 @@ async function reset() {
   else {
     worker.postMessage({TYPE: INIT_MOVES, FEN: DEFAULT_FEN});
   }
-  await render_state();
+  render_state();
 }
 function prom_images() {
   for (let prom of document.getElementById("drop-prom").children) {
@@ -291,7 +291,7 @@ function bind_buttons() {
   });
 }
 
-async function ai_done(event) {
+function ai_done(event) {
   //console.log(event.data);
   if (event.data[0]===INIT_MOVES) {
     [regular_moves, prom_moves] = parse_player_moves(event.data[1]);
@@ -307,11 +307,11 @@ async function ai_done(event) {
   console.log("depth base: %d\n%f secs\neval: %f\nmove: %O\nleaf nodes:%i", 
               curr_depth, time, evaluation, result[2], result[4]);
 
-  [board_state, white_checked, black_checked] = await parse_fen(result[3]);
+  [board_state, white_checked, black_checked] = parse_fen(result[3]);
   recent_from = result[2][0];
   recent_to = result[2][1];
   play_audio();
-  await render_state();
+  render_state();
   if (result[0] === STATUS_CM) {
     lose();
     game_over = true;
@@ -345,11 +345,11 @@ function play_audio() {
 /**
  * @param {Move} move 
  */
-async function conclude_move(move) {
+function conclude_move(move) {
   selected = -1
   moves_highlight = new Set();
-  [board_state, white_checked, black_checked] = await parse_fen(move.FEN);
-  await render_state();
+  [board_state, white_checked, black_checked] = parse_fen(move.FEN);
+  render_state();
   play_audio();
   if (move.STATUS !== STATUS_OG) {
     if (move.STATUS === STATUS_CM) {
@@ -364,7 +364,7 @@ async function conclude_move(move) {
   move_ai(move.FEN);
 }
 function bind_click() {
-  c.addEventListener("mousedown", async function(e) {
+  c.addEventListener("mousedown", function(e) {
     if (game_over || !can_move) return;
     let rect = c.getBoundingClientRect();
     let x = ((e.clientX - rect.left) / width) | 0;
@@ -419,11 +419,11 @@ function bind_click() {
         moves_highlight = new Set();
       }
     }
-    if (can_move) await render_state();
+    if (can_move) render_state();
   });
 }
 
-async function parse_fen(string) {
+function parse_fen(string) {
   if (string==="") return [null,null,null];
   let str_split = string.split(' ');
   let board = [];
