@@ -1,5 +1,5 @@
 use wasm_bindgen::prelude::*;
-use chess::{Piece, Board, ChessMove, Rank, CastleRights, BoardStatus, Square, Color, MoveGen, ALL_FILES, ALL_RANKS, ALL_SQUARES};
+use chess::{Piece, Board, ChessMove, BoardStatus, Color, MoveGen, ALL_SQUARES};
 use std::{mem, cmp, str::FromStr};
 
 #[wasm_bindgen]
@@ -37,14 +37,22 @@ pub fn init_moves(fen: &str) -> String {
       Some(Piece::Rook)   => String::from("R"),
       _                   => String::from("0"),
     };
-
-    player_moves.push([from, to, prom, to_fen(&copy), status].join("?"));
+    let check = match copy.checkers().popcnt() {
+      0 => " n",
+      _ => " y"
+    };
+    let mut fen = copy.to_string();
+    fen.push_str(check);
+    player_moves.push([from, to, prom, fen, status].join("?"));
   }
+  
   return player_moves.join(";");
+
 }
 
 #[wasm_bindgen]
 pub fn ai_search(depth: isize, fen: &str) -> String {
+
   let board = Board::from_str(fen).expect("Valid FEN");
 
   let (value, mov, total, _) = 
@@ -74,7 +82,13 @@ pub fn ai_search(depth: isize, fen: &str) -> String {
       Some(Piece::Rook)   => String::from("R"),
       _                   => String::from("0"),
     };
-    let fen = to_fen(&copy);
+    let check = match copy.checkers().popcnt() {
+      0 => " n",
+      _ => " y"
+    };
+    let mut fen = copy.to_string();
+    fen.push_str(check);
+
     let status = match copy.status() {
       BoardStatus::Checkmate => String::from("cm"),
       BoardStatus::Stalemate => String::from("sm"),
@@ -82,86 +96,18 @@ pub fn ai_search(depth: isize, fen: &str) -> String {
     };
     player_moves.push([from, to, prom, fen, status].join("?"));
   }
+  let mut response_fen = response.to_string();
+  let response_check = match response.checkers().popcnt() {
+    0 => " n",
+    _ => " y"
+  };
+
+  response_fen.push_str(response_check);
+
   // status,eval,ai move,ai move fen,total nodes computed,all player moves in from?to?prom?fen format,termination depth of move
-  return [status,value.to_string(),ai_move,to_fen(&response),total.to_string(),player_moves.join(";")].join(",")
+  return [status,value.to_string(),ai_move,response_fen,total.to_string(),player_moves.join(";")].join(",")
 }
 
-fn to_fen(board: &Board) -> String {
-
-  let mut fen: String = String::with_capacity(90);
-
-  let mut count = 0;
-  for rank in ALL_RANKS.iter().rev() {
-    for file in ALL_FILES.iter() {
-      let square = Square::make_square(*rank, *file);
-
-      if board.piece_on(square).is_some() {
-        if count != 0 {
-          fen.push(char::from_digit(count, 10).unwrap());
-          count = 0;
-        }
-        let mut piece: String = match board.piece_on(square).unwrap() {
-          Piece::Pawn   => "p".to_string(),
-          Piece::Knight => "n".to_string(),
-          Piece::Bishop => "b".to_string(),
-          Piece::Rook   => "r".to_string(),
-          Piece::Queen  => "q".to_string(),
-          Piece::King   => "k".to_string(),
-        };
-        if board.color_on(square) == Some(Color::White) {
-          piece = piece.to_ascii_uppercase();
-        }
-        fen.push_str(&piece);
-      }
-      else {
-          count += 1;
-      }
-    }
-
-    if count != 0 {
-      fen.push(char::from_digit(count, 10).unwrap());
-    }
-
-    if *rank != Rank::First {
-      fen.push('/');
-    }
-    count = 0;
-  }
-  match board.side_to_move() {
-    Color::White => fen.push_str(" w "),
-    Color::Black => fen.push_str(" b "),
-  };
-  let white_castle = match board.castle_rights(Color::White) {
-    CastleRights::Both      => String::from("KQ"),
-    CastleRights::KingSide  => String::from("K"),
-    CastleRights::QueenSide => String::from("Q"),
-    CastleRights::NoRights  => String::from(""),
-  };
-  let black_castle = match board.castle_rights(Color::Black) {
-    CastleRights::Both      => String::from("kq"),
-    CastleRights::KingSide  => String::from("k"),
-    CastleRights::QueenSide => String::from("q"),
-    CastleRights::NoRights  => String::from(""),
-  };
-  if black_castle == white_castle {
-    fen.push_str("-");
-  }
-  else {
-    fen.push_str(&white_castle);
-    fen.push_str(&black_castle);
-  }
-  fen.push(' ');
-  match board.en_passant() {
-    Some(t) => fen.push_str(&t.to_string()),
-    _ => fen.push_str("- "),
-  }
-  match board.checkers().popcnt() {
-    0 => fen.push('n'),
-    _ => fen.push('y'),
-  }
-  fen.shrink_to_fit();
-  return fen;
-}
 
 fn eval_board(board: &Board, player: Color) -> i32 {
   let mut value = 0;

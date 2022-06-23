@@ -515,6 +515,7 @@ function bind_click() {
  * @returns state / white checked? / black checked?
  */
 function parse_fen(fen) {
+  console.log(fen);
   if (fen==="") return [null,null,null];
   let split_fen = fen.split(' ');
   let state = [];
@@ -531,8 +532,8 @@ function parse_fen(fen) {
     let color = (upper===curr_char) ? WHITE : BLACK;
     state.push(new Piece(color, upper));
   }
-  let black_checked = (split_fen[1]===BLACK && split_fen[4]==="y") ? true : false;
-  let white_checked = (split_fen[1]===WHITE && split_fen[4]==="y") ? true : false;
+  let black_checked = (split_fen[1]===BLACK && split_fen[6]==="y") ? true : false;
+  let white_checked = (split_fen[1]===WHITE && split_fen[6]==="y") ? true : false;
   
   return [state, white_checked, black_checked];
 }
