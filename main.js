@@ -315,7 +315,7 @@ async function init_images() {
   await Promise.all(jar);
 }
 
-async function init_audio() {
+function init_audio() {
   AUDIO["move"] = new Audio("./assets/sound/move.wav");
 }
 
@@ -606,7 +606,7 @@ async function init() {
   document.body.appendChild(c);
   ctx = c.getContext("2d");
   await init_images();
-  await init_audio();
+  init_audio();
   reset();
   bind_buttons();
   bind_click();
