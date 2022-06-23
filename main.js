@@ -298,20 +298,20 @@ function load_image(key, url) {
                         i.src = url; 
                       });
 }
-async function init_images() {
+async function init_images(set) {
   let jar = [];
-  jar.push(load_image(BLACK+ROOK,   `./assets/pieces/${get_set()}/bR.svg`));
-  jar.push(load_image(BLACK+KNIGHT, `./assets/pieces/${get_set()}/bN.svg`));
-  jar.push(load_image(BLACK+KING,   `./assets/pieces/${get_set()}/bK.svg`));
-  jar.push(load_image(BLACK+PAWN,   `./assets/pieces/${get_set()}/bP.svg`));
-  jar.push(load_image(BLACK+QUEEN,  `./assets/pieces/${get_set()}/bQ.svg`));
-  jar.push(load_image(BLACK+BISHOP, `./assets/pieces/${get_set()}/bB.svg`));
-  jar.push(load_image(WHITE+ROOK,   `./assets/pieces/${get_set()}/wR.svg`));
-  jar.push(load_image(WHITE+KNIGHT, `./assets/pieces/${get_set()}/wN.svg`));
-  jar.push(load_image(WHITE+KING,   `./assets/pieces/${get_set()}/wK.svg`));
-  jar.push(load_image(WHITE+PAWN,   `./assets/pieces/${get_set()}/wP.svg`));
-  jar.push(load_image(WHITE+QUEEN,  `./assets/pieces/${get_set()}/wQ.svg`));
-  jar.push(load_image(WHITE+BISHOP, `./assets/pieces/${get_set()}/wB.svg`));
+  jar.push(load_image(BLACK+ROOK,   `./assets/pieces/${set}/bR.svg`));
+  jar.push(load_image(BLACK+KNIGHT, `./assets/pieces/${set}/bN.svg`));
+  jar.push(load_image(BLACK+KING,   `./assets/pieces/${set}/bK.svg`));
+  jar.push(load_image(BLACK+PAWN,   `./assets/pieces/${set}/bP.svg`));
+  jar.push(load_image(BLACK+QUEEN,  `./assets/pieces/${set}/bQ.svg`));
+  jar.push(load_image(BLACK+BISHOP, `./assets/pieces/${set}/bB.svg`));
+  jar.push(load_image(WHITE+ROOK,   `./assets/pieces/${set}/wR.svg`));
+  jar.push(load_image(WHITE+KNIGHT, `./assets/pieces/${set}/wN.svg`));
+  jar.push(load_image(WHITE+KING,   `./assets/pieces/${set}/wK.svg`));
+  jar.push(load_image(WHITE+PAWN,   `./assets/pieces/${set}/wP.svg`));
+  jar.push(load_image(WHITE+QUEEN,  `./assets/pieces/${set}/wQ.svg`));
+  jar.push(load_image(WHITE+BISHOP, `./assets/pieces/${set}/wB.svg`));
   await Promise.all(jar);
 }
 
@@ -392,9 +392,9 @@ function bind_buttons() {
     if (tag.innerHTML===get_set()) tag.style["background-color"] = BTN_HGHLT;
     tag.addEventListener("click", async function(e) {
       if (tag.innerHTML===get_set()) { return; }
-      set_set(tag.innerHTML);
-      try { await init_images(); }
+      try { await init_images(tag.innerHTML); }
       catch(e) { return; }
+      set_set(tag.innerHTML);
       reset_dropdown_highlight(set_iter);
       e.target.style["background-color"] = BTN_HGHLT;
       prom_images();
@@ -605,7 +605,7 @@ async function init() {
   c.onselectstart = function () { return false; }
   document.body.appendChild(c);
   ctx = c.getContext("2d");
-  await init_images();
+  await init_images(get_set());
   init_audio();
   reset();
   bind_buttons();
