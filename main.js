@@ -13,12 +13,12 @@ const STATUS_SM = "sm"; // stalemate
 const STATUS_OG = "og"; // ongoing
 const C_HEIGHT = window.innerHeight / 1.1; // canvas height
 const C_WIDTH = C_HEIGHT;  // canvas width
-const SQUARES_W = 8;
-const SQUARES_H = 8;
-const SQ_WIDTH = C_WIDTH/SQUARES_W;   // square width
-const SQ_HEIGHT = C_HEIGHT/SQUARES_H; // square height
-const PROM_IMG_W = SQUARES_W+3;
-const PROM_IMG_H = SQUARES_H+3;
+const NUM_HORIZONTALSQ = 8;
+const NUM_VERTICALSQ = 8;
+const SQ_WIDTH = C_WIDTH/NUM_HORIZONTALSQ;   // square width
+const SQ_HEIGHT = C_HEIGHT/NUM_VERTICALSQ; // square height
+const PROM_IMG_W = NUM_HORIZONTALSQ+3;
+const PROM_IMG_H = NUM_VERTICALSQ+3;
 const BTN_HGHLT = "#d4d422";
 const CHECK_COLOR = "yellow";
 const BORDER_COLOR = "black"; // square border
@@ -231,15 +231,15 @@ function lose() {
  * @returns 
  */
 function linear(x, y) {
-  return ((SQUARES_H*y)+x);
+  return ((NUM_VERTICALSQ*y)+x);
 }
 /**
  * @param {Number} z 
  * @returns x, y
  */
 function nonlinear(z) {
-  let x = z % SQUARES_W;
-  let y = (z / SQUARES_H) | 0;
+  let x = z % NUM_HORIZONTALSQ;
+  let y = (z / NUM_VERTICALSQ) | 0;
   return [x, y];
 }
 /**
@@ -248,14 +248,14 @@ function nonlinear(z) {
  * @returns Number
  */
  function pos_conversion(pos) {
-  let x = (pos % SQUARES_W);
-  let y = 7-((pos / SQUARES_H) | 0);
-  return ((SQUARES_H*y)+x);
+  let x = (pos % NUM_HORIZONTALSQ);
+  let y = 7-((pos / NUM_VERTICALSQ) | 0);
+  return ((NUM_VERTICALSQ*y)+x);
 }
 
 function render_board() {
-  for (let i = 0; i < SQUARES_W; i++) {
-    for (let j = 0; j < SQUARES_H; j++) {
+  for (let i = 0; i < NUM_HORIZONTALSQ; i++) {
+    for (let j = 0; j < NUM_VERTICALSQ; j++) {
       let [x,y] = (is_flipped_flag) ? [7-i,7-j] : [i,j]; 
       let pos = linear(x,y);
       ctx.fillStyle =  BORDER_COLOR;
@@ -277,7 +277,7 @@ function render_board() {
 }
 function render_state() {
   render_board();
-  for (let i=0; i<SQUARES_H*SQUARES_W; i++) {
+  for (let i=0; i<NUM_VERTICALSQ*NUM_HORIZONTALSQ; i++) {
     if (get_piece_at(i)===EMPTY) {
       continue;
     };
@@ -285,7 +285,7 @@ function render_state() {
     [x, y] = (is_flipped_flag) ? [7-x,7-y] : [x,y];
     let str = get_color_at(i) + "" + get_piece_at(i);
     let img = IMAGES[str];
-    ctx.drawImage(img, (x*SQ_WIDTH)+(SQ_WIDTH/(SQUARES_W+SQUARES_W)), (y*SQ_HEIGHT)+(SQ_HEIGHT/(SQUARES_H+SQUARES_H)), C_WIDTH/(SQUARES_W+1), C_HEIGHT/(SQUARES_H+1));
+    ctx.drawImage(img, (x*SQ_WIDTH)+(SQ_WIDTH/(NUM_HORIZONTALSQ*2)), (y*SQ_HEIGHT)+(SQ_HEIGHT/(NUM_VERTICALSQ*2)), C_WIDTH/(NUM_HORIZONTALSQ+1), C_HEIGHT/(NUM_VERTICALSQ+1));
   }
 }
 
