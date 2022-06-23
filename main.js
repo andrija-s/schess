@@ -87,6 +87,11 @@ function get_player() {
 function set_player(color) {
   player = color;
 }
+function change_color() {
+  set_player((get_player()===WHITE) ? BLACK : WHITE);
+  prom_images();
+  reset();
+}
 
 
 let recent_from = -1;
@@ -124,6 +129,45 @@ function set_worker() {
   worker = new Worker(WORKER_PATH);
   worker.onmessage = ai_done;
 }
+function ai_done(event) {
+  //console.log(event.data);
+  if (event.data[0]===INIT_MOVES) {
+    [regular_moves, prom_moves] = parse_player_moves(event.data[1]);
+    set_move_flag(true);
+    worker.terminate();
+    set_worker();
+    return;
+  }
+  let result = parse_response(event.data[1]);
+  // format: status, evaluation, ai move, new state, num nodes computed, get_player() moves
+  evaluation = result[1].toFixed(2) * ((get_player()===WHITE) ? -1 : 1);
+  let time = ((Date.now() - ai_time) / 1000).toFixed(2);
+  console.log("depth base: %d\n%f secs\neval: %f\nmove: %O\nleaf nodes:%i", 
+              get_depth(), time, evaluation, result[2], result[4]);
+
+  let [state, white_checked, black_checked] = parse_fen(result[3]);
+  set_state(state);
+  set_check(WHITE, white_checked);
+  set_check(BLACK, black_checked);
+  set_recent_fromto(result[2][0], result[2][1]);
+  play_audio();
+  render_state();
+  if (result[0] === STATUS_CM) {
+    lose();
+    set_game_over(true);
+    return;
+  }
+  else if (result[0] === STATUS_SM) {
+    draw();
+    set_game_over(true);
+    return;
+  }
+  regular_moves = result[5][0];
+  prom_moves = result[5][1];
+  // worker.terminate();
+  set_worker();
+  set_move_flag(true);
+}
 
 let can_move_flag = true;
 function can_move() {
@@ -147,6 +191,9 @@ let is_flipped_flag = false;
 function is_flipped() {
   return is_flipped_flag;
 }
+/**
+ * @param {Boolean} change if called by change button, only flip to set player to bottom
+ */
 function flip(change=false) {
   if (change && ((is_flipped_flag && get_player()===BLACK) || (!is_flipped_flag && get_player()===WHITE))) return;
   is_flipped_flag = !is_flipped_flag;
@@ -177,6 +224,7 @@ function win() {
 function lose() {
   alert("YOU LOSE!");
 }
+
 /**
  * @param {Number} x 
  * @param {Number} y 
@@ -187,14 +235,23 @@ function linear(x, y) {
 }
 /**
  * @param {Number} z 
- * @returns Array of Numbers
+ * @returns x, y
  */
 function nonlinear(z) {
   let x = z % SQUARES_W;
   let y = (z / SQUARES_H) | 0;
   return [x, y];
 }
-
+/**
+ * Rust code counts squares 0-63 starting at a1, javascript code counts from top left corner (a8)
+ * @param {Number} pos 
+ * @returns Number
+ */
+ function pos_conversion(pos) {
+  let x = (pos % SQUARES_W);
+  let y = 7-((pos / SQUARES_H) | 0);
+  return ((SQUARES_H*y)+x);
+}
 
 function render_board() {
   for (let i = 0; i < SQUARES_W; i++) {
@@ -218,10 +275,8 @@ function render_board() {
     }
   }
 }
-
 function render_state() {
   render_board();
-
   for (let i=0; i<SQUARES_H*SQUARES_W; i++) {
     if (get_piece_at(i)===EMPTY) {
       continue;
@@ -264,18 +319,12 @@ async function init_audio() {
   AUDIO["move"] = new Audio("./assets/sound/move.wav");
 }
 
-function reset_dropdown_highlight(iter) {
-  for (let opt of iter.children) {
-        opt.style["background-color"] = "";
-  }
-}
-
 function reset() {
   if (worker !== null)  worker.terminate();
   set_worker();
   hide_prom();
-  let [temp_state, white_checked, black_checked] = parse_fen(DEFAULT_FEN);
-  set_state(temp_state);
+  let [state, white_checked, black_checked] = parse_fen(DEFAULT_FEN);
+  set_state(state);
   set_check(WHITE, white_checked);
   set_check(BLACK, black_checked);
   reset_move_highlight();
@@ -291,17 +340,17 @@ function reset() {
   }
   render_state();
 }
+
+function reset_dropdown_highlight(iter) {
+  for (let opt of iter.children) {
+        opt.style["background-color"] = "";
+  }
+}
 function prom_images() {
   for (let prom of document.getElementById("drop-prom").children) {
     prom.innerHTML = `<img src="./assets/pieces/${get_set()}/${get_player()}${prom.id}.svg" width="${c.width/PROM_IMG_W}" height="${c.height/PROM_IMG_H}"/>`;
   }
 }
-function change_color() {
-  set_player((get_player()===WHITE) ? BLACK : WHITE);
-  prom_images();
-  reset();
-}
-
 function hide_prom() {
   document.querySelector(".proms").style.display = "none";
 }
@@ -366,45 +415,6 @@ function bind_buttons() {
   });
 }
 
-function ai_done(event) {
-  //console.log(event.data);
-  if (event.data[0]===INIT_MOVES) {
-    [regular_moves, prom_moves] = parse_player_moves(event.data[1]);
-    set_move_flag(true);
-    worker.terminate();
-    set_worker();
-    return;
-  }
-  let result = parse_response(event.data[1]);
-  // format: status, evaluation, ai move, new state, num nodes computed, get_player() moves
-  evaluation = result[1].toFixed(2) * ((get_player()===WHITE) ? -1 : 1);
-  let time = ((Date.now() - ai_time) / 1000).toFixed(2);
-  console.log("depth base: %d\n%f secs\neval: %f\nmove: %O\nleaf nodes:%i", 
-              get_depth(), time, evaluation, result[2], result[4]);
-
-  let [temp_state, white_checked, black_checked] = parse_fen(result[3]);
-  set_state(temp_state);
-  set_check(WHITE, white_checked);
-  set_check(BLACK, black_checked);
-  set_recent_fromto(result[2][0], result[2][1]);
-  play_audio();
-  render_state();
-  if (result[0] === STATUS_CM) {
-    lose();
-    set_game_over(true);
-    return;
-  }
-  else if (result[0] === STATUS_SM) {
-    draw();
-    set_game_over(true);
-    return;
-  }
-  regular_moves = result[5][0];
-  prom_moves = result[5][1];
-  worker.terminate();
-  set_worker();
-  set_move_flag(true);
-}
 /**
  * @param {String} fen 
  */
@@ -413,20 +423,19 @@ function move_ai(fen) {
   ai_time = Date.now();
   worker.postMessage({TYPE: AI_SEARCH, DEPTH: get_depth(), FEN: fen});
 }
-/**
- * @param {Move} move 
- */
+
 function play_audio() {
   AUDIO["move"].play();
 }
+
 /**
- * @param {Move} move 
+ * @param {JSON} move {FEN: fen, STATUS: ongoing/chechmate/stalemate} 
  */
 function conclude_move(move) {
   set_selected(-1);
   reset_move_highlight();
-  let [temp_state, white_checked, black_checked] = parse_fen(move.FEN);
-  set_state(temp_state);
+  let [state, white_checked, black_checked] = parse_fen(move.FEN);
+  set_state(state);
   set_check(WHITE, white_checked);
   set_check(BLACK, black_checked);
   render_state();
@@ -443,6 +452,7 @@ function conclude_move(move) {
   }
   move_ai(move.FEN);
 }
+
 function bind_click() {
   c.addEventListener("mousedown", function(e) {
     if (get_game_over() || !can_move()) return;
@@ -503,29 +513,37 @@ function bind_click() {
   });
 }
 
-function parse_fen(string) {
-  if (string==="") return [null,null,null];
-  let str_split = string.split(' ');
-  let board = [];
-  for (let i = 0; i < str_split[0].length; i++) {
-    let curr_char = str_split[0].toString().charAt(i);
+/**
+ * @param {String} fen fen 
+ * @returns state / white checked? / black checked?
+ */
+function parse_fen(fen) {
+  if (fen==="") return [null,null,null];
+  let split_fen = fen.split(' ');
+  let state = [];
+  for (let i = 0; i < split_fen[0].length; i++) {
+    let curr_char = split_fen[0].toString().charAt(i);
     if (curr_char==="/") continue;
     if (!isNaN(parseInt(curr_char))) {
       for (let j = 0; j < parseInt(curr_char); j++) {
-        board.push(new Piece(EMPTY, EMPTY));
+        state.push(new Piece(EMPTY, EMPTY));
       }
       continue;
     }
     let upper = curr_char.toUpperCase();
     let color = (upper===curr_char) ? WHITE : BLACK;
-    board.push(new Piece(color, upper));
+    state.push(new Piece(color, upper));
   }
-  let black_checked = (str_split[1]===BLACK && str_split[4]==="y") ? true : false;
-  let white_checked = (str_split[1]===WHITE && str_split[4]==="y") ? true : false;
+  let black_checked = (split_fen[1]===BLACK && split_fen[4]==="y") ? true : false;
+  let white_checked = (split_fen[1]===WHITE && split_fen[4]==="y") ? true : false;
   
-  return [board, white_checked, black_checked];
+  return [state, white_checked, black_checked];
 }
 
+/**
+ * @param {String} fens fens separated by ';'
+ * @returns JSON of regular fens / JSON of prom fens
+ */
 function parse_player_moves(fens) {
 
   let player_moves = fens.split(";");
@@ -554,9 +572,13 @@ function parse_player_moves(fens) {
   }
   return [regular_list,prom_list];
 }
-// format: status, evaluation, ai move, new state, num nodes computed, player moves
-function parse_response(string) {
-  let str_split = string.split(',');
+
+/**
+ * @param {String} response response from worker, separated by ","
+ * @returns status, evaluation, ai move, new state, num nodes computed, player moves
+ */
+function parse_response(response) {
+  let str_split = response.split(',');
   let state_eval = parseInt(str_split[1]);
   let ai_move = str_split[2].split("?");
   ai_move = [pos_conversion(parseInt(ai_move[0])), pos_conversion(parseInt(ai_move[1]))];
@@ -566,12 +588,6 @@ function parse_response(string) {
   let player_moves = parse_player_moves(str_split[5]);
 
   return [str_split[0],state_eval,ai_move,new_state,nodes_traversed,player_moves];
-}
-
-function pos_conversion(pos) {
-  let x = (pos % SQUARES_W);
-  let y = 7-((pos / SQUARES_H) | 0);
-  return ((SQUARES_H*y)+x);
 }
 
 ////////////////////////////////////////////////////////////////////
