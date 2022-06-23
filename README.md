@@ -2,9 +2,9 @@
 
 [Play!](https://andrija-s.github.io/schess/) - Works off the [Rust branch](https://github.com/andrija-s/schess/tree/rust_switch) currently.
 
-AI is currently very basic, only evaluates material and transpositions/iterative deepening has not been implemented (yet, one would hope).
+AI is currently very basic, it only evaluates material. Transpositions and iterative deepening has not been implemented (yet, one would hope).
 
-For the rust version, the chess move generator is by user [jordanbray](https://github.com/jordanbray/chess) with a little fix from [AlexanderHarrison](https://github.com/jordanbray/chess/issues/63)
+For the rust version, the chess move generator is by user [jordanbray](https://github.com/jordanbray/chess) with a little tweak from [AlexanderHarrison](https://github.com/jordanbray/chess/issues/63)
 
 Assets Used: <br />
 [alpha]() by Eric Bentzen <br />
