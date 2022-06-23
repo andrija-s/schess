@@ -130,19 +130,16 @@ function set_worker() {
   worker.onmessage = ai_done;
 }
 function ai_done(event) {
-  //console.log(event.data);
   if (event.data[0]===INIT_MOVES) {
     [regular_moves, prom_moves] = parse_player_moves(event.data[1]);
     set_move_flag(true);
-    worker.terminate();
-    set_worker();
     return;
   }
   let result = parse_response(event.data[1]);
   // format: status, evaluation, ai move, new state, num nodes computed, get_player() moves
   evaluation = result[1].toFixed(2) * ((get_player()===WHITE) ? -1 : 1);
   let time = ((Date.now() - ai_time) / 1000).toFixed(2);
-  console.log("depth base: %d\n%f secs\neval: %f\nmove: %O\nleaf nodes:%i", 
+  console.log("depth base: %d\n%f secs\neval: %f\nmove: %O\nleaf nodes: %i\n", 
               get_depth(), time, evaluation, result[2], result[4]);
 
   let [state, white_checked, black_checked] = parse_fen(result[3]);

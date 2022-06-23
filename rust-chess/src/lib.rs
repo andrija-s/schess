@@ -47,7 +47,7 @@ pub fn init_moves(fen: &str) -> String {
 pub fn ai_search(depth: isize, fen: &str) -> String {
   let board = Board::from_str(fen).expect("Valid FEN");
 
-  let (value, mov, total, move_depth) = 
+  let (value, mov, total, _) = 
                 ai(&board, board.side_to_move(), depth, i32::MIN, i32::MAX, true);
 
   let ai_move= match mov {
@@ -82,8 +82,8 @@ pub fn ai_search(depth: isize, fen: &str) -> String {
     };
     player_moves.push([from, to, prom, fen, status].join("?"));
   }
-  // status,eval,ai move,fen on move,total nodes computed,all player moves in from?to?prom?fen format
-  return [status,value.to_string(),ai_move,to_fen(&response),total.to_string(),player_moves.join(";"),move_depth.to_string()].join(",")
+  // status,eval,ai move,ai move fen,total nodes computed,all player moves in from?to?prom?fen format,termination depth of move
+  return [status,value.to_string(),ai_move,to_fen(&response),total.to_string(),player_moves.join(";")].join(",")
 }
 
 fn to_fen(board: &Board) -> String {
