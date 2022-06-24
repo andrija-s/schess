@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::*;
-use chess::{Piece, Board, ChessMove, BoardStatus, Color, MoveGen, ALL_SQUARES};
-use std::{mem, cmp, str::FromStr};
+use chess::{Piece, Board, BoardStatus, MoveGen};
+use std::{str::FromStr};
+mod ai_main;
 
 #[wasm_bindgen]
 extern "C" {
@@ -21,6 +22,7 @@ pub fn init_moves(fen: &str) -> String {
 
   let mut player_moves = Vec::new();
   let move_it = MoveGen::new_legal(&board);
+
   for m in move_it {
     let copy = board.make_move_new(m);
     let from = m.get_source().to_int().to_string();
@@ -54,9 +56,10 @@ pub fn init_moves(fen: &str) -> String {
 pub fn ai_search(depth: isize, fen: &str) -> String {
 
   let board = Board::from_str(fen).expect("Valid FEN");
+  // value, flag, depth
 
-  let (value, mov, total, _) = 
-                ai(&board, board.side_to_move(), depth, i32::MIN, i32::MAX, true);
+  let (value, mov, total) = 
+                ai_main::search(&board, board.side_to_move(), depth);
 
   let ai_move= match mov {
     Some(t) => [t.get_source().to_int().to_string(),
@@ -107,128 +110,6 @@ pub fn ai_search(depth: isize, fen: &str) -> String {
   // status,eval,ai move,ai move fen,total nodes computed,all player moves in from?to?prom?fen format,termination depth of move
   return [status,value.to_string(),ai_move,response_fen,total.to_string(),player_moves.join(";")].join(",")
 }
-
-
-fn eval_board(board: &Board, player: Color) -> i32 {
-  let mut value = 0;
-  //let w_queen_alive = false;
-  //let b_queen_alive = false;
-  for sq in ALL_SQUARES.iter() {
-    let col = board.color_on(*sq);
-    if board.piece_on(*sq).is_none() || col.is_none() { continue; };
-    let c = if col==Some(player) { 1 } else { -1 };
-    //let pos_eval = if col==Some(Color::Black) { 63 - i } else { i };
-    match board.piece_on(*sq) {
-      Some(Piece::Bishop) => {
-        value += (330/* +BISHOP_POS[pos_eval] */) * c;
-      },
-      Some(Piece::Knight) => {
-        value += (320/* +KNIGHT_POS[pos_eval] */) * c;
-      },
-      Some(Piece::Queen) => {
-        value += (900/* +QUEEN_POS[pos_eval] */) * c;
-        /* if col==Some(Color::White) { w_queen_alive = true; }
-        else { b_queen_alive = true; } */
-      },
-      Some(Piece::Rook) => {
-        value += (500/* +KNIGHT_POS[pos_eval] */) * c;
-      },
-      Some(Piece::Pawn) => {
-        value += (100/* +KNIGHT_POS[pos_eval] */) * c;
-      },
-      _ => (),
-    }
-  }
-  /* if (w_queen_alive) {
-    value += KINGMID_POS[63 - board.king_pos(BLACK)] * ((BLACK===player) ? 1 : -1);
-  } else {
-    value += KINGEND_POS[63 - board.king_pos(BLACK)] * ((BLACK===player) ? 1 : -1);
-  }
-  if (b_queen_alive) {
-    value += KINGMID_POS[board.king_pos(WHITE)] * ((WHITE===player) ? 1 : -1);
-  } else {
-    value += KINGEND_POS[board.king_pos(WHITE)] * ((WHITE===player) ? 1 : -1);
-  } */
-  return value;
-}
-
-fn ai(board: &Board, player: Color, depth: isize, alpha: i32, beta: i32, max_player: bool) -> (i32, Option<ChessMove>, usize, isize) {
-  
-  let mut best_val:i32 = if max_player { i32::MIN } else { i32::MAX };
-  let mut best_move = None;
-  let mut sum: usize = 1;
-  let mut shallowest = isize::MIN;
-
-  if depth < 1 {
-    match board.status() {
-      BoardStatus::Checkmate => return (best_val, best_move, sum, depth),
-      BoardStatus::Stalemate => return (0, best_move, sum, depth),
-      _ => return (eval_board(board, player), best_move, sum, depth)
-    }
-  }
-
-  let move_it = MoveGen::new_legal(board);
-  if max_player {
-    let mut curr_alpha = alpha;
-    for m in move_it {
-      match m.get_promotion() {
-        Some(Piece::Bishop) | Some(Piece::Rook) | Some(Piece::Knight) => continue,
-        _ => ()
-      }
-      let mut bresult = mem::MaybeUninit::<Board>::uninit();
-      unsafe {
-        board.make_move(m, &mut *bresult.as_mut_ptr());
-        let (value, _, ret_sum, mov_depth) = ai(&*bresult.as_ptr(), player, depth - 1, curr_alpha, beta, !max_player);
-        sum += ret_sum;
-        if value > best_val || (value == best_val && mov_depth > shallowest) {
-          best_val = value;
-          best_move = Some(m);
-          shallowest = mov_depth;
-        }
-        if best_val >= beta { break; }
-        curr_alpha = cmp::max(curr_alpha, best_val);
-      }
-    }
-  }
-  else {
-    let mut curr_beta = beta;
-    for m in move_it {
-      match m.get_promotion() {
-        Some(Piece::Bishop) | Some(Piece::Rook) | Some(Piece::Knight) => continue,
-        _ => ()
-      }
-      let mut bresult = mem::MaybeUninit::<Board>::uninit();
-      unsafe {
-        board.make_move(m, &mut *bresult.as_mut_ptr());
-        let (value, _, ret_sum, mov_depth) = ai(&*bresult.as_ptr(), player, depth - 1, alpha, curr_beta, !max_player);
-        sum += ret_sum;
-        if value < best_val || (value == best_val && mov_depth > shallowest) {
-          best_val = value;
-          best_move = Some(m);
-          shallowest = mov_depth;
-        }
-        if best_val <= alpha { break; }
-        curr_beta = cmp::min(curr_beta, best_val);
-      }
-    }
-  }
-  // hotfix until minimax logic is worked out
-  match best_move {
-    None => {
-      best_move = MoveGen::new_legal(board).next();
-      match board.status() {
-        BoardStatus::Stalemate => return (0, best_move, sum, depth),
-        _ => return (best_val, best_move, sum, depth),
-      }
-    }
-    _ => return (best_val, best_move, sum, shallowest),
-  }
-}
-
-
-
-
-
 
 pub fn set_panic_hook() {
     #[cfg(feature = "console_error_panic_hook")]
