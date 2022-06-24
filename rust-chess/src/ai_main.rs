@@ -90,7 +90,7 @@ fn ab_search(board: &Board, player: Color, depth: isize, alpha: i32, beta: i32, 
   {
     match board.status() 
     {
-      BoardStatus::Ongoing   => (),
+      BoardStatus::Ongoing   => panic!("Ongoing and yet no moves. fen: {}.", board.to_string()),
       BoardStatus::Checkmate => return (if max_player { i32::MIN } else { i32::MAX }, sum, depth),
       BoardStatus::Stalemate => return (0, sum, depth),
     }

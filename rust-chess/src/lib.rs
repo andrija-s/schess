@@ -58,6 +58,7 @@ pub fn init_moves(fen: &str) -> String
 #[wasm_bindgen]
 pub fn ai_search(depth: isize, fen: &str) -> String 
 {
+  set_panic_hook();
   let board = Board::from_str(fen).expect("Valid FEN");
   // value, flag, depth
 
