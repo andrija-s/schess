@@ -38,6 +38,12 @@ pub fn ai(board: &Board) -> (i32, Option<ChessMove>, usize)
   }
   let saved = table.len();
   drop(table);
+
+  if result.1.is_none() {
+    let mut move_it = MoveGen::new_legal(board);
+    result = (result.0, move_it.next());
+  }
+
   return (result.0,result.1,saved);
 }
 
@@ -117,6 +123,7 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: isize, table
   else if max_player
   {
     let mut a = alpha;
+    // handle best_move from table
     if best_move.is_some() 
     {
       let (value, _) =  ab_with_mem(&board.make_move_new(best_move.unwrap()), a, beta, depth - 1, table, !max_player);
@@ -142,6 +149,7 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: isize, table
   else
   {
     let mut b = beta;
+    // handle best_move from table
     if best_move.is_some()
     {
       let (value, _) =  ab_with_mem(&board.make_move_new(best_move.unwrap()), alpha, b, depth - 1, table, !max_player);
@@ -171,14 +179,14 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: isize, table
     temp_upper = best_value;
     table.insert((*board).get_hash(), Bounds::new(temp_lower, temp_upper, best_move, depth));
   }
-  else if best_value > alpha && best_value < beta
+  else if best_value >= beta {
+    temp_lower = best_value;
+    table.insert((*board).get_hash(), Bounds::new(temp_lower, temp_upper, best_move, depth));
+  }
+  else // best_value > alpha && best_value < beta
   {
     temp_lower = best_value;
     temp_upper = best_value;
-    table.insert((*board).get_hash(), Bounds::new(temp_lower, temp_upper, best_move, depth));
-  }
-  else if best_value >= beta {
-    temp_lower = best_value;
     table.insert((*board).get_hash(), Bounds::new(temp_lower, temp_upper, best_move, depth));
   }
 
