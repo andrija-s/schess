@@ -64,7 +64,8 @@ pub fn ai_search(depth: isize, fen: &str) -> String
   set_panic_hook();
   let board = Board::from_str(fen).expect("Valid FEN");
   // value, flag, depth
-  let (value, mov, total) = if depth==0 { ai_mtdf::ai(&board) } else { ai_vanilla::ai(&board, board.side_to_move(), depth) };
+  let (value, mov) = if depth==0 { ai_mtdf::ai(&board) } 
+                                                    else { ai_vanilla::ai(&board, board.side_to_move(), depth) };
 
   let ai_move= match mov {
     Some(t) => [t.get_source().to_int().to_string(),
@@ -115,7 +116,7 @@ pub fn ai_search(depth: isize, fen: &str) -> String
   response_fen.push_str(response_check);
 
   // status,eval,ai move,ai move fen,total nodes computed,all player moves in from?to?prom?fen format,termination depth of move
-  return [status,value.to_string(),ai_move,response_fen,total.to_string(),player_moves.join(";")].join(",")
+  return [status,value.to_string(),ai_move,response_fen,player_moves.join(";")].join(",")
 
 }
 

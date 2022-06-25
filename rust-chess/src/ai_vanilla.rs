@@ -3,12 +3,12 @@ use std::mem;
 
 #[path = "./evaluation.rs"] mod evaluation;
 
-pub fn ai(board: &Board, player: Color, depth: isize) -> (i32, Option<ChessMove>, usize)
+pub fn ai(board: &Board, player: Color, depth: isize) -> (i32, Option<ChessMove>)
 {
   return ab_search_top(board, player, depth);
 }
 
-fn ab_search_top(board: &Board, player: Color, depth: isize) -> (i32, Option<ChessMove>, usize) 
+fn ab_search_top(board: &Board, player: Color, depth: isize) -> (i32, Option<ChessMove>) 
 {
   let mut best_val:i32 = i32::MIN;
   let mut ai_move = None;
@@ -19,8 +19,8 @@ fn ab_search_top(board: &Board, player: Color, depth: isize) -> (i32, Option<Che
   match board.status() 
   {
     BoardStatus::Ongoing   => (),
-    BoardStatus::Checkmate => return (best_val, ai_move, sum),
-    BoardStatus::Stalemate => return (0, ai_move, sum),
+    BoardStatus::Checkmate => return (best_val, ai_move),
+    BoardStatus::Stalemate => return (0, ai_move),
   }
 
   let move_it = MoveGen::new_legal(board);
@@ -31,18 +31,20 @@ fn ab_search_top(board: &Board, player: Color, depth: isize) -> (i32, Option<Che
       _ => ()
     }
     let mut bresult = mem::MaybeUninit::<Board>::uninit();
-    unsafe {
+    unsafe 
+    {
       board.make_move(m, &mut *bresult.as_mut_ptr());
       let (value, ret_sum, mov_depth) = ab_search(&*bresult.as_ptr(), player, depth - 1, best_val, beta, false);
       sum += ret_sum;
-      if value > best_val || (value == best_val && mov_depth > shallowest) {
+      if value > best_val || (value == best_val && mov_depth > shallowest) 
+      {
         best_val = value;
         ai_move = Some(m);
         shallowest = mov_depth;
       }
     }
   }
-  return (best_val, ai_move, sum);
+  return (best_val, ai_move);
 }
   
 fn ab_search(board: &Board, player: Color, depth: isize, alpha: i32, beta: i32, max_player: bool) -> (i32, usize, isize)

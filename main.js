@@ -141,8 +141,8 @@ function ai_done(event) {
   // format: status, evaluation, ai move, new state, num nodes computed, get_player() moves
   evaluation = result[1].toFixed(2) * ((get_player()===WHITE) ? -1 : 1);
   let time = ((Date.now() - ai_time) / 1000).toFixed(2);
-  console.log("depth base: %d\n%f secs\neval: %f\nmove: %O\nnodes traversed (roughly): %i\n", 
-              get_depth(), time, evaluation, result[2], result[4]);
+  console.log("depth base: %d\n%f secs\neval: %f\nmove: %O\n", 
+              get_depth(), time, evaluation, result[2]);
 
   let [state, white_checked, black_checked] = parse_fen(result[3]);
   set_state(state);
@@ -161,8 +161,8 @@ function ai_done(event) {
     set_game_over(true);
     return;
   }
-  regular_moves = result[5][0];
-  prom_moves = result[5][1];
+  regular_moves = result[4][0];
+  prom_moves = result[4][1];
   // improves memory dealloc, slows down moves
   /* worker.terminate();
   set_worker(); */
@@ -584,11 +584,10 @@ function parse_response(response) {
   let ai_move = str_split[2].split("?");
   ai_move = [pos_conversion(parseInt(ai_move[0])), pos_conversion(parseInt(ai_move[1]))];
   let new_state = str_split[3];
-  let nodes_traversed = parseInt(str_split[4]);
 
-  let player_moves = parse_player_moves(str_split[5]);
+  let player_moves = parse_player_moves(str_split[4]);
 
-  return [str_split[0],state_eval,ai_move,new_state,nodes_traversed,player_moves];
+  return [str_split[0],state_eval,ai_move,new_state,player_moves];
 }
 
 ////////////////////////////////////////////////////////////////////

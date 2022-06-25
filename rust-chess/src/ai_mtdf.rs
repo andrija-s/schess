@@ -8,21 +8,22 @@ struct Bounds
   low: i32,
   high: i32,
   best: Option<ChessMove>,
-  depth: isize,
+  depth: i32,
 }
-
 impl Bounds
 {
-  fn new(lower: i32, upper: i32, best_move: Option<ChessMove>, remaining_depth: isize) -> Bounds 
+  fn new(lower: i32, upper: i32, best_move: Option<ChessMove>, remaining_depth: i32) -> Bounds 
   {
     Bounds { low: lower, high: upper, best: best_move, depth: remaining_depth }
   }
 }
+
 const TOTAL_LIMIT: f64 = 4500.0;
-const ITER_LIMIT: f64 = 1500.0;
+const ITER_LIMIT: f64 = 1400.0;
+const PADDING: i32 = 50; // to help differentiate checkmates by depth
 
 // https://people.csail.mit.edu/plaat/mtdf.html
-pub fn ai(board: &Board) -> (i32, Option<ChessMove>, usize)
+pub fn ai(board: &Board) -> (i32, Option<ChessMove>)
 {
   let mut table:HashMap<u64, Bounds> = HashMap::with_capacity(256_000);
   let mut result = (0, None);
@@ -37,8 +38,7 @@ pub fn ai(board: &Board) -> (i32, Option<ChessMove>, usize)
     end = crate::now();
     i += 1;
   }
-  crate::log(&("max depth: ".to_owned() + &i.to_string()));
-  let saved = table.len();
+  crate::log(&("max depth: ".to_owned() + &i.to_string() + " table entries: " + &table.len().to_string()));
   drop(table);
 
   if result.1.is_none() {
@@ -46,10 +46,10 @@ pub fn ai(board: &Board) -> (i32, Option<ChessMove>, usize)
     result = (result.0, move_it.next());
   }
 
-  return (result.0,result.1,saved);
+  return (result.0,result.1);
 }
 
-fn mtdf(root_board: &Board, f: i32, depth: isize, table: &mut HashMap<u64, Bounds>) -> (i32, Option<ChessMove>, bool)
+fn mtdf(root_board: &Board, f: i32, depth: i32, table: &mut HashMap<u64, Bounds>) -> (i32, Option<ChessMove>, bool)
 {
   let mut guess = f;
   let mut best_move = None;
@@ -77,7 +77,7 @@ fn get_ai_color(board: &Board, max_player: bool) -> Color
   }
 }
 
-fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: isize, table: &mut HashMap<u64, Bounds>, max_player: bool) -> (i32, Option<ChessMove>) 
+fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: i32, table: &mut HashMap<u64, Bounds>, max_player: bool) -> (i32, Option<ChessMove>) 
 {
   let entry = table.get(&board.get_hash());
   let mut best_value = if max_player { i32::MIN } else { i32::MAX };
@@ -102,7 +102,7 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: isize, table
     match board.status() {
       BoardStatus::Stalemate => best_value = 0,
       BoardStatus::Ongoing   => best_value = evaluation::evaluation(board, &get_ai_color(board, max_player)),
-      BoardStatus::Checkmate => ()
+      BoardStatus::Checkmate => best_value += if max_player { PADDING - depth } else { depth - PADDING }
     }
   }
   else if max_player
@@ -134,7 +134,7 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: isize, table
   else
   {
     let mut b = beta;
-    // handle best_move from table
+    // see max_player comment
     if best_move.is_some()
     {
       let (value, _) =  ab_with_mem(&board.make_move_new(best_move.unwrap()), alpha, b, depth - 1, table, !max_player);

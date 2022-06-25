@@ -9,11 +9,13 @@ pub fn evaluation(board: &Board, player: &Color) -> i32
   let mut bishops = 0;
   let mut knights = 0;
   let mut rooks   = 0;
-  for sq in ALL_SQUARES.iter() {
+  for sq in ALL_SQUARES.iter() 
+  {
     let col = board.color_on(*sq);
     if board.piece_on(*sq).is_none() || col.is_none() { continue; };
     let c = if col==Some(*player) { 1 } else { -1 };
-    match board.piece_on(*sq) {
+    match board.piece_on(*sq) 
+    {
       Some(Piece::Bishop) => { bishops += c; },
       Some(Piece::Knight) => { knights += c; },
       Some(Piece::Queen)  => { queens  += c; },
