@@ -163,6 +163,7 @@ function ai_done(event) {
   }
   regular_moves = result[5][0];
   prom_moves = result[5][1];
+  // improves memory dealloc, slows down moves
   /* worker.terminate();
   set_worker(); */
   set_move_flag(true);

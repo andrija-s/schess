@@ -8,9 +8,8 @@ struct Bounds
   best: Option<ChessMove>,
   depth: isize,
 }
-const TOTAL_LIMIT: f64 = 10000.0;
-const ITER_LIMIT: f64 = 1000.0;
-const SEC_DIV: f64 = 1000.0;
+const TOTAL_LIMIT: f64 = 4500.0;
+const ITER_LIMIT: f64 = 1500.0;
 
 impl Bounds
 {
@@ -22,20 +21,20 @@ impl Bounds
 // https://people.csail.mit.edu/plaat/mtdf.html
 pub fn ai(board: &Board) -> (i32, Option<ChessMove>, usize)
 {
-  let mut table:HashMap<u64, Bounds> = HashMap::with_capacity(512000);
+  let mut table:HashMap<u64, Bounds> = HashMap::with_capacity(256_000);
   let mut result = (0, None);
   let start_total = crate::now();
   let mut end = start_total;
-  let mut start_iter = start_total;
   let mut i = 1;
-  while (end - start_iter) < ITER_LIMIT && (end - start_total) < TOTAL_LIMIT
+  while (end - start_total) < TOTAL_LIMIT
   {
-    start_iter = crate::now();
-    result = mtdf(board, result.0, i, &mut table);
+    let temp_result = mtdf(board, result.0, i, &mut table);
+    if temp_result.2 { result = (temp_result.0, temp_result.1); }
+    else { break; }
     end = crate::now();
-    crate::log(&("depth: ".to_owned() + &i.to_string() + " time: " + &((end-start_iter)/SEC_DIV).to_string() + " secs"));
     i += 1;
   }
+  crate::log(&("max depth: ".to_owned() + &i.to_string()));
   let saved = table.len();
   drop(table);
 
@@ -47,22 +46,24 @@ pub fn ai(board: &Board) -> (i32, Option<ChessMove>, usize)
   return (result.0,result.1,saved);
 }
 
-fn mtdf(root_board: &Board, f: i32, depth: isize, table: &mut HashMap<u64, Bounds>) -> (i32, Option<ChessMove>)
+fn mtdf(root_board: &Board, f: i32, depth: isize, table: &mut HashMap<u64, Bounds>) -> (i32, Option<ChessMove>, bool)
 {
   let mut guess = f;
   let mut best_move = None;
   let mut upperbound = i32::MAX;
   let mut lowerbound = i32::MIN;
-
+  let start_iter = crate::now();
   while lowerbound < upperbound
   {
     let beta = if guess == lowerbound { guess + 1 } else { guess };
     (guess, best_move) = ab_with_mem(root_board, beta - 1, beta, depth, table, true);
-    
+
+    if crate::now() - start_iter > ITER_LIMIT { return (0, None, false) }
+
     if guess < beta { upperbound = guess; }
     else            { lowerbound = guess; }
   }
-  return (guess, best_move);
+  return (guess, best_move, true);
 }
 
 fn get_ai_color(board: &Board, max_player: bool) -> Color 
@@ -75,20 +76,26 @@ fn get_ai_color(board: &Board, max_player: bool) -> Color
 
 fn eval_board(board: &Board, player: &Color) -> i32
 {
-  let mut value = 0;
+  let mut value   = 0;
+  let mut queens  = 0;
+  let mut pawns   = 0;
+  let mut bishops = 0;
+  let mut knights = 0;
+  let mut rooks   = 0;
   for sq in ALL_SQUARES.iter() {
     let col = board.color_on(*sq);
     if board.piece_on(*sq).is_none() || col.is_none() { continue; };
     let c = if col==Some(*player) { 1 } else { -1 };
     match board.piece_on(*sq) {
-      Some(Piece::Bishop) => { value += (330) * c; },
-      Some(Piece::Knight) => { value += (320) * c; },
-      Some(Piece::Queen)  => { value += (900) * c; },
-      Some(Piece::Rook)   => { value += (500) * c; },
-      Some(Piece::Pawn)   => { value += (100) * c; },
+      Some(Piece::Bishop) => { bishops += c; },
+      Some(Piece::Knight) => { knights += c; },
+      Some(Piece::Queen)  => { queens  += c; },
+      Some(Piece::Rook)   => { rooks   += c; },
+      Some(Piece::Pawn)   => { pawns   += c; },
       _ => (),
     }
   }
+  value += (330 * bishops) + (320 * knights) + (900 * queens) + (500 * rooks)+ (100 * pawns);
   return value;
 }
 
