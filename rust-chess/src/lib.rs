@@ -3,7 +3,7 @@ use chess::{Piece, Board, BoardStatus, MoveGen};
 use std::{str::FromStr};
 
 mod ai_mtdf;
-mod ai_main;
+mod ai_vanilla;
 
 #[wasm_bindgen]
 extern "C" 
@@ -64,7 +64,7 @@ pub fn ai_search(depth: isize, fen: &str) -> String
   set_panic_hook();
   let board = Board::from_str(fen).expect("Valid FEN");
   // value, flag, depth
-  let (value, mov, total) = if depth==0 { ai_mtdf::ai(&board) } else { ai_main::ai(&board, board.side_to_move(), depth) };
+  let (value, mov, total) = if depth==0 { ai_mtdf::ai(&board) } else { ai_vanilla::ai(&board, board.side_to_move(), depth) };
 
   let ai_move= match mov {
     Some(t) => [t.get_source().to_int().to_string(),

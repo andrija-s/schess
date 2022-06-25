@@ -1,0 +1,1 @@
+command line instruction to build: `wasm-pack build --target no-modules --release`

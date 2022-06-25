@@ -1,6 +1,7 @@
-use chess::{Piece, Board, ChessMove, BoardStatus, Color, MoveGen, ALL_SQUARES};
+use chess::{Piece, Board, ChessMove, BoardStatus, Color, MoveGen};
 use std::mem;
 
+#[path = "./evaluation.rs"] mod evaluation;
 
 pub fn ai(board: &Board, player: Color, depth: isize) -> (i32, Option<ChessMove>, usize)
 {
@@ -43,35 +44,6 @@ fn ab_search_top(board: &Board, player: Color, depth: isize) -> (i32, Option<Che
   }
   return (best_val, ai_move, sum);
 }
-
-fn eval_board(board: &Board, player: &Color) -> i32 
-{
-  let mut value = 0;
-  for sq in ALL_SQUARES.iter() {
-    let col = board.color_on(*sq);
-    if board.piece_on(*sq).is_none() || col.is_none() { continue; };
-    let c = if col==Some(*player) { 1 } else { -1 };
-    match board.piece_on(*sq) {
-      Some(Piece::Bishop) => {
-        value += (330) * c;
-      },
-      Some(Piece::Knight) => {
-        value += (320) * c;
-      },
-      Some(Piece::Queen) => {
-        value += (900) * c;
-      },
-      Some(Piece::Rook) => {
-        value += (500) * c;
-      },
-      Some(Piece::Pawn) => {
-        value += (100) * c;
-      },
-      _ => (),
-    }
-  }
-  return value;
-}
   
 fn ab_search(board: &Board, player: Color, depth: isize, alpha: i32, beta: i32, max_player: bool) -> (i32, usize, isize)
 {
@@ -82,7 +54,7 @@ fn ab_search(board: &Board, player: Color, depth: isize, alpha: i32, beta: i32, 
 
   if depth < 1 
   {
-    return (eval_board(board, &player), sum, depth);
+    return (evaluation::evaluation(board, &player), sum, depth);
   }
 
   let move_it = MoveGen::new_legal(board);

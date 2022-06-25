@@ -1,5 +1,7 @@
-use chess::{Piece, Board, ChessMove, BoardStatus, Color, MoveGen, ALL_SQUARES};
+use chess::{Board, ChessMove, BoardStatus, Color, MoveGen};
 use std::{cmp, collections::HashMap};
+
+#[path = "./evaluation.rs"] mod evaluation;
 
 struct Bounds
 {
@@ -8,8 +10,6 @@ struct Bounds
   best: Option<ChessMove>,
   depth: isize,
 }
-const TOTAL_LIMIT: f64 = 4500.0;
-const ITER_LIMIT: f64 = 1500.0;
 
 impl Bounds
 {
@@ -18,6 +18,9 @@ impl Bounds
     Bounds { low: lower, high: upper, best: best_move, depth: remaining_depth }
   }
 }
+const TOTAL_LIMIT: f64 = 4500.0;
+const ITER_LIMIT: f64 = 1500.0;
+
 // https://people.csail.mit.edu/plaat/mtdf.html
 pub fn ai(board: &Board) -> (i32, Option<ChessMove>, usize)
 {
@@ -74,31 +77,6 @@ fn get_ai_color(board: &Board, max_player: bool) -> Color
   }
 }
 
-fn eval_board(board: &Board, player: &Color) -> i32
-{
-  let mut value   = 0;
-  let mut queens  = 0;
-  let mut pawns   = 0;
-  let mut bishops = 0;
-  let mut knights = 0;
-  let mut rooks   = 0;
-  for sq in ALL_SQUARES.iter() {
-    let col = board.color_on(*sq);
-    if board.piece_on(*sq).is_none() || col.is_none() { continue; };
-    let c = if col==Some(*player) { 1 } else { -1 };
-    match board.piece_on(*sq) {
-      Some(Piece::Bishop) => { bishops += c; },
-      Some(Piece::Knight) => { knights += c; },
-      Some(Piece::Queen)  => { queens  += c; },
-      Some(Piece::Rook)   => { rooks   += c; },
-      Some(Piece::Pawn)   => { pawns   += c; },
-      _ => (),
-    }
-  }
-  value += (330 * bishops) + (320 * knights) + (900 * queens) + (500 * rooks)+ (100 * pawns);
-  return value;
-}
-
 fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: isize, table: &mut HashMap<u64, Bounds>, max_player: bool) -> (i32, Option<ChessMove>) 
 {
   let entry = table.get(&board.get_hash());
@@ -123,7 +101,7 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: isize, table
   {
     match board.status() {
       BoardStatus::Stalemate => best_value = 0,
-      BoardStatus::Ongoing   => best_value = eval_board(board, &get_ai_color(board, max_player)),
+      BoardStatus::Ongoing   => best_value = evaluation::evaluation(board, &get_ai_color(board, max_player)),
       BoardStatus::Checkmate => ()
     }
   }
