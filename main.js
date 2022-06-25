@@ -231,7 +231,7 @@ function lose() {
  * @returns 
  */
 function linear(x, y) {
-  return ((NUM_VERTICALSQ*y)+x);
+  return (NUM_VERTICALSQ * y) + x;
 }
 /**
  * @param {Number} z 
@@ -248,15 +248,15 @@ function nonlinear(z) {
  * @returns Number
  */
  function pos_conversion(pos) {
-  let x = (pos % NUM_HORIZONTALSQ);
-  let y = 7-((pos / NUM_VERTICALSQ) | 0);
-  return ((NUM_VERTICALSQ*y)+x);
+  let x = pos % NUM_HORIZONTALSQ;
+  let y = NUM_VERTICALSQ - 1 - ((pos / NUM_VERTICALSQ) | 0);
+  return (NUM_VERTICALSQ * y) + x;
 }
 
 function render_board() {
   for (let i = 0; i < NUM_HORIZONTALSQ; i++) {
     for (let j = 0; j < NUM_VERTICALSQ; j++) {
-      let [x,y] = (is_flipped_flag) ? [7-i,7-j] : [i,j]; 
+      let [x,y] = (is_flipped_flag) ? [NUM_HORIZONTALSQ-1-i,NUM_VERTICALSQ-1-j] : [i,j]; 
       let pos = linear(x,y);
       ctx.fillStyle =  BORDER_COLOR;
       ctx.fillRect(i*SQ_WIDTH,j*SQ_HEIGHT,SQ_WIDTH,SQ_HEIGHT);
@@ -282,7 +282,7 @@ function render_state() {
       continue;
     };
     let [x, y] = nonlinear(i);
-    [x, y] = (is_flipped_flag) ? [7-x,7-y] : [x,y];
+    [x, y] = (is_flipped_flag) ? [NUM_HORIZONTALSQ-1-i,NUM_VERTICALSQ-1-j] : [x,y];
     let str = get_color_at(i) + "" + get_piece_at(i);
     let img = IMAGES[str];
     ctx.drawImage(img, (x*SQ_WIDTH)+(SQ_WIDTH/(NUM_HORIZONTALSQ*2)), (y*SQ_HEIGHT)+(SQ_HEIGHT/(NUM_VERTICALSQ*2)), C_WIDTH/(NUM_HORIZONTALSQ+1), C_HEIGHT/(NUM_VERTICALSQ+1));
