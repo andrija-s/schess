@@ -39,6 +39,8 @@ function getStringFromWasm0(ptr, len) {
     return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
 }
 
+function notDefined(what) { return () => { throw new Error(`${what} is not defined`); }; }
+
 let WASM_VECTOR_LEN = 0;
 
 const cachedTextEncoder = new TextEncoder('utf-8');
@@ -183,6 +185,7 @@ async function load(module, imports) {
 function getImports() {
     const imports = {};
     imports.wbg = {};
+    imports.wbg.__wbg_now_b36d6f7240bf8d51 = typeof Date.now == 'function' ? Date.now : notDefined('Date.now');
     imports.wbg.__wbg_log_6be25f6be6f8feca = function(arg0, arg1) {
         console.log(getStringFromWasm0(arg0, arg1));
     };

@@ -31,7 +31,7 @@ const SQ_TO_COLOR ="aqua";
 const PIECE_SETS = [ "alpha", "anarcandy", "cburnett", "chessnut", "kosal", "maestro", "merida" ];
 const IMAGES = {}; // piece images
 const AUDIO = {};
-const DEPTHS = [ 1, 2, 3, 4, 5, 6 ];
+const DEPTHS = [ 0, 1, 2, 3, 4, 5, 6 ];
 const WORKER_PATH = "./scripts/worker.js";
 const AI_SEARCH = "ai_search";
 const INIT_MOVES = "init_moves";
@@ -50,6 +50,7 @@ let c = null; // canvas element
 let ctx = null; // canvas context
 let evaluation = 0;
 let ai_time = 0.0;
+
 
 class Piece {
   constructor(color, type) {
@@ -356,10 +357,10 @@ function bind_buttons() {
   let ai_iter = document.getElementById("drop-ai");
   for (let i=0; i<DEPTHS.length; i++) {
     let tag = document.createElement("a");
-    tag.innerHTML = "Depth " + DEPTHS[i];
+    tag.innerHTML = (DEPTHS[i] > 0) ? "Depth " + DEPTHS[i] : "Adaptive (Will Nuke RAM)";
     if (tag.innerHTML==="Depth " + get_depth()) tag.style["background-color"] = BTN_HGHLT;
     tag.addEventListener("click", (e) => {
-      if (tag.innerHTML==="Depth " + get_depth()) { return; }
+      if (tag.innerHTML==="Depth " + get_depth() || (tag.innerHTML==="Adaptive (Will Nuke RAM)" && get_depth==0)) { return; }
       reset_dropdown_highlight(ai_iter);
       e.target.style["background-color"] = BTN_HGHLT;
       set_depth(DEPTHS[i]);
