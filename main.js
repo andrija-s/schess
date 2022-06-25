@@ -35,6 +35,7 @@ const DEPTHS = [ 0, 1, 2, 3, 4, 5, 6 ];
 const WORKER_PATH = "./scripts/worker.js";
 const AI_SEARCH = "ai_search";
 const INIT_MOVES = "init_moves";
+const MTDF_ID = "Adaptive";
 /**
 * regular moves:
 * {(from #): [{TO: (to #), FEN: (fen #)}, {TO: (to #), FEN: (fen #)}, ...]}
@@ -140,7 +141,7 @@ function ai_done(event) {
   // format: status, evaluation, ai move, new state, num nodes computed, get_player() moves
   evaluation = result[1].toFixed(2) * ((get_player()===WHITE) ? -1 : 1);
   let time = ((Date.now() - ai_time) / 1000).toFixed(2);
-  console.log("depth base: %d\n%f secs\neval: %f\nmove: %O\nleaf nodes: %i\n", 
+  console.log("depth base: %d\n%f secs\neval: %f\nmove: %O\nnodes traversed (roughly): %i\n", 
               get_depth(), time, evaluation, result[2], result[4]);
 
   let [state, white_checked, black_checked] = parse_fen(result[3]);
@@ -357,10 +358,10 @@ function bind_buttons() {
   let ai_iter = document.getElementById("drop-ai");
   for (let i=0; i<DEPTHS.length; i++) {
     let tag = document.createElement("a");
-    tag.innerHTML = (DEPTHS[i] > 0) ? "Depth " + DEPTHS[i] : "Adaptive (Will Nuke RAM)";
+    tag.innerHTML = (DEPTHS[i] > 0) ? "Depth " + DEPTHS[i] : MTDF_ID;
     if (tag.innerHTML==="Depth " + get_depth()) tag.style["background-color"] = BTN_HGHLT;
     tag.addEventListener("click", (e) => {
-      if (tag.innerHTML==="Depth " + get_depth() || (tag.innerHTML==="Adaptive (Will Nuke RAM)" && get_depth==0)) { return; }
+      if (tag.innerHTML==="Depth " + get_depth() || (tag.innerHTML===MTDF_ID && get_depth==0)) { return; }
       reset_dropdown_highlight(ai_iter);
       e.target.style["background-color"] = BTN_HGHLT;
       set_depth(DEPTHS[i]);

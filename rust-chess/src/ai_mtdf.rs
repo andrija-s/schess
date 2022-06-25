@@ -10,6 +10,8 @@ struct Bounds
 }
 const TOTAL_LIMIT: f64 = 10000.0;
 const ITER_LIMIT: f64 = 1000.0;
+const SEC_DIV: f64 = 1000.0;
+
 impl Bounds
 {
   fn new(lower: i32, upper: i32, best_move: Option<ChessMove>, remaining_depth: isize) -> Bounds 
@@ -17,11 +19,11 @@ impl Bounds
     Bounds { low: lower, high: upper, best: best_move, depth: remaining_depth }
   }
 }
-
+// https://people.csail.mit.edu/plaat/mtdf.html
 pub fn ai(board: &Board) -> (i32, Option<ChessMove>, usize)
 {
-  let mut table:HashMap<u64, Bounds> = HashMap::with_capacity(128000);
-  let mut result = (0, None, 0);
+  let mut table:HashMap<u64, Bounds> = HashMap::with_capacity(512000);
+  let mut result = (0, None);
   let start_total = crate::now();
   let mut end = start_total;
   let mut start_iter = start_total;
@@ -31,30 +33,30 @@ pub fn ai(board: &Board) -> (i32, Option<ChessMove>, usize)
     start_iter = crate::now();
     result = mtdf(board, result.0, i, &mut table);
     end = crate::now();
-    crate::log(&("depth: ".to_owned() + &i.to_string() + " time: " + &((end-start_iter)/1000.0).to_string() + " secs"));
+    crate::log(&("depth: ".to_owned() + &i.to_string() + " time: " + &((end-start_iter)/SEC_DIV).to_string() + " secs"));
     i += 1;
   }
+  let saved = table.len();
   drop(table);
-  return result;
+  return (result.0,result.1,saved);
 }
 
-fn mtdf(root_board: &Board, f: i32, depth: isize, table: &mut HashMap<u64, Bounds>) -> (i32, Option<ChessMove>, usize)
+fn mtdf(root_board: &Board, f: i32, depth: isize, table: &mut HashMap<u64, Bounds>) -> (i32, Option<ChessMove>)
 {
   let mut guess = f;
   let mut best_move = None;
-  let mut nodes_traversed = 0;
   let mut upperbound = i32::MAX;
   let mut lowerbound = i32::MIN;
 
   while lowerbound < upperbound
   {
     let beta = if guess == lowerbound { guess + 1 } else { guess };
-    (guess, best_move, nodes_traversed) = ab_with_mem(root_board, beta - 1, beta, depth, table, true);
+    (guess, best_move) = ab_with_mem(root_board, beta - 1, beta, depth, table, true);
     
     if guess < beta { upperbound = guess; }
     else            { lowerbound = guess; }
   }
-  return (guess, best_move, nodes_traversed);
+  return (guess, best_move);
 }
 
 fn get_ai_color(board: &Board, max_player: bool) -> Color 
@@ -84,10 +86,9 @@ fn eval_board(board: &Board, player: &Color) -> i32
   return value;
 }
 
-fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: isize, table: &mut HashMap<u64, Bounds>, max_player: bool) -> (i32, Option<ChessMove>, usize) 
+fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: isize, table: &mut HashMap<u64, Bounds>, max_player: bool) -> (i32, Option<ChessMove>) 
 {
   let entry = table.get(&board.get_hash());
-  let mut sum = 1;
   let mut best_value = if max_player { i32::MIN } else { i32::MAX };
   let mut best_move = None;
   match entry {
@@ -95,8 +96,8 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: isize, table
     {
       if t.depth >= depth 
       {
-        if t.low >= beta { return (t.low, t.best, sum) }
-        if t.high <= alpha { return (t.high, t.best, sum) }
+        if t.low >= beta { return (t.low, t.best) }
+        if t.high <= alpha { return (t.high, t.best) }
         alpha = cmp::max(alpha, t.low);
         beta = cmp::min(beta, t.high);
         best_move = t.best;
@@ -118,9 +119,8 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: isize, table
     let mut a = alpha;
     if best_move.is_some() 
     {
-      let temp_result =  ab_with_mem(&board.make_move_new(best_move.unwrap()), a, beta, depth - 1, table, !max_player);
-      best_value = temp_result.0;
-      sum += temp_result.2;
+      let (value, _) =  ab_with_mem(&board.make_move_new(best_move.unwrap()), a, beta, depth - 1, table, !max_player);
+      best_value = value;
       a = cmp::max(a, best_value);
     }
     if best_value < beta
@@ -128,13 +128,12 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: isize, table
       let move_it = MoveGen::new_legal(board);
       for m in move_it
       {
-        let temp_result =  ab_with_mem(&board.make_move_new(m), a, beta, depth - 1, table, !max_player);
-        if temp_result.0 > best_value
+        let (value, _) =  ab_with_mem(&board.make_move_new(m), a, beta, depth - 1, table, !max_player);
+        if value > best_value
         {
-          best_value = temp_result.0;
+          best_value = value;
           best_move = Some(m);
         } 
-        sum += temp_result.2;
         a = cmp::max(a, best_value);
         if best_value >= beta { break; }
       }
@@ -145,9 +144,8 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: isize, table
     let mut b = beta;
     if best_move.is_some()
     {
-      let temp_result =  ab_with_mem(&board.make_move_new(best_move.unwrap()), alpha, b, depth - 1, table, !max_player);
-      best_value = temp_result.0;
-      sum += temp_result.2;
+      let (value, _) =  ab_with_mem(&board.make_move_new(best_move.unwrap()), alpha, b, depth - 1, table, !max_player);
+      best_value = value;
       b = cmp::min(b, best_value);
     }
     if best_value > alpha
@@ -155,13 +153,12 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: isize, table
       let move_it = MoveGen::new_legal(board);
       for m in move_it
       {
-        let temp_result =  ab_with_mem(&board.make_move_new(m), alpha, b, depth - 1, table, !max_player);
-        if temp_result.0 < best_value
+        let (value, _) =  ab_with_mem(&board.make_move_new(m), alpha, b, depth - 1, table, !max_player);
+        if value < best_value
         {
-          best_value = temp_result.0;
+          best_value = value;
           best_move = Some(m);
         } 
-        sum += temp_result.2;
         b = cmp::min(b, best_value);
         if best_value <= alpha { break; }
       }
@@ -185,17 +182,5 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: isize, table
     table.insert((*board).get_hash(), Bounds::new(temp_lower, temp_upper, best_move, depth));
   }
 
-  return (best_value, best_move, sum)
+  return (best_value, best_move)
 }
-
-/*
-/* Traditional transposition table storing of bounds */
-/* Fail low result implies an upper bound */
-if g <= alpha then n.upperbound := g; store n.upperbound;
-/* Found an accurate minimax value - will not occur if called with zero window */
-if g >  alpha and g < beta then
-n.lowerbound := g; n.upperbound := g; store n.lowerbound, n.upperbound;
-/* Fail high result implies a lower bound */
-if g >= beta then n.lowerbound := g; store n.lowerbound;
-return g;
- */
