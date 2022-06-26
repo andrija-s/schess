@@ -61,7 +61,7 @@ fn ab_search(board: &Board, player: Color, depth: i32, alpha: i32, beta: i32, ma
   
   if depth < 1 
   {
-    return (evaluation::evaluation(board, &player), sum);
+    return (evaluation::evaluation(board, player), sum);
   }
 
   let move_it = MoveGen::new_legal(board);

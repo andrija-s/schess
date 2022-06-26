@@ -1,7 +1,7 @@
 use chess::{Board, Color, Piece, ALL_SQUARES};
 
 
-pub fn evaluation(board: &Board, player: &Color) -> i32
+pub fn evaluation(board: &Board, player: Color) -> i32
 {
   let mut value   = 0;
   let mut queens  = 0;
@@ -13,7 +13,7 @@ pub fn evaluation(board: &Board, player: &Color) -> i32
   {
     let col = board.color_on(*sq);
     if board.piece_on(*sq).is_none() || col.is_none() { continue; };
-    let c = if col==Some(*player) { 1 } else { -1 };
+    let c = if col==Some(player) { 1 } else { -1 };
     match board.piece_on(*sq) 
     {
       Some(Piece::Bishop) => { bishops += c; },

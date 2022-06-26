@@ -102,7 +102,7 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: i32, table: 
   {
     if depth < 1
     {
-      best_value = evaluation::evaluation(board, &get_ai_color(board, max_player));
+      best_value = evaluation::evaluation(board, get_ai_color(board, max_player));
     }
     else if max_player
     {
