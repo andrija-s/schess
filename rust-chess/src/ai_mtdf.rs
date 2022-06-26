@@ -20,7 +20,7 @@ impl Bounds
 
 const TOTAL_LIMIT: f64 = 4500.0;
 const ITER_LIMIT: f64 = 1400.0;
-const PADDING: i32 = 50; // to help differentiate checkmates by depth
+const CHECK_MATE: i32 = 10_000; // to help differentiate checkmates by depth
 
 // https://people.csail.mit.edu/plaat/mtdf.html
 pub fn ai(board: &Board) -> (i32, Option<ChessMove>)
@@ -102,7 +102,7 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: i32, table: 
     match board.status() {
       BoardStatus::Stalemate => best_value = 0,
       BoardStatus::Ongoing   => best_value = evaluation::evaluation(board, &get_ai_color(board, max_player)),
-      BoardStatus::Checkmate => best_value += if max_player { PADDING - depth } else { depth - PADDING }
+      BoardStatus::Checkmate => best_value = if max_player { -CHECK_MATE - depth } else { CHECK_MATE + depth }
     }
   }
   else if max_player
