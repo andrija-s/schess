@@ -57,7 +57,7 @@ fn mtdf(root_board: &Board, mut guess: i32, depth: i32, table: &mut HashMap<u64,
   {
     let beta = if guess == lowerbound { guess + 1 } else { guess };
     (guess, best_move) = ab_with_mem(root_board, beta - 1, beta, depth, table, true);
-    // 
+    
     if crate::now() - start_iter > ITER_LIMIT { return (0, None, false) }
 
     if guess < beta { upperbound = guess; }
@@ -76,14 +76,14 @@ fn get_ai_color(board: &Board, max_player: bool) -> Color
 
 fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: i32, table: &mut HashMap<u64, Bounds>, max_player: bool) -> (i32, Option<ChessMove>) 
 {
-  let mut best_value = match (*board).status() {
+  let mut best_value = match board.status() {
     BoardStatus::Ongoing   => if max_player { i32::MIN } else { i32::MAX },
     BoardStatus::Checkmate => if max_player { -CHECK_MATE - depth } else { CHECK_MATE + depth },
     BoardStatus::Stalemate => 0
   };
   let mut best_move = None;
   
-  let entry = table.get(&(*board).get_hash());
+  let entry = table.get(&board.get_hash());
   match entry {
     Some(t) => 
     {
@@ -110,7 +110,7 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: i32, table: 
       // handle best_move from table
       if best_move.is_some() 
       {
-        let (value, _) =  ab_with_mem(&(*board).make_move_new(best_move.unwrap()), a, beta, depth - 1, table, !max_player);
+        let (value, _) =  ab_with_mem(&board.make_move_new(best_move.unwrap()), a, beta, depth - 1, table, !max_player);
         best_value = value;
         a = cmp::max(a, best_value);
       }
@@ -119,7 +119,7 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: i32, table: 
         let move_it = MoveGen::new_legal(board);
         for m in move_it
         {
-          let (value, _) =  ab_with_mem(&(*board).make_move_new(m), a, beta, depth - 1, table, !max_player);
+          let (value, _) =  ab_with_mem(&board.make_move_new(m), a, beta, depth - 1, table, !max_player);
           if value > best_value
           {
             best_value = value;
@@ -136,7 +136,7 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: i32, table: 
       // see max_player comment
       if best_move.is_some()
       {
-        let (value, _) =  ab_with_mem(&(*board).make_move_new(best_move.unwrap()), alpha, b, depth - 1, table, !max_player);
+        let (value, _) =  ab_with_mem(&board.make_move_new(best_move.unwrap()), alpha, b, depth - 1, table, !max_player);
         best_value = value;
         b = cmp::min(b, best_value);
       }
@@ -145,7 +145,7 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: i32, table: 
         let move_it = MoveGen::new_legal(board);
         for m in move_it
         {
-          let (value, _) =  ab_with_mem(&(*board).make_move_new(m), alpha, b, depth - 1, table, !max_player);
+          let (value, _) =  ab_with_mem(&board.make_move_new(m), alpha, b, depth - 1, table, !max_player);
           if value < best_value
           {
             best_value = value;
