@@ -282,7 +282,7 @@ function render_state() {
       continue;
     };
     let [x, y] = nonlinear(i);
-    [x, y] = (is_flipped_flag) ? [NUM_HORIZONTALSQ-1-i,NUM_VERTICALSQ-1-j] : [x,y];
+    [x, y] = (is_flipped_flag) ? [NUM_HORIZONTALSQ-1-x,NUM_VERTICALSQ-1-y] : [x,y];
     let str = get_color_at(i) + "" + get_piece_at(i);
     let img = IMAGES[str];
     ctx.drawImage(img, (x*SQ_WIDTH)+(SQ_WIDTH/(NUM_HORIZONTALSQ*2)), (y*SQ_HEIGHT)+(SQ_HEIGHT/(NUM_VERTICALSQ*2)), C_WIDTH/(NUM_HORIZONTALSQ+1), C_HEIGHT/(NUM_VERTICALSQ+1));
