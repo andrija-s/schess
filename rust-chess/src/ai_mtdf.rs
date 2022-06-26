@@ -76,11 +76,12 @@ fn get_ai_color(board: &Board, max_player: bool) -> Color
 
 fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: i32, table: &mut HashMap<u64, Bounds>, max_player: bool) -> (i32, Option<ChessMove>) 
 {
-  let mut best_value = match board.status() {
-    BoardStatus::Ongoing   => if max_player { i32::MIN } else { i32::MAX },
-    BoardStatus::Checkmate => if max_player { -CHECK_MATE - depth } else { CHECK_MATE + depth },
-    BoardStatus::Stalemate => 0
+  match board.status() {
+    BoardStatus::Checkmate => return (if max_player { -CHECK_MATE - depth } else { CHECK_MATE + depth }, None),
+    BoardStatus::Stalemate => return (0, None),
+    BoardStatus::Ongoing   => (),
   };
+  let mut best_value = if max_player { i32::MIN } else { i32::MAX };
   let mut best_move = None;
   
   let entry = table.get(&board.get_hash());
@@ -98,72 +99,69 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: i32, table: 
     },
     None => ()
   }
-  if board.status() == BoardStatus::Ongoing 
+  if depth < 1
   {
-    if depth < 1
+    best_value = evaluation::evaluation(board, get_ai_color(board, max_player));
+  }
+  else if max_player
+  {
+    let mut a = alpha;
+    // handle best_move from table
+    if best_move.is_some() 
     {
-      best_value = evaluation::evaluation(board, get_ai_color(board, max_player));
+      let (value, _) =  ab_with_mem(&board.make_move_new(best_move.unwrap()), a, beta, depth - 1, table, !max_player);
+      best_value = value;
+      a = cmp::max(a, best_value);
     }
-    else if max_player
+    if best_value < beta
     {
-      let mut a = alpha;
-      // handle best_move from table
-      if best_move.is_some() 
+      let move_it = MoveGen::new_legal(board);
+      let mut bresult = mem::MaybeUninit::<Board>::uninit();
+      for m in move_it
       {
-        let (value, _) =  ab_with_mem(&board.make_move_new(best_move.unwrap()), a, beta, depth - 1, table, !max_player);
-        best_value = value;
-        a = cmp::max(a, best_value);
-      }
-      if best_value < beta
-      {
-        let move_it = MoveGen::new_legal(board);
-        let mut bresult = mem::MaybeUninit::<Board>::uninit();
-        for m in move_it
+        unsafe 
         {
-          unsafe 
+          board.make_move(m, &mut *bresult.as_mut_ptr());
+          let (value, _) =  ab_with_mem(&*bresult.as_ptr(), a, beta, depth - 1, table, !max_player);
+          if value > best_value
           {
-            board.make_move(m, &mut *bresult.as_mut_ptr());
-            let (value, _) =  ab_with_mem(&*bresult.as_ptr(), a, beta, depth - 1, table, !max_player);
-            if value > best_value
-            {
-              best_value = value;
-              best_move = Some(m);
-            } 
-            a = cmp::max(a, best_value);
-            if best_value >= beta { break; }
-          }
+            best_value = value;
+            best_move = Some(m);
+          } 
+          a = cmp::max(a, best_value);
+          if best_value >= beta { break; }
         }
       }
     }
-    else
+  }
+  else
+  {
+    let mut b = beta;
+    // see max_player comment
+    // &*bresult.as_ptr()
+    if best_move.is_some()
     {
-      let mut b = beta;
-      // see max_player comment
-      // &*bresult.as_ptr()
-      if best_move.is_some()
+      let (value, _) =  ab_with_mem(&board.make_move_new(best_move.unwrap()), alpha, b, depth - 1, table, !max_player);
+      best_value = value;
+      b = cmp::min(b, best_value);
+    }
+    if best_value > alpha
+    {
+      let move_it = MoveGen::new_legal(board);
+      let mut bresult = mem::MaybeUninit::<Board>::uninit();
+      for m in move_it
       {
-        let (value, _) =  ab_with_mem(&board.make_move_new(best_move.unwrap()), alpha, b, depth - 1, table, !max_player);
-        best_value = value;
-        b = cmp::min(b, best_value);
-      }
-      if best_value > alpha
-      {
-        let move_it = MoveGen::new_legal(board);
-        let mut bresult = mem::MaybeUninit::<Board>::uninit();
-        for m in move_it
+        unsafe
         {
-          unsafe
+          board.make_move(m, &mut *bresult.as_mut_ptr());
+          let (value, _) =  ab_with_mem(&*bresult.as_ptr(), alpha, b, depth - 1, table, !max_player);
+          if value < best_value
           {
-            board.make_move(m, &mut *bresult.as_mut_ptr());
-            let (value, _) =  ab_with_mem(&*bresult.as_ptr(), alpha, b, depth - 1, table, !max_player);
-            if value < best_value
-            {
-              best_value = value;
-              best_move = Some(m);
-            } 
-            b = cmp::min(b, best_value);
-            if best_value <= alpha { break; }
-          }
+            best_value = value;
+            best_move = Some(m);
+          } 
+          b = cmp::min(b, best_value);
+          if best_value <= alpha { break; }
         }
       }
     }
