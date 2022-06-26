@@ -1,5 +1,5 @@
 use chess::{Board, ChessMove, BoardStatus, Color, MoveGen};
-use std::{cmp, collections::HashMap};
+use std::{cmp, mem, collections::HashMap};
 
 #[path = "./evaluation.rs"] mod evaluation;
 
@@ -98,7 +98,7 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: i32, table: 
     },
     None => ()
   }
-  if (*board).status() == BoardStatus::Ongoing 
+  if board.status() == BoardStatus::Ongoing 
   {
     if depth < 1
     {
@@ -117,16 +117,21 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: i32, table: 
       if best_value < beta
       {
         let move_it = MoveGen::new_legal(board);
+        let mut bresult = mem::MaybeUninit::<Board>::uninit();
         for m in move_it
         {
-          let (value, _) =  ab_with_mem(&board.make_move_new(m), a, beta, depth - 1, table, !max_player);
-          if value > best_value
+          unsafe 
           {
-            best_value = value;
-            best_move = Some(m);
-          } 
-          a = cmp::max(a, best_value);
-          if best_value >= beta { break; }
+            board.make_move(m, &mut *bresult.as_mut_ptr());
+            let (value, _) =  ab_with_mem(&*bresult.as_ptr(), a, beta, depth - 1, table, !max_player);
+            if value > best_value
+            {
+              best_value = value;
+              best_move = Some(m);
+            } 
+            a = cmp::max(a, best_value);
+            if best_value >= beta { break; }
+          }
         }
       }
     }
@@ -134,6 +139,7 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: i32, table: 
     {
       let mut b = beta;
       // see max_player comment
+      // &*bresult.as_ptr()
       if best_move.is_some()
       {
         let (value, _) =  ab_with_mem(&board.make_move_new(best_move.unwrap()), alpha, b, depth - 1, table, !max_player);
@@ -143,16 +149,21 @@ fn ab_with_mem(board: &Board, mut alpha: i32, mut beta: i32, depth: i32, table: 
       if best_value > alpha
       {
         let move_it = MoveGen::new_legal(board);
+        let mut bresult = mem::MaybeUninit::<Board>::uninit();
         for m in move_it
         {
-          let (value, _) =  ab_with_mem(&board.make_move_new(m), alpha, b, depth - 1, table, !max_player);
-          if value < best_value
+          unsafe
           {
-            best_value = value;
-            best_move = Some(m);
-          } 
-          b = cmp::min(b, best_value);
-          if best_value <= alpha { break; }
+            board.make_move(m, &mut *bresult.as_mut_ptr());
+            let (value, _) =  ab_with_mem(&*bresult.as_ptr(), alpha, b, depth - 1, table, !max_player);
+            if value < best_value
+            {
+              best_value = value;
+              best_move = Some(m);
+            } 
+            b = cmp::min(b, best_value);
+            if best_value <= alpha { break; }
+          }
         }
       }
     }
