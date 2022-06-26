@@ -2,7 +2,7 @@
 
 [Play!](https://andrija-s.github.io/schess/) - Works off the [Rust branch](https://github.com/andrija-s/schess/tree/rust_switch) currently.
 
-AI board evaluation is currently very basic, it only scores material. Iterative deepening and transposition table implemented are used on the adaptive setting. No opening book so adaptive tends to take its time on first move.
+AI board evaluation is currently very basic, it only scores material. Iterative deepening and transposition table are only used on the adaptive setting. No opening book so adaptive tends to take its time on first move.
 
 For the rust version, the chess move generator is from a [rust chess library](https://github.com/jordanbray/chess) with a little tweak from [AlexanderHarrison](https://github.com/jordanbray/chess/issues/63)
 
