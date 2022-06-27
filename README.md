@@ -1,4 +1,5 @@
 # Schess
+WARNING: Adaptive setting for AI eats a lot of RAM.
 
 [Play!](https://andrija-s.github.io/schess/) - Works off the [Rust branch](https://github.com/andrija-s/schess/tree/rust_switch) currently.
 
