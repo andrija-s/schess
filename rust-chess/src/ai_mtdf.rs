@@ -1,4 +1,4 @@
-use chess::{Board, BoardStatus, ChessMove, Color, MoveGen};
+use chess::{Board, BoardStatus, ChessMove, Color, MoveGen, Piece};
 use std::{cmp, collections::HashMap, mem};
 
 #[path = "./evaluation.rs"]
@@ -111,14 +111,17 @@ fn ab_with_mem(
     let mut a = alpha;
     // handle best_move from table
     if best_move.is_some() {
-      let (value, _) = ab_with_mem(&board.make_move_new(best_move.unwrap()), a, beta, depth - 1, table, !max_player);
-      best_value = value;
+      (best_value, _) = ab_with_mem(&board.make_move_new(best_move.unwrap()), a, beta, depth - 1, table, !max_player);
       a = cmp::max(a, best_value);
     }
     if best_value < beta {
       let move_it = MoveGen::new_legal(board);
       let mut bresult = mem::MaybeUninit::<Board>::uninit();
       for m in move_it {
+        match m.get_promotion() {
+          Some(Piece::Bishop) | Some(Piece::Rook) | Some(Piece::Knight) => continue,
+          _ => (),
+        }
         unsafe {
           board.make_move(m, &mut *bresult.as_mut_ptr());
           let (value, _) = ab_with_mem(&*bresult.as_ptr(), a, beta, depth - 1, table, !max_player);
@@ -136,14 +139,17 @@ fn ab_with_mem(
   } else {
     let mut b = beta;
     if best_move.is_some() {
-      let (value, _) = ab_with_mem(&board.make_move_new(best_move.unwrap()), alpha, b, depth - 1, table, !max_player);
-      best_value = value;
+      (best_value, _) = ab_with_mem(&board.make_move_new(best_move.unwrap()), alpha, b, depth - 1, table, !max_player);
       b = cmp::min(b, best_value);
     }
     if best_value > alpha {
       let move_it = MoveGen::new_legal(board);
       let mut bresult = mem::MaybeUninit::<Board>::uninit();
       for m in move_it {
+        match m.get_promotion() {
+          Some(Piece::Bishop) | Some(Piece::Rook) | Some(Piece::Knight) => continue,
+           _ => (),
+        }
         unsafe {
           board.make_move(m, &mut *bresult.as_mut_ptr());
           let (value, _) = ab_with_mem(&*bresult.as_ptr(), alpha, b, depth - 1, table, !max_player);
