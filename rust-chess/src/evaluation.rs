@@ -12,10 +12,10 @@ pub fn evaluation(board: &Board, player: Color) -> i32 {
 fn material_value(piece: Piece) -> i32 {
   match piece {
     Piece::King => 0,
-    Piece::Pawn => 100,
-    Piece::Rook => 500,
-    Piece::Queen => 900,
-    Piece::Bishop => 330,
-    Piece::Knight => 320,
+    Piece::Pawn => 107,
+    Piece::Rook => 503,
+    Piece::Queen => 901,
+    Piece::Bishop => 335,
+    Piece::Knight => 323,
   }
 }
