@@ -1,0 +1,10 @@
+tab_spaces = 2
+fn_args_layout = "Compressed"
+fn_call_width = 100
+chain_width = 100
+max_width = 120
+#control_brace_style = "AlwaysNextLine"
+#fn_single_line = true
+#imports_indent = "Visual"
+#indent_style = "Visual"
+#where_single_line = true
