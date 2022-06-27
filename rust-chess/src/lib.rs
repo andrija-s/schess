@@ -1,4 +1,4 @@
-use chess::{Board, BoardStatus, MoveGen, Piece};
+use chess::{Board, BoardStatus, MoveGen, Piece, EMPTY};
 use std::str::FromStr;
 use wasm_bindgen::prelude::*;
 
@@ -43,8 +43,8 @@ pub fn init_moves(fen: &str) -> String {
       Some(Piece::Rook) => String::from("R"),
       _ => String::from("0"),
     };
-    let check = match copy.checkers().popcnt() {
-      0 => " n",
+    let check = match *copy.checkers() {
+      EMPTY => " n",
       _ => " y",
     };
     let mut fen = copy.to_string();
@@ -110,8 +110,8 @@ pub fn ai_search(depth: i32, fen: &str) -> String {
   }
 
   let mut response_fen = response.to_string();
-  let response_check = match response.checkers().popcnt() {
-    0 => " n",
+  let response_check = match *response.checkers() {
+    EMPTY => " n",
     _ => " y",
   };
   response_fen.push_str(response_check);

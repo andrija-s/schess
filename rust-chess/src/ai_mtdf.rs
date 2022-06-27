@@ -161,19 +161,13 @@ fn ab_with_mem(
       }
     }
   }
-  let mut temp_lower = i32::MIN;
-  let mut temp_upper = i32::MAX;
   if best_value <= alpha {
-    temp_upper = best_value;
-    table.insert((*board).get_hash(), Bounds::new(temp_lower, temp_upper, best_move, depth));
+    table.insert((*board).get_hash(), Bounds::new(i32::MIN, best_value, best_move, depth));
   } else if best_value >= beta {
-    temp_lower = best_value;
-    table.insert((*board).get_hash(), Bounds::new(temp_lower, temp_upper, best_move, depth));
+    table.insert((*board).get_hash(), Bounds::new(best_value, i32::MAX, best_move, depth));
   } else {
     // best_value > alpha && best_value < beta
-    temp_lower = best_value;
-    temp_upper = best_value;
-    table.insert((*board).get_hash(), Bounds::new(temp_lower, temp_upper, best_move, depth));
+    table.insert((*board).get_hash(), Bounds::new(best_value, best_value, best_move, depth));
   }
 
   return (best_value, best_move);
