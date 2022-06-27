@@ -73,7 +73,7 @@ class Record
     this.R_MOVES = structuredClone(get_regular_moves());
     this.P_MOVES = structuredClone(get_prom_moves());
     this.FROM = get_recent_from();
-    this.TO = get_recent_to;
+    this.TO = get_recent_to();
   }
 }
 
@@ -98,6 +98,8 @@ function undo()
   set_regular_moves(time_machine.R_MOVES);
   set_prom_moves(time_machine.P_MOVES);
   set_recent_fromto(time_machine.FROM, time_machine.TO);
+  set_game_over(false);
+  set_move_flag(true);
   render_state();
 }
 
@@ -534,7 +536,7 @@ function bind_buttons()
   let undobtn_btn = document.getElementById("undobtn");
   undobtn_btn.addEventListener("click", () =>
   {
-    if (!can_move()) { return; }
+    if (!can_move() && !get_game_over()) { return; }
     undo();
   });
   let change_btn = document.getElementById("changebtn");
