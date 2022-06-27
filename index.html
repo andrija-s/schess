@@ -1,38 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta name="viewport" content="width=device-width, intial-scale=1.0">
-    <meta charset="UTF-8">
-    <title>Portal</title>
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="assets/pieces/kosal/wQ.svg" type="image/x-icon">
-  </head>
-  <body>
-    <div class="settings">
-      <button id="resetbtn"  class="btn">New Game</button>
-      <div class="dropdown">
-        <button id="aidepbtn" class="btn">AI Level</button>
-        <div    id="drop-ai"  class="dropdown-content"></div>
-      </div>
-      <button id="flipbtn"   class="btn">Flip</button>
-      <button id="changebtn" class="btn">Change Sides</button>
-      <div class="dropdown">
-        <button id="setart" class="btn">Sets</button>
-        <div    id="drop-sets"  class="dropdown-content"></div>
-      </div>
+
+<head>
+  <meta name="viewport" content="width=device-width, intial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Portal</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="assets/pieces/kosal/wQ.svg" type="image/x-icon">
+</head>
+
+<body>
+  <div class="settings">
+    <button id="resetbtn" class="btn">New Game</button>
+    <div class="dropdown">
+      <button id="aidepbtn" class="btn">AI Level</button>
+      <div id="drop-ai" class="dropdown-content"></div>
     </div>
-    <div id="drop-prom" class="proms"></div>
+    <button id="flipbtn" class="btn">Flip</button>
+    <button id="changebtn" class="btn">Change Sides</button>
+    <button id="undobtn" class="btn">Undo</button>
+    <div class="dropdown">
+      <button id="setart" class="btn">Sets</button>
+      <div id="drop-sets" class="dropdown-content"></div>
+    </div>
+  </div>
+  <div id="drop-prom" class="proms"></div>
 
-    <script src="./main.js"></script>
+  <script src="./main.js"></script>
 
 
-    <!-- </div>
+  <!-- </div>
     <div class="regbtn">
     </div>
     <div class="regbtn">
     </div> -->
-  </body>
+</body>
+
 </html>

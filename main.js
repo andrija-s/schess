@@ -44,7 +44,58 @@ const MTDF_ID = "Adaptive";
 * {(from #): {TO: [{PIECE: (piece type), FEN: (fen#)}, {PIECE: (piece type), FEN: (fen#)}, ...]}}
 */
 let regular_moves = null;
+function get_regular_moves()
+{
+  return regular_moves;
+}
+function set_regular_moves(moves)
+{
+  regular_moves = moves;
+}
+
 let prom_moves = null;
+function get_prom_moves()
+{
+  return prom_moves;
+}
+function set_prom_moves(moves)
+{
+  prom_moves = moves;
+}
+
+class Record
+{
+  constructor()
+  {
+    this.STATE = structuredClone(get_state());
+    this.WHITE_CHECKED = get_checked(WHITE);
+    this.BLACK_CHECKED = get_checked(BLACK);
+    this.R_MOVES = structuredClone(get_regular_moves());
+    this.P_MOVES = structuredClone(get_prom_moves());
+    this.FROM = get_recent_from();
+    this.TO = get_recent_to;
+  }
+}
+
+let history = [];
+history.push(null);
+function add_to_history()
+{
+  history.push(new Record());
+}
+function undo()
+{
+  if (history[history.length - 1] === null) { return; }
+  let time_machine = history.pop();
+  set_selected(-1);
+  set_state(time_machine.STATE);
+  set_check(WHITE, time_machine.WHITE_CHECKED);
+  set_check(BLACK, time_machine.BLACK_CHECKED);
+  set_regular_moves(time_machine.R_MOVES);
+  set_prom_moves(time_machine.P_MOVES);
+  set_recent_fromto(time_machine.FROM, time_machine.TO);
+  render_state();
+}
 
 let promote_fens = { "Q": null, "B": null, "R": null, "N": null };
 let c = null; // canvas element
@@ -154,7 +205,9 @@ function ai_done(event)
 {
   if (event.data[0] === INIT_MOVES)
   {
-    [regular_moves, prom_moves] = parse_player_moves(event.data[1]);
+    let [temp_regular_moves, temp_prom_moves] = parse_player_moves(event.data[1]);
+    set_regular_moves(temp_regular_moves);
+    set_prom_moves(temp_prom_moves);
     set_move_flag(true);
     return;
   }
@@ -184,8 +237,8 @@ function ai_done(event)
     set_game_over(true);
     return;
   }
-  regular_moves = result[4][0];
-  prom_moves = result[4][1];
+  set_regular_moves(result[4][0]);
+  set_prom_moves(result[4][1]);
   // improves memory dealloc, slows down moves
   /* worker.terminate();
   set_worker(); */
@@ -203,7 +256,11 @@ function set_move_flag(bool)
 }
 
 let checks = [false, false];
-function is_checked(color)
+/**
+ * @param {String} color  WHITE/BLACK
+ * @returns 
+ */
+function get_checked(color)
 {
   if (color === WHITE) return checks[0];
   else return checks[1];
@@ -305,8 +362,8 @@ function render_board()
       if (get_selected() === pos) ctx.fillStyle = SELECT_COLOR;
       else if (moves_highlight.has(pos))
         ctx.fillStyle = MOVE_HGHLT_COLOR;
-      else if ((get_piece_at(pos) === KING && get_color_at(pos) === WHITE && is_checked(WHITE))
-        || (get_piece_at(pos) === KING && get_color_at(pos) === BLACK && is_checked(BLACK)))
+      else if ((get_piece_at(pos) === KING && get_color_at(pos) === WHITE && get_checked(WHITE))
+        || (get_piece_at(pos) === KING && get_color_at(pos) === BLACK && get_checked(BLACK)))
         ctx.fillStyle = CHECK_COLOR;
       else if (pos === get_recent_from())
         ctx.fillStyle = SQ_FROM_COLOR;
@@ -469,7 +526,12 @@ function bind_buttons()
   {
     reset();
   });
-
+  let undobtn_btn = document.getElementById("undobtn");
+  undobtn_btn.addEventListener("click", () =>
+  {
+    if (!can_move()) { return; }
+    undo();
+  });
   let change_btn = document.getElementById("changebtn");
   change_btn.addEventListener("click", () =>
   {
@@ -500,6 +562,7 @@ function conclude_move(move)
 {
   set_selected(-1);
   reset_move_highlight();
+  add_to_history();
   let [state, white_checked, black_checked] = parse_fen(move.FEN);
   set_state(state);
   set_check(WHITE, white_checked);
@@ -537,16 +600,16 @@ function bind_click()
     if (get_selected() === -1 && get_color_at(pos) === get_player())
     {
       set_selected(pos);
-      if (regular_moves[pos])
+      if (get_regular_moves()[pos])
       {
-        for (let mov of regular_moves[pos])
+        for (let mov of get_regular_moves()[pos])
         {
           moves_highlight.add(mov.TO);
         }
       }
-      if (prom_moves[pos])
+      if (get_prom_moves()[pos])
       {
-        for (let mov in prom_moves[pos])
+        for (let mov in get_prom_moves()[pos])
         {
           moves_highlight.add(parseInt(mov));
         }
@@ -556,9 +619,9 @@ function bind_click()
     else if (get_selected() !== -1)
     {
       let move = null;
-      if (regular_moves[get_selected()])
+      if (get_regular_moves()[get_selected()])
       {
-        for (let mov of regular_moves[get_selected()])
+        for (let mov of get_regular_moves()[get_selected()])
         {
           if (mov.TO == pos)
           {
@@ -572,10 +635,10 @@ function bind_click()
         conclude_move(move);
         return;
       }
-      else if (prom_moves[get_selected()] && prom_moves[get_selected()][pos])
+      else if (get_prom_moves()[get_selected()] && get_prom_moves()[get_selected()][pos])
       {
 
-        for (let mov of prom_moves[get_selected()][pos])
+        for (let mov of get_prom_moves()[get_selected()][pos])
         {
           promote_fens[mov.PIECE] = { FEN: mov.FEN, STATUS: mov.STATUS };
         }

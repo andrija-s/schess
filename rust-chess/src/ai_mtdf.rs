@@ -17,7 +17,7 @@ impl Bounds {
 }
 
 const TOTAL_LIMIT: f64 = 4500.0;
-const ITER_LIMIT: f64 = 1200.0;
+const ITER_LIMIT: f64 = 900.0;
 const CHECK_MATE: i32 = 10_000; // to help differentiate checkmates by depth
 
 // https://people.csail.mit.edu/plaat/mtdf.html
