@@ -77,8 +77,12 @@ class Record
   }
 }
 
-let history = [];
-history.push(null);
+let history = null;
+function reset_history()
+{
+  history = [];
+  history.push(null);
+}
 function add_to_history()
 {
   history.push(new Record());
@@ -424,6 +428,7 @@ function init_audio()
 function reset()
 {
   if (worker !== null) worker.terminate();
+  reset_history();
   set_worker();
   hide_prom();
   let [state, white_checked, black_checked] = parse_fen(DEFAULT_FEN);
