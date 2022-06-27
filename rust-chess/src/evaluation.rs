@@ -3,7 +3,7 @@ use chess::{Board, Color, Piece, ALL_PIECES};
 pub fn evaluation(board: &Board, player: Color) -> i32 {
   let mut value = 0;
   for piece in ALL_PIECES {
-    value += material_value(piece) * (board.count_piece(piece, player) as i32 - board.count_piece(piece,!player) as i32)
+    value += material_value(piece) * (board.count_piece(piece, player) as i32 - board.count_piece(piece, !player) as i32)
   }
   return value;
 }

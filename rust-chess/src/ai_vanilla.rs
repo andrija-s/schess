@@ -48,7 +48,6 @@ fn ab_search_top(board: &Board, player: Color, depth: i32) -> (i32, Option<Chess
 }
 
 fn ab_search(board: &Board, player: Color, depth: i32, alpha: i32, beta: i32, max_player: bool) -> i32 {
-  
   /* unsafe {
     COUNTER += 1;
   } */
