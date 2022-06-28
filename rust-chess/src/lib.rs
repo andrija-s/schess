@@ -1,4 +1,4 @@
-use chess::{Board, BoardStatus, MoveGen, Piece, EMPTY};
+use chess::{Board, BoardStatus, MoveGen, Piece, EMPTY, ChessMove, BitBoard};
 use std::str::FromStr;
 use wasm_bindgen::prelude::*;
 
@@ -19,50 +19,22 @@ extern "C" {
   #[wasm_bindgen(js_namespace = Date, js_name = now)]
   pub fn now() -> f64;
 }
-/* #[test]
-fn valio() {
-  println!("{:?}", get_rank(chess::Rank::Second));
 
-  assert!(5==4);
-} */
 #[wasm_bindgen]
 pub fn init_moves(fen: &str) -> String {
-  let board = Board::from_str(fen).expect("Valid FEN");
-  let mut player_moves = Vec::new();
-  let move_it = MoveGen::new_legal(&board);
 
-  for m in move_it {
-    let copy = board.make_move_new(m);
-    let from = m.get_source().to_int().to_string();
-    let to = m.get_dest().to_int().to_string();
-    let status = match copy.status() {
-      BoardStatus::Checkmate => String::from("cm"),
-      BoardStatus::Stalemate => String::from("sm"),
-      BoardStatus::Ongoing => String::from("og"),
-    };
-    let prom = match m.get_promotion() {
-      Some(Piece::Bishop) => String::from("B"),
-      Some(Piece::Queen) => String::from("Q"),
-      Some(Piece::Knight) => String::from("N"),
-      Some(Piece::Rook) => String::from("R"),
-      _ => String::from("0"),
-    };
-    let check = match *copy.checkers() {
-      EMPTY => " n",
-      _ => " y",
-    };
-    let mut fen = copy.to_string();
-    fen.push_str(check);
-    player_moves.push([from, to, prom, fen, status].join("?"));
-  }
+  let board = Board::from_str(fen).expect("Valid FEN");
+  let player_moves = collect_str(&board);
 
   return player_moves.join(";");
 }
 
 #[wasm_bindgen]
 pub fn ai_search(depth: i32, fen: &str) -> String {
+  
   set_panic_hook();
   let board = Board::from_str(fen).expect("Valid FEN");
+
   // value, flag, depth
   let (value, mov) = if depth == 0 {
     ai_mtdf::ai(&board)
@@ -79,51 +51,59 @@ pub fn ai_search(depth: i32, fen: &str) -> String {
   };
 
   let response = board.make_move_new(mov.unwrap());
-  let status = match response.status() {
-    BoardStatus::Checkmate => String::from("cm"),
-    BoardStatus::Stalemate => String::from("sm"),
-    BoardStatus::Ongoing => String::from("og"),
-  };
+  let status = status_str(&response);
 
-  let mut player_moves = Vec::new();
-  let move_it = MoveGen::new_legal(&response);
-  for m in move_it {
-    let copy = response.make_move_new(m);
-    let from = m.get_source().to_int().to_string();
-    let to = m.get_dest().to_int().to_string();
-    let prom = match m.get_promotion() {
-      Some(Piece::Bishop) => String::from("B"),
-      Some(Piece::Queen) => String::from("Q"),
-      Some(Piece::Knight) => String::from("N"),
-      Some(Piece::Rook) => String::from("R"),
-      _ => String::from("0"),
-    };
-    let check = match copy.checkers().popcnt() {
-      0 => " n",
-      _ => " y",
-    };
-    let mut fen = copy.to_string();
-    fen.push_str(check);
-
-    let status = match copy.status() {
-      BoardStatus::Checkmate => String::from("cm"),
-      BoardStatus::Stalemate => String::from("sm"),
-      BoardStatus::Ongoing => String::from("og"),
-    };
-    player_moves.push([from, to, prom, fen, status].join("?"));
-  }
+  let player_moves = collect_str(&response);
 
   let mut response_fen = response.to_string();
-  let response_check = match *response.checkers() {
-    EMPTY => " n",
-    _ => " y",
-  };
-  response_fen.push_str(response_check);
+  let response_check = check_str(*response.checkers());
+  response_fen.push_str(&response_check);
 
   // status,eval,ai move,ai move fen,total nodes computed,all player moves in from?to?prom?fen format,termination depth of move
   return [status, value.to_string(), ai_move, response_fen, player_moves.join(";")].join(",");
 }
-
+#[inline]
+fn promotion_str(m: &ChessMove) -> String {
+  match m.get_promotion() {
+    Some(Piece::Bishop) => String::from("B"),
+    Some(Piece::Queen) => String::from("Q"),
+    Some(Piece::Knight) => String::from("N"),
+    Some(Piece::Rook) => String::from("R"),
+    _ => String::from("0"),
+  }
+}
+#[inline]
+fn status_str(board: &Board) -> String {
+  match board.status() {
+    BoardStatus::Checkmate => String::from("cm"),
+    BoardStatus::Stalemate => String::from("sm"),
+    BoardStatus::Ongoing => String::from("og"),
+  }
+}
+#[inline]
+fn check_str(bitboard: BitBoard) -> String {
+  match bitboard {
+    EMPTY => String::from(" n"),
+    _ => String::from(" y"),
+  }
+}
+// eats iterator
+fn collect_str(board: &Board) -> Vec<String> {
+  let move_it = MoveGen::new_legal(board);
+  let mut player_moves = Vec::new();
+  for m in move_it {
+    let copy = board.make_move_new(m);
+    let from = m.get_source().to_int().to_string();
+    let to = m.get_dest().to_int().to_string();
+    let status = status_str(&copy);
+    let prom = promotion_str(&m);
+    let check = check_str(*copy.checkers());
+    let mut fen = copy.to_string();
+    fen.push_str(&check);
+    player_moves.push([from, to, prom, fen, status].join("?"));
+  }
+  return player_moves;
+}
 pub fn set_panic_hook() {
   #[cfg(feature = "console_error_panic_hook")]
   console_error_panic_hook::set_once();

@@ -9,11 +9,6 @@ onmessage = async function (event)
 
   await wasm_bindgen('../rust-chess/pkg/rust_chess_bg.wasm');
 
-  /*  let test_time = Date.now();
-   let test_result = ai_search(6, "rnb1kbnr/4pppp/8/q1PpP3/p7/P7/1PPBBPPP/RN1QK1NR b KQkq - 0 1");
-   console.log(test_result);
-   console.log((Date.now() - test_time) / 1000); */
-
   let result;
   let time = Date.now();
 
