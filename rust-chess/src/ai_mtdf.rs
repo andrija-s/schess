@@ -8,16 +8,17 @@ struct Bounds {
   low: i32,
   high: i32,
   best: Option<ChessMove>,
+  order: [Piece; 6],
   depth: i32,
 }
 impl Bounds {
-  fn new(low: i32, high: i32, best: Option<ChessMove>, depth: i32) -> Bounds {
-    Bounds { low, high, best, depth }
+  fn new(low: i32, high: i32, best: Option<ChessMove>, order: [Piece; 6], depth: i32) -> Bounds {
+    Bounds { low, high, best, order, depth }
   }
 }
 
 const TOTAL_LIMIT: f64 = 4500.0;
-const ITER_LIMIT: f64 = 900.0;
+const ITER_LIMIT: f64 = 1400.0;
 const CHECK_MATE: i32 = 10_000; // to help differentiate checkmates by depth
 
 // https://people.csail.mit.edu/plaat/mtdf.html
@@ -86,22 +87,25 @@ fn ab_with_mem(
     _ => (),
   }
   let mut best_value = if max_player { i32::MIN } else { i32::MAX };
-  let mut best_move = None;
+  let mut order: [Piece; 6] = [Piece::Pawn, Piece::Knight, Piece::Bishop, Piece::Queen, Piece::Rook, Piece::King];
+  let mut piece_values: [i32; 6] = [0,0,0,0,0,0];
+  let mut best_move: Option<ChessMove> = None;
 
   let entry = table.get(&board.get_hash());
   match entry {
     Some(t) => {
       if t.depth >= depth {
+        best_move = t.best;
         if t.low >= beta {
-          return (t.low, t.best);
+          return (t.low, best_move);
         }
         if t.high <= alpha {
-          return (t.high, t.best);
+          return (t.high, best_move);
         }
         alpha = cmp::max(alpha, t.low);
         beta = cmp::min(beta, t.high);
-        best_move = t.best;
       }
+      order = t.order;
     }
     None => (),
   }
@@ -109,13 +113,8 @@ fn ab_with_mem(
     best_value = evaluation::evaluation(board, get_ai_color(board, max_player));
   } else if max_player {
     let mut a = alpha;
-    // handle best_move from table
-    if best_move.is_some() {
-      (best_value, _) = ab_with_mem(&board.make_move_new(best_move.unwrap()), a, beta, depth - 1, table, !max_player);
-      a = cmp::max(a, best_value);
-    }
     if best_value < beta {
-      let move_it = MoveGen::new_legal(board);
+      let move_it = MoveGen::new_legal_ordered(board, &mut order);
       let mut bresult = mem::MaybeUninit::<Board>::uninit();
       for m in move_it {
         match m.get_promotion() {
@@ -125,6 +124,7 @@ fn ab_with_mem(
         unsafe {
           board.make_move(m, &mut *bresult.as_mut_ptr());
           let (value, _) = ab_with_mem(&*bresult.as_ptr(), a, beta, depth - 1, table, !max_player);
+          piece_values[board.piece_on(m.get_source()).unwrap().to_index()] += value;
           if value > best_value {
             best_value = value;
             best_move = Some(m);
@@ -136,14 +136,11 @@ fn ab_with_mem(
         }
       }
     }
+    order.sort_by(|a, b| piece_values[b.to_index()].partial_cmp(&piece_values[a.to_index()]).unwrap());
   } else {
     let mut b = beta;
-    if best_move.is_some() {
-      (best_value, _) = ab_with_mem(&board.make_move_new(best_move.unwrap()), alpha, b, depth - 1, table, !max_player);
-      b = cmp::min(b, best_value);
-    }
     if best_value > alpha {
-      let move_it = MoveGen::new_legal(board);
+      let move_it = MoveGen::new_legal_ordered(board, &mut order);
       let mut bresult = mem::MaybeUninit::<Board>::uninit();
       for m in move_it {
         match m.get_promotion() {
@@ -153,6 +150,7 @@ fn ab_with_mem(
         unsafe {
           board.make_move(m, &mut *bresult.as_mut_ptr());
           let (value, _) = ab_with_mem(&*bresult.as_ptr(), alpha, b, depth - 1, table, !max_player);
+          piece_values[board.piece_on(m.get_source()).unwrap().to_index()] += value;
           if value < best_value {
             best_value = value;
             best_move = Some(m);
@@ -164,14 +162,15 @@ fn ab_with_mem(
         }
       }
     }
+    order.sort_by(|a, b| piece_values[a.to_index()].partial_cmp(&piece_values[b.to_index()]).unwrap());
   }
   if best_value <= alpha {
-    table.insert((*board).get_hash(), Bounds::new(i32::MIN, best_value, best_move, depth));
+    table.insert((*board).get_hash(), Bounds::new(i32::MIN, best_value, best_move, order, depth));
   } else if best_value >= beta {
-    table.insert((*board).get_hash(), Bounds::new(best_value, i32::MAX, best_move, depth));
+    table.insert((*board).get_hash(), Bounds::new(best_value, i32::MAX, best_move, order, depth));
   } else {
     // best_value > alpha && best_value < beta
-    table.insert((*board).get_hash(), Bounds::new(best_value, best_value, best_move, depth));
+    table.insert((*board).get_hash(), Bounds::new(best_value, best_value, best_move, order, depth));
   }
 
   return (best_value, best_move);
