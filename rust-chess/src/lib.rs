@@ -19,11 +19,15 @@ extern "C" {
   #[wasm_bindgen(js_namespace = Date, js_name = now)]
   pub fn now() -> f64;
 }
+/* #[test]
+fn valio() {
+  println!("{:?}", get_rank(chess::Rank::Second));
 
+  assert!(5==4);
+} */
 #[wasm_bindgen]
 pub fn init_moves(fen: &str) -> String {
   let board = Board::from_str(fen).expect("Valid FEN");
-
   let mut player_moves = Vec::new();
   let move_it = MoveGen::new_legal(&board);
 
