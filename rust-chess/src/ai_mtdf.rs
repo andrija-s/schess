@@ -179,7 +179,7 @@ fn ab_with_mem(
     }
     order.sort_by(
       |a, b| 
-      piece_values[a.to_index()].partial_cmp(&piece_values[b.to_index()]).unwrap()
+      piece_values[b.to_index()].partial_cmp(&piece_values[a.to_index()]).unwrap()
     );
   }
   if best_value <= alpha {
