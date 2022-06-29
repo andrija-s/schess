@@ -31,7 +31,7 @@ const SQ_TO_COLOR = "aqua";
 const PIECE_SETS = ["alpha", "anarcandy", "cburnett", "chessnut", "kosal", "maestro", "merida"];
 const IMAGES = {}; // piece images
 const AUDIO = {};
-const DEPTHS = 6;
+const DEPTHS = 9;
 const WORKER_PATH = "./scripts/worker.js";
 const AI_SEARCH = "ai_search";
 const INIT_MOVES = "init_moves";
@@ -205,9 +205,9 @@ let worker = null
 function set_worker()
 {
   worker = new Worker(WORKER_PATH);
-  worker.onmessage = ai_done;
+  worker.onmessage = worker_done;
 }
-function ai_done(event)
+function worker_done(event)
 {
   if (event.data === "READY")
   {
@@ -448,7 +448,6 @@ function reset()
 {
   if (worker !== null) worker.terminate();
   reset_history();
-  set_worker();
   hide_prom();
   let [state, white_checked, black_checked] = parse_fen(DEFAULT_FEN);
   set_state(state);
@@ -459,15 +458,7 @@ function reset()
   set_selected(-1);
   set_move_flag(false);
   set_game_over(false);
-  /* if (get_player() === BLACK)
-  {
-    move_ai(DEFAULT_FEN);
-  }
-  else
-  {
-    worker.postMessage({ TYPE: INIT_MOVES, FEN: DEFAULT_FEN });
-  }
-  render_state(); */
+  set_worker();
 }
 
 function reset_dropdown_highlight(iter)
