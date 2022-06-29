@@ -88,7 +88,7 @@ fn ab_with_mem(
   }
   let mut best_value = if max_player { i32::MIN } else { i32::MAX };
   let mut order: [Piece; 6] = [Piece::Pawn, Piece::Knight, Piece::Bishop, Piece::Queen, Piece::Rook, Piece::King];
-  let mut piece_values: [i32; 6] = [0,0,0,0,0,0];
+  let mut piece_values: [i8; 6] = [0,0,0,0,0,0];
   let mut best_move: Option<ChessMove> = None;
 
   let entry = table.get(&board.get_hash());
@@ -124,7 +124,13 @@ fn ab_with_mem(
         unsafe {
           board.make_move(m, &mut *bresult.as_mut_ptr());
           let (value, _) = ab_with_mem(&*bresult.as_ptr(), a, beta, depth - 1, table, !max_player);
-          piece_values[board.piece_on(m.get_source()).unwrap().to_index()] += value;
+          let piece_in = board.piece_on(m.get_source()).unwrap().to_index();
+          if value > 0 {
+            piece_values[piece_in] += 1
+          }
+          else if value < 0 {
+            piece_values[piece_in] -= 1
+          }
           if value > best_value {
             best_value = value;
             best_move = Some(m);
@@ -136,7 +142,10 @@ fn ab_with_mem(
         }
       }
     }
-    order.sort_by(|a, b| piece_values[b.to_index()].partial_cmp(&piece_values[a.to_index()]).unwrap());
+    order.sort_by(
+      |a, b| 
+      piece_values[b.to_index()].partial_cmp(&piece_values[a.to_index()]).unwrap()
+    );
   } else {
     let mut b = beta;
     if best_value > alpha {
@@ -150,7 +159,13 @@ fn ab_with_mem(
         unsafe {
           board.make_move(m, &mut *bresult.as_mut_ptr());
           let (value, _) = ab_with_mem(&*bresult.as_ptr(), alpha, b, depth - 1, table, !max_player);
-          piece_values[board.piece_on(m.get_source()).unwrap().to_index()] += value;
+          let piece_in = board.piece_on(m.get_source()).unwrap().to_index();
+          if value < 0 {
+            piece_values[piece_in] += 1
+          }
+          else if value > 0 {
+            piece_values[piece_in] -= 1
+          }
           if value < best_value {
             best_value = value;
             best_move = Some(m);
@@ -162,7 +177,10 @@ fn ab_with_mem(
         }
       }
     }
-    order.sort_by(|a, b| piece_values[a.to_index()].partial_cmp(&piece_values[b.to_index()]).unwrap());
+    order.sort_by(
+      |a, b| 
+      piece_values[a.to_index()].partial_cmp(&piece_values[b.to_index()]).unwrap()
+    );
   }
   if best_value <= alpha {
     table.insert((*board).get_hash(), Bounds::new(i32::MIN, best_value, best_move, order, depth));
