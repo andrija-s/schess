@@ -1,3 +1,4 @@
 rust-chess/target
 rust-chess/chess-3.2.0
+scripts/old_worker.js
 *.log

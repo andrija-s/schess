@@ -209,6 +209,11 @@ function set_worker()
 }
 function ai_done(event)
 {
+  if (event.data === "READY")
+  {
+    init_play();
+    return;
+  }
   if (event.data[0] === INIT_MOVES)
   {
     let [temp_regular_moves, temp_prom_moves] = parse_player_moves(event.data[1]);
@@ -249,6 +254,18 @@ function ai_done(event)
   /* worker.terminate();
   set_worker(); */
   set_move_flag(true);
+}
+function init_play()
+{
+  if (get_player() === BLACK)
+  {
+    move_ai(DEFAULT_FEN);
+  }
+  else
+  {
+    worker.postMessage({ TYPE: INIT_MOVES, FEN: DEFAULT_FEN });
+  }
+  render_state();
 }
 
 let can_move_flag = true;
@@ -442,7 +459,7 @@ function reset()
   set_selected(-1);
   set_move_flag(false);
   set_game_over(false);
-  if (get_player() === BLACK)
+  /* if (get_player() === BLACK)
   {
     move_ai(DEFAULT_FEN);
   }
@@ -450,7 +467,7 @@ function reset()
   {
     worker.postMessage({ TYPE: INIT_MOVES, FEN: DEFAULT_FEN });
   }
-  render_state();
+  render_state(); */
 }
 
 function reset_dropdown_highlight(iter)
