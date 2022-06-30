@@ -20,10 +20,12 @@ impl Bounds {
 const TOTAL_LIMIT: f64 = 5000.0;
 const ITER_LIMIT: f64 = 2000.0;
 const CHECK_MATE: i32 = 10_000; // to help differentiate checkmates by depth
+const HASH_LIMIT: usize = 4_096_000;
+const HASH_CAP: usize = 1_024_000;
 
 // https://people.csail.mit.edu/plaat/mtdf.html
 pub fn ai(board: &Board) -> (i32, Option<ChessMove>) {
-  let mut table: HashMap<u64, Bounds> = HashMap::with_capacity(512_000);
+  let mut table: HashMap<u64, Bounds> = HashMap::with_capacity(HASH_CAP);
   let mut result = (0, None);
   let start_total = crate::now();
   let mut i = 1;
@@ -181,6 +183,9 @@ fn ab_with_mem(
       |a, b| 
       piece_values[b.to_index()].partial_cmp(&piece_values[a.to_index()]).unwrap()
     );
+  }
+  if table.len() > HASH_LIMIT {
+    return (best_value, best_move);
   }
   if best_value <= alpha {
     table.insert((*board).get_hash(), Bounds::new(i32::MIN, best_value, best_move, order, depth));
