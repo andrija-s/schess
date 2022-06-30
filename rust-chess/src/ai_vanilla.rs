@@ -16,8 +16,8 @@ pub fn ai(board: &Board, player: Color, depth: i32) -> (i32, Option<ChessMove>) 
 
 fn ab_search_top(board: &Board, player: Color, depth: i32) -> (i32, Option<ChessMove>) {
   let mut best_val: i32 = i32::MIN;
-  let mut ai_move = None;
-  let beta = i32::MAX;
+  let mut ai_move: Option<ChessMove> = None;
+  let beta: i32 = i32::MAX;
 
   match board.status() {
     BoardStatus::Ongoing => (),
@@ -25,7 +25,7 @@ fn ab_search_top(board: &Board, player: Color, depth: i32) -> (i32, Option<Chess
     BoardStatus::Stalemate => return (0, ai_move),
   }
 
-  let move_it = MoveGen::new_legal(board);
+  let move_it: MoveGen = MoveGen::new_legal(board);
   for m in move_it {
     match m.get_promotion() {
       Some(Piece::Bishop) | Some(Piece::Rook) | Some(Piece::Knight) => continue,
@@ -64,20 +64,20 @@ fn ab_search(board: &Board, player: Color, depth: i32, alpha: i32, beta: i32, ma
     return evaluation::evaluation(board, player);
   }
 
-  let move_it = MoveGen::new_legal(board);
+  let move_it: MoveGen = MoveGen::new_legal(board);
   if move_it.len() == 0 {
     panic!("Ongoing and yet no moves. fen: {}.", (*board).to_string());
   }
   if max_player {
+    let mut bresult = mem::MaybeUninit::<Board>::uninit();
     for m in move_it {
       match m.get_promotion() {
         Some(Piece::Bishop) | Some(Piece::Rook) | Some(Piece::Knight) => continue,
         _ => (),
       }
-      let mut bresult = mem::MaybeUninit::<Board>::uninit();
       unsafe {
         board.make_move(m, &mut *bresult.as_mut_ptr());
-        let value = ab_search(&*bresult.as_ptr(), player, depth - 1, best_val, beta, !max_player);
+        let value: i32 = ab_search(&*bresult.as_ptr(), player, depth - 1, best_val, beta, !max_player);
         best_val = cmp::max(value, best_val);
         if best_val >= beta {
           break;
@@ -85,15 +85,15 @@ fn ab_search(board: &Board, player: Color, depth: i32, alpha: i32, beta: i32, ma
       }
     }
   } else {
+    let mut bresult = mem::MaybeUninit::<Board>::uninit();
     for m in move_it {
       match m.get_promotion() {
         Some(Piece::Bishop) | Some(Piece::Rook) | Some(Piece::Knight) => continue,
         _ => (),
       }
-      let mut bresult = mem::MaybeUninit::<Board>::uninit();
       unsafe {
         board.make_move(m, &mut *bresult.as_mut_ptr());
-        let value = ab_search(&*bresult.as_ptr(), player, depth - 1, alpha, best_val, !max_player);
+        let value: i32 = ab_search(&*bresult.as_ptr(), player, depth - 1, alpha, best_val, !max_player);
         best_val = cmp::min(value, best_val);
         if best_val <= alpha {
           break;

@@ -1,7 +1,7 @@
 importScripts('../rust-chess/pkg/rust_chess.js');
 
 const { init_moves, ai_search } = wasm_bindgen;
-const AI_DELAY = .25;
+const AI_DELAY = .5;
 const DO_DELAY = true;
 
 

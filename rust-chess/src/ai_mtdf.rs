@@ -26,11 +26,11 @@ const HASH_CAP: usize = 1_024_000;
 // https://people.csail.mit.edu/plaat/mtdf.html
 pub fn ai(board: &Board) -> (i32, Option<ChessMove>) {
   let mut table: HashMap<u64, Bounds> = HashMap::with_capacity(HASH_CAP);
-  let mut result = (0, None);
-  let start_total = crate::now();
-  let mut i = 1;
+  let mut result: (i32, Option<ChessMove>) = (0, None);
+  let start_total: f64 = crate::now();
+  let mut i: i32 = 1;
   while (crate::now() - start_total) < TOTAL_LIMIT {
-    let temp_result = mtdf(board, result.0, i, &mut table);
+    let temp_result: (i32, Option<ChessMove>, bool) = mtdf(board, result.0, i, &mut table);
     if temp_result.2 {
       result = (temp_result.0, temp_result.1);
     } else {
@@ -42,7 +42,7 @@ pub fn ai(board: &Board) -> (i32, Option<ChessMove>) {
   drop(table);
 
   if result.1.is_none() {
-    let mut move_it = MoveGen::new_legal(board);
+    let mut move_it: MoveGen = MoveGen::new_legal(board);
     result = (result.0, move_it.next());
   }
 
@@ -50,12 +50,12 @@ pub fn ai(board: &Board) -> (i32, Option<ChessMove>) {
 }
 
 fn mtdf(root_board: &Board, mut guess: i32, depth: i32, table: &mut HashMap<u64, Bounds>) -> (i32, Option<ChessMove>, bool) {
-  let mut best_move = None;
-  let mut upperbound = i32::MAX;
-  let mut lowerbound = i32::MIN;
-  let start_iter = crate::now();
+  let mut best_move: Option<ChessMove> = None;
+  let mut upperbound: i32 = i32::MAX;
+  let mut lowerbound: i32 = i32::MIN;
+  let start_iter: f64 = crate::now();
   while lowerbound < upperbound {
-    let beta = if guess == lowerbound { guess + 1 } else { guess };
+    let beta: i32 = if guess == lowerbound { guess + 1 } else { guess };
     (guess, best_move) = ab_with_mem(root_board, beta - 1, beta, depth, table, true);
 
     if crate::now() - start_iter > ITER_LIMIT {
@@ -88,12 +88,12 @@ fn ab_with_mem(
     BoardStatus::Checkmate if !max_player => return (CHECK_MATE + depth, None),
     _ => (),
   }
-  let mut best_value = if max_player { i32::MIN } else { i32::MAX };
+  let mut best_value: i32 = if max_player { i32::MIN } else { i32::MAX };
   let mut order: [Piece; 6] = [Piece::Pawn, Piece::Knight, Piece::Bishop, Piece::Queen, Piece::Rook, Piece::King];
   let mut piece_values: [i8; 6] = [0,0,0,0,0,0];
   let mut best_move: Option<ChessMove> = None;
 
-  let entry = table.get(&board.get_hash());
+  let entry: Option<&Bounds> = table.get(&board.get_hash());
   match entry {
     Some(t) => {
       if t.depth >= depth {
@@ -114,9 +114,9 @@ fn ab_with_mem(
   if depth < 1 {
     best_value = evaluation::evaluation(board, get_ai_color(board, max_player));
   } else if max_player {
-    let mut a = alpha;
+    let mut a: i32 = alpha;
     if best_value < beta {
-      let move_it = MoveGen::new_legal_ordered(board, &mut order);
+      let move_it: MoveGen = MoveGen::new_legal_ordered(board, &mut order);
       let mut bresult = mem::MaybeUninit::<Board>::uninit();
       for m in move_it {
         match m.get_promotion() {
@@ -126,7 +126,7 @@ fn ab_with_mem(
         unsafe {
           board.make_move(m, &mut *bresult.as_mut_ptr());
           let (value, _) = ab_with_mem(&*bresult.as_ptr(), a, beta, depth - 1, table, !max_player);
-          let piece_in = board.piece_on(m.get_source()).unwrap().to_index();
+          let piece_in: usize = board.piece_on(m.get_source()).unwrap().to_index();
           if value > 0 {
             piece_values[piece_in] += 1
           }
@@ -149,9 +149,9 @@ fn ab_with_mem(
       piece_values[b.to_index()].partial_cmp(&piece_values[a.to_index()]).unwrap()
     );
   } else {
-    let mut b = beta;
+    let mut b: i32 = beta;
     if best_value > alpha {
-      let move_it = MoveGen::new_legal_ordered(board, &mut order);
+      let move_it: MoveGen = MoveGen::new_legal_ordered(board, &mut order);
       let mut bresult = mem::MaybeUninit::<Board>::uninit();
       for m in move_it {
         match m.get_promotion() {
@@ -161,7 +161,7 @@ fn ab_with_mem(
         unsafe {
           board.make_move(m, &mut *bresult.as_mut_ptr());
           let (value, _) = ab_with_mem(&*bresult.as_ptr(), alpha, b, depth - 1, table, !max_player);
-          let piece_in = board.piece_on(m.get_source()).unwrap().to_index();
+          let piece_in: usize = board.piece_on(m.get_source()).unwrap().to_index();
           if value < 0 {
             piece_values[piece_in] += 1
           }

@@ -1,13 +1,13 @@
 use chess::{Board, BitBoard, Color, Piece, ALL_PIECES};
 
-const BAD_SQ_PAWN_BLACK: chess::BitBoard = BitBoard(39582418599936);
-const BAD_SQ_PAWN_WHITE: chess::BitBoard = BitBoard(2359296);
-const SIDE_H: chess::BitBoard = BitBoard(9259542123273814144);
-const SIDE_A: chess::BitBoard = BitBoard(72340172838076673);
-const MID: chess::BitBoard = BitBoard(103481868288);
+const BAD_SQ_PAWN_BLACK: BitBoard = BitBoard(39582418599936);
+const BAD_SQ_PAWN_WHITE: BitBoard = BitBoard(2359296);
+const SIDE_H: BitBoard = BitBoard(9259542123273814144);
+const SIDE_A: BitBoard = BitBoard(72340172838076673);
+const MID: BitBoard = BitBoard(103481868288);
 
-const RANK_SEVEN: chess::BitBoard = BitBoard(71776119061217280);
-const RANK_TWO: chess::BitBoard = BitBoard(65280);
+const RANK_SEVEN: BitBoard = BitBoard(71776119061217280);
+const RANK_TWO: BitBoard = BitBoard(65280);
 
 const PROMISING_PAWN: i32 = 50;
 const KNIGHT_PENALTY: i32 = 30;
@@ -18,9 +18,9 @@ const BAD_PAWN: i32 = 10;
 
 #[inline]
 pub fn evaluation(board: &Board, ai: Color) -> i32 {
-  let mut value = 0;
+  let mut value: i32 = 0;
 
-  let num_checkers = board.checkers().popcnt();
+  let num_checkers: u32 = board.checkers().popcnt();
   if num_checkers == 1 {
     value += ONE_CHECK * if board.side_to_move() == ai { -1 } else { 1 };
   }
@@ -32,8 +32,8 @@ pub fn evaluation(board: &Board, ai: Color) -> i32 {
   value += (board.pieces(Piece::Knight) & board.color_combined(ai) & SIDE_H).popcnt() as i32 * -KNIGHT_PENALTY;
   value += (board.pieces(Piece::Knight) & board.color_combined(!ai) & SIDE_H).popcnt() as i32 * KNIGHT_PENALTY;
 
-  let ai_pawns = board.pieces(Piece::Pawn) & board.color_combined(ai);
-  let human_pawns = board.pieces(Piece::Pawn) & board.color_combined(!ai);
+  let ai_pawns: BitBoard = board.pieces(Piece::Pawn) & board.color_combined(ai);
+  let human_pawns: BitBoard = board.pieces(Piece::Pawn) & board.color_combined(!ai);
   value += (ai_pawns & MID).popcnt() as i32 * MID_PAWN;
   value += (ai_pawns & if ai==Color::White { RANK_SEVEN } else { RANK_TWO }).popcnt() as i32 * PROMISING_PAWN;
   value += (ai_pawns & if ai==Color::White { BAD_SQ_PAWN_WHITE } else { BAD_SQ_PAWN_BLACK }).popcnt() as i32 * -BAD_PAWN;
