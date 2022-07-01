@@ -188,7 +188,30 @@ function get_selected()
 }
 function set_selected(pos)
 {
+  if (moves_highlight.size < 1)
+  {
+    reset_move_highlight();
+    selected = -1;
+    return;
+  }
   selected = pos;
+}
+function set_move_highlight(pos)
+{
+  if (get_regular_moves()[pos])
+  {
+    for (let mov of get_regular_moves()[pos])
+    {
+      moves_highlight.add(mov.TO);
+    }
+  }
+  if (get_prom_moves()[pos])
+  {
+    for (let mov in get_prom_moves()[pos])
+    {
+      moves_highlight.add(parseInt(mov));
+    }
+  }
 }
 
 let curr_depth = 5;
@@ -396,17 +419,24 @@ function render_board()
     }
   }
 }
-function render_state()
+function render_state(mask = -1, input_x = -1, input_y = -1)
 {
   render_board();
   for (let i = 0; i < NUM_VERTICALSQ * NUM_HORIZONTALSQ; i++)
   {
-    if (get_piece_at(i) === EMPTY) { continue; };
+    if (get_piece_at(i) === EMPTY || mask === i) { continue; };
     let [x, y] = nonlinear(i);
     [x, y] = (is_flipped_flag) ? [NUM_HORIZONTALSQ - 1 - x, NUM_VERTICALSQ - 1 - y] : [x, y];
     let str = get_color_at(i) + "" + get_piece_at(i);
     let img = IMAGES[str];
     ctx.drawImage(img, (x * SQ_WIDTH) + (SQ_WIDTH / (NUM_HORIZONTALSQ * 2)), (y * SQ_HEIGHT) + (SQ_HEIGHT / (NUM_VERTICALSQ * 2)), C_WIDTH / (NUM_HORIZONTALSQ + 1), C_HEIGHT / (NUM_VERTICALSQ + 1));
+  }
+  if (mask !== -1)
+  {
+    let str = get_color_at(mask) + "" + get_piece_at(mask);
+    let img = IMAGES[str];
+    ctx.drawImage(img, input_x, input_y, C_WIDTH / (NUM_HORIZONTALSQ + 1), C_HEIGHT / (NUM_VERTICALSQ + 1));
+
   }
 }
 
@@ -599,80 +629,132 @@ function conclude_move(move)
   }
   move_ai(move.FEN);
 }
-
+let mouse_x;
+let mouse_y;
+onmousemove = function (e) { mouse_x = e.clientX; mouse_y = e.clientY; }
+// https://stackoverflow.com/a/59741870
 function bind_click()
 {
+  const delta = 6;
+  const rect = c.getBoundingClientRect();
+  let start_x;
+  let start_y;
+  let mask;
+  let animation_id = null;
+  let initial_select;
+  window.addEventListener('mouseup', function (e)
+  {
+    if (animation_id)
+    {
+      cancelAnimationFrame(animation_id);
+      animation_id = null;
+    }
+    up_x = e.clientX;
+    up_y = e.clientY;
+    if (up_x < rect.left || up_x > rect.right || up_y < rect.top || up_y > rect.bottom)
+    {
+      set_selected(-1);
+      reset_move_highlight();
+    }
+    render_state();
+  })
   c.addEventListener("mousedown", function (e)
   {
     if (get_game_over() || !can_move()) return;
-    let rect = c.getBoundingClientRect();
-    let x = ((e.clientX - rect.left) / SQ_WIDTH) | 0;
-    let y = ((e.clientY - rect.top) / SQ_HEIGHT) | 0;
+    start_x = e.clientX;
+    start_y = e.clientY;
+    mask = board_pos(start_x, start_y);
+    if (get_selected() === -1 || get_color_at(mask) === get_player()) initial_select = true;
+    else
+    {
+      initial_select = false;
+      if (get_color_at(mask) !== get_player())
+      {
+        return;
+      }
+    }
+    function animate_drag()
+    {
+      render_state(mask, (mouse_x - rect.left) - 50, (mouse_y - rect.top) - 50);
+      animation_id = requestAnimationFrame(animate_drag);
+    }
+    reset_move_highlight();
+    set_move_highlight(mask);
+    set_selected(mask);
+    animate_drag();
+  });
+  c.addEventListener('mouseup', function (e)
+  {
+    if (get_game_over() || !can_move()) return;
+    const end_x = e.clientX;
+    const end_y = e.clientY;
+    const diffX = Math.abs(end_x - start_x);
+    const diffY = Math.abs(end_y - start_y);
+
+    if (diffX < delta && diffY < delta)
+    {
+      if (initial_select)
+      {
+        return;
+      }
+      click(start_x, start_y, get_selected());
+      if (can_move()) render_state();
+    }
+    else
+    {
+      click(end_x, end_y, get_selected());
+      if (can_move()) render_state();
+    }
+  });
+  function board_pos(input_x, input_y)
+  {
+    let x = ((input_x - rect.left) / SQ_WIDTH) | 0;
+    let y = ((input_y - rect.top) / SQ_HEIGHT) | 0;
     if (x > 7 || y > 7) return;
     [x, y] = (is_flipped_flag) ? [7 - x, 7 - y] : [x, y];
-    let pos = linear(x, y);
+    return linear(x, y);
+  }
+  function click(input_x, input_y, from)
+  {
+    let pos = board_pos(input_x, input_y);
 
-    if (get_selected() === -1 && get_color_at(pos) === get_player())
+    let move = null;
+    if (get_regular_moves()[from])
     {
-      set_selected(pos);
-      if (get_regular_moves()[pos])
+      for (let mov of get_regular_moves()[from])
       {
-        for (let mov of get_regular_moves()[pos])
+        if (mov.TO == pos)
         {
-          moves_highlight.add(mov.TO);
-        }
-      }
-      if (get_prom_moves()[pos])
-      {
-        for (let mov in get_prom_moves()[pos])
-        {
-          moves_highlight.add(parseInt(mov));
-        }
-      }
-      if (moves_highlight.size < 1) set_selected(-1);
-    }
-    else if (get_selected() !== -1)
-    {
-      let move = null;
-      if (get_regular_moves()[get_selected()])
-      {
-        for (let mov of get_regular_moves()[get_selected()])
-        {
-          if (mov.TO == pos)
-          {
-            move = { FEN: mov.FEN, STATUS: mov.STATUS };
-            break;
-          };
-        }
-      }
-      if (move !== null)
-      {
-        conclude_move(move);
-        return;
-      }
-      else if (get_prom_moves()[get_selected()] && get_prom_moves()[get_selected()][pos])
-      {
-
-        for (let mov of get_prom_moves()[get_selected()][pos])
-        {
-          promote_fens[mov.PIECE] = { FEN: mov.FEN, STATUS: mov.STATUS };
-        }
-        set_move_flag(false);
-        let proms = document.querySelector(".proms");
-        proms.style.display = "block";
-        proms.style.position = "absolute";
-        proms.style.left = `${e.clientX}px`;
-        proms.style.top = `${e.clientY}px`;
-        return;
-      }
-      else
-      {
-        set_selected(-1);
-        reset_move_highlight();
+          move = { FEN: mov.FEN, STATUS: mov.STATUS };
+          break;
+        };
       }
     }
-    if (can_move()) render_state();
-  });
+    if (move !== null)
+    {
+      conclude_move(move);
+      return;
+    }
+    else if (get_prom_moves()[from] && get_prom_moves()[from][pos])
+    {
+      for (let mov of get_prom_moves()[from][pos])
+      {
+        promote_fens[mov.PIECE] = { FEN: mov.FEN, STATUS: mov.STATUS };
+      }
+      set_move_flag(false);
+      let proms = document.querySelector(".proms");
+      proms.style.display = "block";
+      proms.style.position = "absolute";
+      proms.style.left = `${mouse_x}px`;
+      proms.style.top = `${mouse_y}px`;
+      return;
+    }
+    else
+    {
+      set_selected(-1);
+      reset_move_highlight();
+    }
+  }
 }
 
 /**
@@ -780,7 +862,7 @@ async function init()
   };
   c.onselectstart = function () { return false; }
   document.body.appendChild(c);
-  ctx = c.getContext("2d");
+  ctx = c.getContext("2d", { alpha: false });
   await init_images(get_set());
   init_audio();
   reset();

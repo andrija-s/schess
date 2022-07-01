@@ -4,7 +4,6 @@ use nohash_hasher::NoHashHasher;
 
 #[path = "./evaluation.rs"]
 mod evaluation;
-
 struct Bounds {
   low: i32,
   high: i32,

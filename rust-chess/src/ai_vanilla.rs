@@ -48,9 +48,6 @@ fn ab_search_top(board: &Board, player: Color, depth: i32) -> (i32, Option<Chess
 }
 
 fn ab_search(board: &Board, player: Color, depth: i32, alpha: i32, beta: i32, max_player: bool) -> i32 {
-  /* unsafe {
-    COUNTER += 1;
-  } */
   let mut best_val: i32 = if max_player { alpha } else { beta };
 
   match board.status() {
@@ -61,6 +58,9 @@ fn ab_search(board: &Board, player: Color, depth: i32, alpha: i32, beta: i32, ma
   }
 
   if depth < 1 {
+    /* unsafe {
+      COUNTER += 1;
+    } */
     return evaluation::evaluation(board, player);
   }
 
