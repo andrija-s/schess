@@ -639,7 +639,7 @@ let mouse_x;
 let mouse_y;
 onmousemove = function (e) { mouse_x = e.clientX; mouse_y = e.clientY; }
 // https://stackoverflow.com/a/59741870
-// it seems like there should be a better way, but binding behavior with overlapping traits to different outcomes is challenging 
+// fucking nightmare
 function bind_click()
 {
   const delta = 6;
