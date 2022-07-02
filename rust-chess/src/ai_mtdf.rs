@@ -161,16 +161,16 @@ fn ab_with_mem(
       }
     }
   }
-  if table.len() >= HASH_LIMIT && !table.contains_key(&(*board).get_hash()) {
+  if table.len() >= HASH_LIMIT && !table.contains_key(&board.get_hash()) {
     return (best_value, best_move);
   }
   if best_value <= alpha {
-    table.insert((*board).get_hash(), Bounds::new(i32::MIN, best_value, best_move, depth));
+    table.insert(board.get_hash(), Bounds::new(i32::MIN, best_value, best_move, depth));
   } else if best_value >= beta {
-    table.insert((*board).get_hash(), Bounds::new(best_value, i32::MAX, best_move, depth));
+    table.insert(board.get_hash(), Bounds::new(best_value, i32::MAX, best_move, depth));
   } else {
     // best_value > alpha && best_value < beta
-    table.insert((*board).get_hash(), Bounds::new(best_value, best_value, best_move, depth));
+    table.insert(board.get_hash(), Bounds::new(best_value, best_value, best_move, depth));
   }
 
   return (best_value, best_move);

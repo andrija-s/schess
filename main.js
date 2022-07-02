@@ -303,7 +303,7 @@ function set_move_flag(bool)
 
 let checks = [false, false];
 /**
- * @param {String} color  WHITE/BLACK
+ * @param {string} color  WHITE/BLACK
  * @returns 
  */
 function get_checked(color)
@@ -323,7 +323,7 @@ function is_flipped()
   return is_flipped_flag;
 }
 /**
- * @param {Boolean} change if called by change button, only flip to set player to bottom
+ * @param {boolean} change if called by change button, only flip to set player to bottom
  */
 function flip(change = false)
 {
@@ -364,8 +364,8 @@ function lose()
 }
 
 /**
- * @param {Number} x 
- * @param {Number} y 
+ * @param {number} x 
+ * @param {number} y 
  * @returns 
  */
 function linear(x, y)
@@ -373,19 +373,19 @@ function linear(x, y)
   return (NUM_VERTICALSQ * y) + x;
 }
 /**
- * @param {Number} z 
- * @returns x, y
+ * @param {number} i 
+ * @returns x, y converted from i
  */
-function nonlinear(z)
+function nonlinear(i)
 {
-  let x = z % NUM_HORIZONTALSQ;
-  let y = (z / NUM_VERTICALSQ) | 0;
+  let x = i % NUM_HORIZONTALSQ;
+  let y = (i / NUM_VERTICALSQ) | 0;
   return [x, y];
 }
 /**
  * Rust code counts squares 0-63 starting at a1, javascript code counts from top left corner (a8)
- * @param {Number} pos 
- * @returns Number
+ * @param {number} pos 
+ * @returns number
  */
 function pos_conversion(pos)
 {
@@ -419,6 +419,11 @@ function render_board()
     }
   }
 }
+/**
+ * @param {number} mask pos to be made invisible and rendered at mouse location 
+ * @param {number} input_x mouse x
+ * @param {number} input_y mouse y
+ */
 function render_state(mask = -1, input_x = -1, input_y = -1)
 {
   render_board();
@@ -451,6 +456,7 @@ function load_image(key, url)
     i.src = url;
   });
 }
+// has to go off get_set() as input and not get_set() directly because bind_buttons needs to pass its input
 async function init_images(set)
 {
   let jar = [];
@@ -586,7 +592,7 @@ function bind_buttons()
 }
 
 /**
- * @param {String} fen 
+ * @param {string} fen 
  */
 function move_ai(fen)
 {
@@ -633,6 +639,7 @@ let mouse_x;
 let mouse_y;
 onmousemove = function (e) { mouse_x = e.clientX; mouse_y = e.clientY; }
 // https://stackoverflow.com/a/59741870
+// it seems like there should be a better way, but binding behavior with overlapping traits to different outcomes is challenging 
 function bind_click()
 {
   const delta = 6;
@@ -762,7 +769,7 @@ function bind_click()
 }
 
 /**
- * @param {String} fen fen 
+ * @param {string} fen fen 
  * @returns state / white checked? / black checked?
  */
 function parse_fen(fen)
@@ -773,7 +780,7 @@ function parse_fen(fen)
   let state = [];
   for (let i = 0; i < split_fen[0].length; i++)
   {
-    let curr_char = split_fen[0].toString().charAt(i);
+    let curr_char = split_fen[0].tostring().charAt(i);
     if (curr_char === "/") continue;
     if (!isNaN(parseInt(curr_char)))
     {
@@ -794,7 +801,7 @@ function parse_fen(fen)
 }
 
 /**
- * @param {String} fens fens separated by ';'
+ * @param {string} fens fens separated by ';'
  * @returns JSON of regular fens / JSON of prom fens
  */
 function parse_player_moves(fens)
@@ -834,7 +841,7 @@ function parse_player_moves(fens)
 }
 
 /**
- * @param {String} response response from worker, separated by ","
+ * @param {string} response response from worker, separated by ","
  * @returns status, evaluation, ai move, new state, num nodes computed, player moves
  */
 function parse_response(response)
