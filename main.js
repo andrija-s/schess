@@ -664,7 +664,11 @@ function bind_click()
     start_x = e.clientX;
     start_y = e.clientY;
     mask = board_pos(start_x, start_y);
-    if (get_selected() === -1 || get_color_at(mask) === get_player()) initial_select = true;
+    if (get_selected() === -1 || get_color_at(mask) === get_player())
+    {
+      if (get_color_at(mask) === EMPTY) return;
+      initial_select = true;
+    }
     else
     {
       initial_select = false;
