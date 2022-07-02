@@ -780,7 +780,7 @@ function parse_fen(fen)
   let state = [];
   for (let i = 0; i < split_fen[0].length; i++)
   {
-    let curr_char = split_fen[0].tostring().charAt(i);
+    let curr_char = split_fen[0].charAt(i);
     if (curr_char === "/") continue;
     if (!isNaN(parseInt(curr_char)))
     {
