@@ -26,6 +26,8 @@ const SELECT_COLOR = "goldenrod";
 const LSQ_COLOR = "#ff7a39"; // square light
 const DSQ_COLOR = "brown";   // square dark
 const MOVE_HGHLT_COLOR = "navajowhite"; // move highlight
+const HOVER_SQ = "steelblue";
+const HOVER_SQ_ATTACK = "darkslateblue";
 const SQ_FROM_COLOR = "teal";
 const SQ_TO_COLOR = "aqua";
 const PIECE_SETS = ["alpha", "anarcandy", "cburnett", "chessnut", "kosal", "maestro", "merida"];
@@ -394,8 +396,12 @@ function pos_conversion(pos)
   return (NUM_VERTICALSQ * y) + x;
 }
 
-function render_board()
+function render_board(mouse_x, mouse_y)
 {
+  mouse_x = (mouse_x / SQ_WIDTH) | 0;
+  mouse_y = (mouse_y / SQ_HEIGHT) | 0;
+  [mouse_x, mouse_y] = (is_flipped_flag) ? [7 - mouse_x, 7 - mouse_y] : [mouse_x, mouse_y];
+  let hover_pos = linear(mouse_x, mouse_y);
   for (let i = 0; i < NUM_HORIZONTALSQ; i++)
   {
     for (let j = 0; j < NUM_VERTICALSQ; j++)
@@ -407,7 +413,16 @@ function render_board()
       ctx.fillStyle = (j % 2 === i % 2) ? LSQ_COLOR : DSQ_COLOR;
       if (get_selected() === pos) ctx.fillStyle = SELECT_COLOR;
       else if (moves_highlight.has(pos))
-        ctx.fillStyle = MOVE_HGHLT_COLOR;
+      {
+        if (pos === hover_pos)
+        {
+          ctx.fillStyle = (get_piece_at(pos) !== EMPTY) ? HOVER_SQ_ATTACK : HOVER_SQ;
+        }
+        else
+        {
+          ctx.fillStyle = MOVE_HGHLT_COLOR;
+        }
+      }
       else if ((get_piece_at(pos) === KING && get_color_at(pos) === WHITE && get_checked(WHITE))
         || (get_piece_at(pos) === KING && get_color_at(pos) === BLACK && get_checked(BLACK)))
         ctx.fillStyle = CHECK_COLOR;
@@ -421,12 +436,12 @@ function render_board()
 }
 /**
  * @param {number} mask pos to be made invisible and rendered at mouse location 
- * @param {number} input_x mouse x
- * @param {number} input_y mouse y
+ * @param {number} mouse_x
+ * @param {number} mouse_y
  */
-function render_state(mask = -1, input_x = -1, input_y = -1)
+function render_state(mask = -1, mouse_x = -1, mouse_y = -1)
 {
-  render_board();
+  render_board(mouse_x, mouse_y);
   for (let i = 0; i < NUM_VERTICALSQ * NUM_HORIZONTALSQ; i++)
   {
     if (get_piece_at(i) === EMPTY || mask === i) { continue; };
@@ -440,7 +455,7 @@ function render_state(mask = -1, input_x = -1, input_y = -1)
   {
     let str = get_color_at(mask) + "" + get_piece_at(mask);
     let img = IMAGES[str];
-    ctx.drawImage(img, input_x, input_y, C_WIDTH / (NUM_HORIZONTALSQ + 1), C_HEIGHT / (NUM_VERTICALSQ + 1));
+    ctx.drawImage(img, mouse_x - 50, mouse_y - 50, C_WIDTH / (NUM_HORIZONTALSQ + 1), C_HEIGHT / (NUM_VERTICALSQ + 1));
 
   }
 }
@@ -686,7 +701,7 @@ function bind_click()
     }
     function animate_drag()
     {
-      render_state(mask, (mouse_x - rect.left) - 50, (mouse_y - rect.top) - 50);
+      render_state(mask, (mouse_x - rect.left), (mouse_y - rect.top));
       animation_id = requestAnimationFrame(animate_drag);
     }
     reset_move_highlight();
