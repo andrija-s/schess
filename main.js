@@ -20,16 +20,16 @@ const SQ_HEIGHT = C_HEIGHT / NUM_VERTICALSQ; // square height
 const PROM_IMG_W = NUM_HORIZONTALSQ + 3;
 const PROM_IMG_H = NUM_VERTICALSQ + 3;
 const BTN_HGHLT = "#d4d422";
-const CHECK_COLOR = "yellow";
+const CHECK_COLOR = "#D585EB";
 const BORDER_COLOR = "black"; // square border
 const SELECT_COLOR = "goldenrod";
-const LSQ_COLOR = "#ff7a39"; // square light
-const DSQ_COLOR = "brown";   // square dark
-const MOVE_HGHLT_COLOR = "navajowhite"; // move highlight
-const HOVER_SQ = "steelblue";
-const HOVER_SQ_ATTACK = "darkslateblue";
-const SQ_FROM_COLOR = "teal";
-const SQ_TO_COLOR = "aqua";
+const LSQ_COLOR = "#F0D9B5"; // square light
+const DSQ_COLOR = "#B58863";   // square dark
+const MOVE_HGHLT_COLOR = "#FFC90E"; // move highlight
+const HOVER_SQ = "#99D9EA";
+const HOVER_SQ_ATTACK = "#DE7C4A";
+const SQ_FROM_COLOR = "#F4E9A4";
+const SQ_TO_COLOR = "#F4E9A4";
 const PIECE_SETS = ["alpha", "anarcandy", "cburnett", "chessnut", "kosal", "maestro", "merida"];
 const IMAGES = {}; // piece images
 const AUDIO = {};
@@ -656,7 +656,7 @@ function conclude_move(move)
 function bind_click()
 {
   const delta = 6;
-  const rect = c.getBoundingClientRect();
+  let rect = c.getBoundingClientRect();
   let mouse_x;
   let mouse_y;
   onmousemove = function (e) { mouse_x = e.clientX; mouse_y = e.clientY; }
@@ -684,6 +684,7 @@ function bind_click()
   c.addEventListener("mousedown", function (e)
   {
     if (get_game_over() || !can_move()) return;
+    rect = c.getBoundingClientRect();
     start_x = e.clientX;
     start_y = e.clientY;
     mask = board_pos(start_x, start_y);
