@@ -650,15 +650,16 @@ function conclude_move(move)
   }
   move_ai(move.FEN);
 }
-let mouse_x;
-let mouse_y;
-onmousemove = function (e) { mouse_x = e.clientX; mouse_y = e.clientY; }
+
 // https://stackoverflow.com/a/59741870
 // fucking nightmare
 function bind_click()
 {
   const delta = 6;
   const rect = c.getBoundingClientRect();
+  let mouse_x;
+  let mouse_y;
+  onmousemove = function (e) { mouse_x = e.clientX; mouse_y = e.clientY; }
   let start_x;
   let start_y;
   let mask;
