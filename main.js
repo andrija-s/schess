@@ -401,7 +401,7 @@ function render_board(mouse_x, mouse_y)
   mouse_x = (mouse_x / SQ_WIDTH) | 0;
   mouse_y = (mouse_y / SQ_HEIGHT) | 0;
   [mouse_x, mouse_y] = (is_flipped_flag) ? [7 - mouse_x, 7 - mouse_y] : [mouse_x, mouse_y];
-  let hover_pos = linear(mouse_x, mouse_y);
+  let hover_pos = (mouse_x > 7 || mouse_y > 7) ? -1 : linear(mouse_x, mouse_y);
   for (let i = 0; i < NUM_HORIZONTALSQ; i++)
   {
     for (let j = 0; j < NUM_VERTICALSQ; j++)
