@@ -400,13 +400,13 @@ function render_board(mouse_x, mouse_y)
 {
   mouse_x = (mouse_x / SQ_WIDTH) | 0;
   mouse_y = (mouse_y / SQ_HEIGHT) | 0;
-  [mouse_x, mouse_y] = (is_flipped_flag) ? [7 - mouse_x, 7 - mouse_y] : [mouse_x, mouse_y];
+  [mouse_x, mouse_y] = (is_flipped()) ? [7 - mouse_x, 7 - mouse_y] : [mouse_x, mouse_y];
   let hover_pos = (mouse_x > 7 || mouse_y > 7) ? -1 : linear(mouse_x, mouse_y);
   for (let i = 0; i < NUM_HORIZONTALSQ; i++)
   {
     for (let j = 0; j < NUM_VERTICALSQ; j++)
     {
-      let [x, y] = (is_flipped_flag) ? [NUM_HORIZONTALSQ - 1 - i, NUM_VERTICALSQ - 1 - j] : [i, j];
+      let [x, y] = (is_flipped()) ? [NUM_HORIZONTALSQ - 1 - i, NUM_VERTICALSQ - 1 - j] : [i, j];
       let pos = linear(x, y);
       ctx.fillStyle = BORDER_COLOR;
       ctx.fillRect(i * SQ_WIDTH, j * SQ_HEIGHT, SQ_WIDTH, SQ_HEIGHT);
@@ -446,7 +446,7 @@ function render_state(mask = -1, mouse_x = -1, mouse_y = -1)
   {
     if (get_piece_at(i) === EMPTY || mask === i) { continue; };
     let [x, y] = nonlinear(i);
-    [x, y] = (is_flipped_flag) ? [NUM_HORIZONTALSQ - 1 - x, NUM_VERTICALSQ - 1 - y] : [x, y];
+    [x, y] = (is_flipped()) ? [NUM_HORIZONTALSQ - 1 - x, NUM_VERTICALSQ - 1 - y] : [x, y];
     let str = get_color_at(i) + "" + get_piece_at(i);
     let img = IMAGES[str];
     ctx.drawImage(img, (x * SQ_WIDTH) + (SQ_WIDTH / (NUM_HORIZONTALSQ * 2)), (y * SQ_HEIGHT) + (SQ_HEIGHT / (NUM_VERTICALSQ * 2)), C_WIDTH / (NUM_HORIZONTALSQ + 1), C_HEIGHT / (NUM_VERTICALSQ + 1));
@@ -739,7 +739,7 @@ function bind_click()
     let x = ((input_x - rect.left) / SQ_WIDTH) | 0;
     let y = ((input_y - rect.top) / SQ_HEIGHT) | 0;
     if (x > 7 || y > 7) return;
-    [x, y] = (is_flipped_flag) ? [7 - x, 7 - y] : [x, y];
+    [x, y] = (is_flipped()) ? [7 - x, 7 - y] : [x, y];
     return linear(x, y);
   }
   function click(input_x, input_y, from)
